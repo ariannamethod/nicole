@@ -36,7 +36,7 @@ except ImportError:
 
 # Telegram Bot API (если доступен)
 try:
-    from telegram import Update, Bot
+    from telegram import Update, Bot, BotCommand
     from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
     TELEGRAM_AVAILABLE = True
 except ImportError:
@@ -171,6 +171,13 @@ Just write me messages - I will learn and adapt!"""
             
         await update.message.reply_text("⚡ New conversation started. Memory preserved.")
     
+    async def setup_menu(self):
+        """Sets up bot menu button"""
+        commands = [
+            BotCommand("newconvo", "RESTART")
+        ]
+        await self.application.bot.set_my_commands(commands)
+        
     def setup_handlers(self):
         """Sets up command handlers"""
         self.application.add_handler(CommandHandler("start", self.start_command))
@@ -178,14 +185,15 @@ Just write me messages - I will learn and adapt!"""
         self.application.add_handler(CommandHandler("newconvo", self.newconvo_command))
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.message_handler))
         
-    def run_bot(self):
+    async def run_bot(self):
         """Runs the bot"""
         self.setup_handlers()
+        await self.setup_menu()  # Устанавливаем menu button
         print(f"[RealTelegramBot] Starting bot with token: {self.token[:10]}...")
-        self.application.run_polling()
+        await self.application.run_polling()
 
 class NicoleTelegramInterface:
-    """Интерфейс Nicole для Telegram"""
+    """Nicole interface for Telegram"""
     
     def __init__(self):
         self.bot = MockTelegramBot()
@@ -198,8 +206,8 @@ class NicoleTelegramInterface:
         }
         
     def _setup_enhanced_nicole(self):
-        """Настраивает полную Nicole систему"""
-        # Создаем интегрированную систему со всеми модулями
+        """Sets up full Nicole system"""
+        # Create integrated system with all modules
         class FullNicole:
             def __init__(self):
                 self.core = nicole.nicole_core
@@ -208,36 +216,36 @@ class NicoleTelegramInterface:
                 self.rag = nicole_rag.nicole_rag
                 self.metrics = nicole_metrics.nicole_metrics
                 
-                # Запускаем фоновые процессы
+                # Start background processes
                 self.learning.start_continuous_learning()
                 self.memory.start_maintenance()
                 
             def process_message(self, user_input: str, chat_id: str) -> str:
-                """Обрабатывает сообщение через всю систему"""
+                """Processes message through entire system"""
                 
-                # Если нет активной сессии - создаем
+                # If no active session - create one
                 if not self.core.session_id:
                     self.core.start_conversation(f"tg_{chat_id}")
                     
-                # Получаем контекст из памяти
+                # Get context from memory
                 memory_context = self.memory.get_conversation_context(user_input)
                 
-                # Дополняем контекст через RAG
+                # Enhance context through RAG
                 enhanced_response, rag_context = self.rag.generate_augmented_response(
                     user_input, 
                     strategy=self.rag.get_best_strategy()
                 )
                 
-                # Обрабатываем через основную Nicole
+                # Process through main Nicole
                 base_response = self.core.process_message(user_input)
                 
-                # Улучшаем ответ
-                if enhanced_response and enhanced_response != "Программирование это круто":
+                # Improve response
+                if enhanced_response and enhanced_response != "Programming is cool":
                     final_response = enhanced_response
                 else:
                     final_response = base_response
                     
-                # Анализируем метрики
+                # Analyze metrics
                 if self.core.current_transformer:
                     self.metrics.analyze_conversation_turn(
                         user_input,
@@ -246,13 +254,13 @@ class NicoleTelegramInterface:
                         self.core.session_id
                     )
                     
-                # Сохраняем в память
+                # Save to memory
                 self.memory.learn_from_conversation(user_input, final_response)
                 
                 return final_response
                 
             def get_system_status(self) -> Dict:
-                """Статус всей системы"""
+                """Status of entire system"""
                 return {
                     'h2o_active_transformers': len(self.core.h2o_engine.executor.active_transformers),
                     'current_session': self.core.session_id,
@@ -266,32 +274,32 @@ class NicoleTelegramInterface:
         return FullNicole()
         
     def start_bot(self):
-        """Запускает телеграм бота"""
+        """Starts telegram bot"""
         self.bot.start_polling()
-        print("[NicoleTelegram] Интерфейс готов к работе!")
+        print("[NicoleTelegram] Interface ready!")
         
     def handle_message(self, chat_id: str, text: str) -> str:
-        """Обрабатывает входящее сообщение"""
+        """Handles incoming message"""
         try:
-            # Проверяем команды
+            # Check commands
             if text.startswith('/'):
                 command = text.split()[0]
                 if command in self.command_handlers:
                     return self.command_handlers[command](chat_id, text)
                 else:
-                    return f"Неизвестная команда: {command}"
+                    return f"Unknown command: {command}"
                     
-            # Обычное сообщение - передаем Nicole
+            # Regular message - pass to Nicole
             response = self.enhanced_nicole.process_message(text, chat_id)
             return response
             
         except Exception as e:
-            error_msg = f"Ошибка обработки: {e}"
+            error_msg = f"Processing error: {e}"
             print(f"[NicoleTelegram:ERROR] {error_msg}")
-            return "Извини, произошла ошибка. Попробуй еще раз."
+            return "Sorry, an error occurred. Please try again."
             
     def _cmd_start(self, chat_id: str, text: str) -> str:
-        """Команда /start"""
+        """Command /start"""
         return """🧠 Hello! I'm NICOLE - Neural Intelligent Conversational Organism Language Engine.
 
 I work without pre-trained weights, creating unique transformers for each dialogue.
@@ -303,7 +311,7 @@ Commands:
 Just write me messages - I will learn and adapt!"""
 
     def _cmd_help(self, chat_id: str, text: str) -> str:
-        """Команда /help"""
+        """Command /help"""
         return """🤖 NICOLE: Neural Intelligent Conversational Organism Language Engine
 
 /newconvo - start new conversation
@@ -342,7 +350,7 @@ Just write me messages - I will learn and adapt!"""
             return f"Ошибка получения статистики: {e}"
             
     def _cmd_reset(self, chat_id: str, text: str) -> str:
-        """Команда /newconvo"""
+        """Command /newconvo"""
         try:
             if self.enhanced_nicole.core.session_id:
                 self.enhanced_nicole.core.end_conversation()
@@ -353,14 +361,14 @@ Just write me messages - I will learn and adapt!"""
             return f"Error: {e}"
 
     def process_message(self, chat_id: str, message_text: str) -> str:
-        """Обрабатывает сообщение от пользователя"""
-        # Логируем входящее сообщение
+        """Processes user message"""
+        # Log incoming message
         user_message = self.bot.simulate_user_message(chat_id, message_text)
         
-        # Обрабатываем сообщение
+        # Process message
         response = self.handle_message(chat_id, message_text)
         
-        # Отправляем ответ
+        # Send response
         self.bot.send_message(chat_id, response)
         
         return response
@@ -470,7 +478,7 @@ def run_production_bot():
         
     print("🚀 Starting Nicole Production Telegram Bot...")
     bot = RealTelegramBot(token)
-    bot.run_bot()
+    asyncio.run(bot.run_bot())
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
