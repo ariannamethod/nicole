@@ -99,6 +99,14 @@ class RealTelegramBot:
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Command /start"""
         chat_id = str(update.effective_chat.id)
+        
+        # Устанавливаем menu button при первом /start
+        try:
+            commands = [BotCommand("newconvo", "RESTART")]
+            await self.application.bot.set_my_commands(commands)
+        except Exception as e:
+            print(f"[RealTelegramBot] Menu setup failed: {e}")
+        
         welcome_msg = """🧠 Hello! I'm NICOLE - Neural Intelligent Conversational Organism Language Engine.
 
 I work without pre-trained weights, creating unique transformers for each dialogue.
@@ -171,13 +179,7 @@ Just write me messages - I will learn and adapt!"""
             
         await update.message.reply_text("⚡ New conversation started. Memory preserved.")
     
-    async def setup_menu(self):
-        """Sets up bot menu button"""
-        commands = [
-            BotCommand("newconvo", "RESTART")
-        ]
-        await self.application.bot.set_my_commands(commands)
-        
+
     def setup_handlers(self):
         """Sets up command handlers"""
         self.application.add_handler(CommandHandler("start", self.start_command))
@@ -190,21 +192,7 @@ Just write me messages - I will learn and adapt!"""
         self.setup_handlers()
         print(f"[RealTelegramBot] Starting bot with token: {self.token[:10]}...")
         
-        # Простой запуск без async проблем
-        try:
-            # Пытаемся установить menu button через sync метод
-            import asyncio
-            try:
-                # Если есть loop - используем его
-                loop = asyncio.get_running_loop()
-                loop.create_task(self.setup_menu())
-            except RuntimeError:
-                # Нет loop - создаем новый только для menu
-                asyncio.run(self.setup_menu())
-        except Exception as e:
-            print(f"[RealTelegramBot] Menu setup failed: {e}")
-        
-        # Запускаем polling обычным способом
+        # Запускаем polling - menu button настроится автоматически
         self.application.run_polling()
 
 class NicoleTelegramInterface:
