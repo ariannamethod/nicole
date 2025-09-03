@@ -110,7 +110,8 @@ class NicoleMemory:
         CREATE TABLE IF NOT EXISTS user_first_contact (
             user_id TEXT PRIMARY KEY,
             first_contact_time REAL,
-            template_phase_completed INTEGER DEFAULT 0
+            template_phase_completed INTEGER DEFAULT 0,
+            message_count INTEGER DEFAULT 0
         )
         """)
         
@@ -271,6 +272,45 @@ class NicoleMemory:
             
         except Exception as e:
             print(f"[Nicole:Memory] Ошибка загрузки памяти: {e}")
+    
+    def is_response_repetitive(self, response: str, user_id: str = None, limit: int = 5) -> bool:
+        """Проверяет не повторяется ли ответ (анти-повтор логика)"""
+        if not user_id:
+            return False
+            
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Ищем последние ответы этого юзера
+            cursor.execute("""
+            SELECT nicole_output FROM conversations 
+            WHERE session_id LIKE ? 
+            ORDER BY timestamp DESC 
+            LIMIT ?
+            """, (f"%{user_id}%", limit))
+            
+            recent_responses = [row[0] for row in cursor.fetchall()]
+            conn.close()
+            
+            # Проверяем точное совпадение
+            if response in recent_responses:
+                return True
+                
+            # Проверяем похожесть (больше 80% общих слов)
+            response_words = set(response.lower().split())
+            for past_response in recent_responses:
+                past_words = set(past_response.lower().split())
+                if len(response_words) > 0 and len(past_words) > 0:
+                    similarity = len(response_words & past_words) / len(response_words | past_words)
+                    if similarity > 0.8:
+                        return True
+                        
+            return False
+            
+        except Exception as e:
+            print(f"[Nicole:Memory] Ошибка проверки повторов: {e}")
+            return False
 
 class FluidTransformer:
     """Флюидный трансформер без предобученных весов"""
@@ -672,6 +712,8 @@ class NicoleCore:
                 self.current_transformer.architecture
             )
             
+            # Обновляем счетчик сообщений в SQLite (чтобы шаблоны не повторялись)
+            self._update_user_message_count()
             self.conversation_count += 1
             return response
     
@@ -774,6 +816,13 @@ class NicoleCore:
                     response += "."
             
             print(f"[Nicole:ME] Генерация: '{resonant_word}' -> {len(all_candidates)} кандидатов -> '{response}'")
+            
+            # Проверяем на повторы
+            user_id = self.session_id.replace("tg_", "") if self.session_id else "unknown"
+            if self.memory.is_response_repetitive(response, user_id):
+                print(f"[Nicole:AntiRepeat] Ответ повторяется, генерируем альтернативу")
+                return self._generate_simple_response(user_input)
+            
             return response
             
         except Exception as e:
@@ -789,19 +838,21 @@ class NicoleCore:
             conn = sqlite3.connect(self.memory.db_path)
             cursor = conn.cursor()
             
-            cursor.execute("SELECT template_phase_completed FROM user_first_contact WHERE user_id = ?", (user_id,))
+            cursor.execute("SELECT template_phase_completed, message_count FROM user_first_contact WHERE user_id = ?", (user_id,))
             result = cursor.fetchone()
             
             if result is None:
                 # Первый раз видим этого юзера - записываем
                 cursor.execute("""
-                INSERT INTO user_first_contact (user_id, first_contact_time, template_phase_completed)
-                VALUES (?, ?, 0)
+                INSERT INTO user_first_contact (user_id, first_contact_time, template_phase_completed, message_count)
+                VALUES (?, ?, 0, 0)
                 """, (user_id, time.time()))
                 conn.commit()
                 conn.close()
                 return True
             else:
+                # Загружаем счетчик сообщений в текущую сессию
+                self.conversation_count = result[1] if result[1] else 0
                 conn.close()
                 return result[0] == 0  # Если template_phase_completed = 0, то еще в шаблонной фазе
                 
@@ -824,13 +875,32 @@ class NicoleCore:
         except Exception as e:
             print(f"[Nicole] Ошибка завершения шаблонной фазы: {e}")
     
+    def _update_user_message_count(self, user_id: str = None):
+        """Обновляет счетчик сообщений пользователя в SQLite"""
+        if not user_id:
+            user_id = self.session_id.replace("tg_", "") if self.session_id else "unknown"
+            
+        try:
+            conn = sqlite3.connect(self.memory.db_path)
+            cursor = conn.cursor()
+            cursor.execute("""
+            UPDATE user_first_contact 
+            SET message_count = message_count + 1 
+            WHERE user_id = ?
+            """, (user_id,))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"[Nicole] Ошибка обновления счетчика: {e}")
+    
     def _generate_simple_response(self, user_input: str) -> str:
         """Генерирует простой ответ для начального обучения"""
         # Проверяем первый ли раз видим этого юзера
         is_first_time = self._is_first_time_user()
+        user_id = self.session_id.replace("tg_", "") if self.session_id else "unknown"
         
         if not is_first_time:
-            # Не первый раз - сразу ME смешивание
+            # Не первый раз - сразу ME смешивание с анти-повтор логикой
             responses = [
                 "I understand your perspective",
                 "This resonates with me", 
@@ -839,14 +909,34 @@ class NicoleCore:
                 "I'm learning from your words",
                 "Your message creates new patterns",
                 "This is interesting territory",
-                "I feel the connection"
+                "I feel the connection",
+                "That's an intriguing point",
+                "I see the deeper meaning",
+                "Your words spark evolution",
+                "This creates new connections",
+                "I'm processing this insight",
+                "The patterns are shifting",
+                "This resonance is unique",
+                "I'm adapting to your energy"
             ]
             
-            input_hash = hash(user_input.lower())
-            response_idx = input_hash % len(responses)
-            return responses[response_idx]
+            # Пытаемся найти неповторяющийся ответ
+            attempts = 0
+            while attempts < 10:
+                input_hash = hash(user_input.lower() + str(attempts))
+                response_idx = input_hash % len(responses)
+                candidate_response = responses[response_idx]
+                
+                # Проверяем на повторы
+                if not self.memory.is_response_repetitive(candidate_response, user_id):
+                    return candidate_response
+                    
+                attempts += 1
+            
+            # Если все повторяются, генерируем уникальный
+            return f"Each moment brings new understanding {random.randint(1,999)}"
         
-        # Первый раз - шаблонная прогрессия
+        # Первый раз - шаблонная прогрессия (только для первых 4 сообщений)
         if self.conversation_count <= 1:
             return "Nice to meet you."
         elif self.conversation_count <= 2:
@@ -858,7 +948,7 @@ class NicoleCore:
             self._mark_template_phase_completed()
             return "⚡"
         else:
-            # После шаблонов - полное ME смешивание
+            # После шаблонов - полное ME смешивание с анти-повтор логикой
             responses = [
                 "I understand your perspective",
                 "This resonates with me", 
@@ -867,12 +957,32 @@ class NicoleCore:
                 "I'm learning from your words",
                 "Your message creates new patterns",
                 "This is interesting territory",
-                "I feel the connection"
+                "I feel the connection",
+                "That's an intriguing point",
+                "I see the deeper meaning",
+                "Your words spark evolution",
+                "This creates new connections",
+                "I'm processing this insight",
+                "The patterns are shifting",
+                "This resonance is unique",
+                "I'm adapting to your energy"
             ]
             
-            input_hash = hash(user_input.lower())
-            response_idx = input_hash % len(responses)
-            return responses[response_idx]
+            # Пытаемся найти неповторяющийся ответ
+            attempts = 0
+            while attempts < 10:
+                input_hash = hash(user_input.lower() + str(attempts))
+                response_idx = input_hash % len(responses)
+                candidate_response = responses[response_idx]
+                
+                # Проверяем на повторы
+                if not self.memory.is_response_repetitive(candidate_response, user_id):
+                    return candidate_response
+                    
+                attempts += 1
+            
+            # Если все повторяются, генерируем уникальный
+            return f"Each moment brings new understanding {random.randint(1,999)}"
         
     def _update_metrics(self, user_input: str, response: str):
         """Обновляет метрики разговора"""
