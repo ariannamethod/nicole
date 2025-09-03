@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Nicole Telegram - Телеграм клиент для тестирования Nicole
-Ебанутый интерфейс для общения с флюидной нейронкой.
+Nicole Telegram - Telegram client for testing Nicole
+Fluid neural network interface.
 """
 
 import asyncio
@@ -41,10 +41,10 @@ try:
     TELEGRAM_AVAILABLE = True
 except ImportError:
     TELEGRAM_AVAILABLE = False
-    print("[TelegramBot] python-telegram-bot не установлен, используем мок")
+    print("[TelegramBot] python-telegram-bot not installed, using mock")
 
 class MockTelegramBot:
-    """Мок телеграм бота для тестирования без API"""
+    """Mock telegram bot for testing without API"""
     
     def __init__(self):
         self.chat_sessions = {}
@@ -52,17 +52,17 @@ class MockTelegramBot:
         self.is_running = False
         
     def start_polling(self):
-        """Запускает polling (симуляция)"""
+        """Starts polling (simulation)"""
         self.is_running = True
-        print("[TelegramBot] Бот запущен (симуляция)")
+        print("[TelegramBot] Bot started (simulation)")
         
     def stop_polling(self):
-        """Останавливает polling"""
+        """Stops polling"""
         self.is_running = False
-        print("[TelegramBot] Бот остановлен")
+        print("[TelegramBot] Bot stopped")
         
     def send_message(self, chat_id: str, text: str):
-        """Отправляет сообщение (симуляция)"""
+        """Sends message (simulation)"""
         message = {
             'chat_id': chat_id,
             'text': text,
@@ -73,7 +73,7 @@ class MockTelegramBot:
         print(f"[Bot -> {chat_id}] {text}")
         
     def simulate_user_message(self, chat_id: str, text: str):
-        """Симулирует сообщение от пользователя"""
+        """Simulates user message"""
         message = {
             'chat_id': chat_id,
             'text': text,
@@ -85,11 +85,11 @@ class MockTelegramBot:
         return message
 
 class RealTelegramBot:
-    """Настоящий Telegram бот для продакшена"""
+    """Real Telegram bot for production"""
     
     def __init__(self, token: str):
         if not TELEGRAM_AVAILABLE:
-            raise ImportError("python-telegram-bot не установлен")
+            raise ImportError("python-telegram-bot not installed")
             
         self.token = token
         self.application = Application.builder().token(token).build()
@@ -97,7 +97,7 @@ class RealTelegramBot:
         self.message_history = []
         
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Команда /start"""
+        """Command /start"""
         chat_id = str(update.effective_chat.id)
         welcome_msg = """🧠 Hello! I'm NICOLE - Neural Intelligent Conversational Organism Language Engine.
 
@@ -110,7 +110,7 @@ Commands:
         await update.message.reply_text(welcome_msg)
         
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Команда /help"""
+        """Command /help"""
         help_text = """🤖 NICOLE: Neural Intelligent Conversational Organism Language Engine
 
 /newconvo - start new conversation
@@ -120,12 +120,12 @@ Just write me messages - I will learn and adapt!"""
         await update.message.reply_text(help_text)
         
     async def message_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Обработчик обычных сообщений"""
+        """Regular message handler"""
         try:
             chat_id = str(update.effective_chat.id)
             user_input = update.message.text
             
-            # Логируем сообщение
+            # Log message
             self.message_history.append({
                 'chat_id': chat_id,
                 'text': user_input,
@@ -133,18 +133,18 @@ Just write me messages - I will learn and adapt!"""
                 'type': 'user_message'
             })
             
-            # Создаем Nicole сессию если нет
+            # Create Nicole session if none exists
             if chat_id not in self.chat_sessions:
                 nicole_core = nicole.NicoleCore()
                 nicole_core.start_conversation(f"tg_{chat_id}")
                 self.chat_sessions[chat_id] = nicole_core
-                print(f"[RealTelegramBot] Создана Nicole сессия для {chat_id}")
+                print(f"[RealTelegramBot] Created Nicole session for {chat_id}")
             
-            # Обрабатываем через Nicole с ME принципами
+            # Process through Nicole with ME principles
             nicole_session = self.chat_sessions[chat_id]
             response = nicole_session.process_message(user_input)
             
-            # Логируем ответ
+            # Log response
             self.message_history.append({
                 'chat_id': chat_id,
                 'text': response,
@@ -155,33 +155,33 @@ Just write me messages - I will learn and adapt!"""
             await update.message.reply_text(response)
             
         except Exception as e:
-            error_msg = f"Ошибка Nicole: {str(e)}"
+            error_msg = f"Nicole Error: {str(e)}"
             print(f"[RealTelegramBot:ERROR] {error_msg}")
             await update.message.reply_text(error_msg)
     
     async def newconvo_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Команда /newconvo - новый разговор"""
+        """Command /newconvo - new conversation"""
         chat_id = str(update.effective_chat.id)
         
-        # Завершаем текущую сессию но сохраняем память
+        # End current session but preserve memory
         if chat_id in self.chat_sessions:
             old_session = self.chat_sessions[chat_id]
-            # Память остается в SQLite, просто создаем новую сессию
+            # Memory stays in SQLite, just create new session
             del self.chat_sessions[chat_id]
             
         await update.message.reply_text("⚡ New conversation started. Memory preserved.")
     
     def setup_handlers(self):
-        """Настраивает обработчики команд"""
+        """Sets up command handlers"""
         self.application.add_handler(CommandHandler("start", self.start_command))
         self.application.add_handler(CommandHandler("help", self.help_command))
         self.application.add_handler(CommandHandler("newconvo", self.newconvo_command))
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.message_handler))
         
     def run_bot(self):
-        """Запускает бота"""
+        """Runs the bot"""
         self.setup_handlers()
-        print(f"[RealTelegramBot] Запускаем бота с токеном: {self.token[:10]}...")
+        print(f"[RealTelegramBot] Starting bot with token: {self.token[:10]}...")
         self.application.run_polling()
 
 class NicoleTelegramInterface:
