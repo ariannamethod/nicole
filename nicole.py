@@ -115,6 +115,12 @@ class NicoleMemory:
         )
         """)
         
+        # Добавляем колонку message_count если ее нет (для существующих баз)
+        try:
+            cursor.execute("ALTER TABLE user_first_contact ADD COLUMN message_count INTEGER DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass  # Колонка уже существует
+        
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS transformer_logs (
             id INTEGER PRIMARY KEY,
@@ -763,6 +769,15 @@ class NicoleCore:
             # Комбинируем ME кандидатов с Objectivity семенами
             all_candidates = list(set(candidates_50 + candidates_70 + objectivity_seeds))
             
+            # Фильтруем только английские слова (анти-микс логика)
+            english_candidates = []
+            for word in all_candidates:
+                # Простая проверка - если слово содержит только латинские буквы
+                if word and all(ord(c) < 128 for c in word.lower()):
+                    english_candidates.append(word)
+            
+            all_candidates = english_candidates if english_candidates else ["understand", "resonate", "learn"]
+            
             if not all_candidates:
                 # Фоллбек на простые ответы
                 return self._generate_simple_response(user_input)
@@ -937,13 +952,14 @@ class NicoleCore:
             return f"Each moment brings new understanding {random.randint(1,999)}"
         
         # Первый раз - шаблонная прогрессия (только для первых 4 сообщений)
-        if self.conversation_count <= 1:
+        # conversation_count теперь загружается из SQLite, поэтому шаблоны не повторяются
+        if self.conversation_count == 0:
             return "Nice to meet you."
-        elif self.conversation_count <= 2:
+        elif self.conversation_count == 1:
             return "Each word you say helps my evolution."
-        elif self.conversation_count <= 3:
+        elif self.conversation_count == 2:
             return "One more, soon I'll start to speak..."
-        elif self.conversation_count <= 4:
+        elif self.conversation_count == 3:
             # Завершаем шаблонную фазу
             self._mark_template_phase_completed()
             return "⚡"
