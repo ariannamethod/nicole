@@ -22,6 +22,13 @@ import nicole_memory
 import nicole_rag
 import nicole_metrics
 
+# Загружаем переменные окружения
+try:
+    from load_env import load_env
+    load_env()  # Автоматически загружаем .env если есть
+except ImportError:
+    pass
+
 # Telegram Bot API (если доступен)
 try:
     from telegram import Update, Bot
@@ -563,6 +570,23 @@ class InteractiveNicole:
             except Exception as e:
                 print(f"Ошибка: {e}")
 
+def run_production_bot():
+    """Запускает продакшен бота с настоящим Telegram API"""
+    token = os.getenv('TELEGRAM_TOKEN')
+    if not token:
+        print("❌ TELEGRAM_TOKEN не найден в переменных окружения!")
+        print("Создайте .env файл или установите переменную окружения")
+        return
+        
+    if not TELEGRAM_AVAILABLE:
+        print("❌ python-telegram-bot не установлен!")
+        print("Установите: pip install python-telegram-bot")
+        return
+        
+    print("🚀 Запускаем Nicole Production Telegram Bot...")
+    bot = RealTelegramBot(token)
+    bot.run_bot()
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         if sys.argv[1] == "test":
@@ -570,8 +594,11 @@ if __name__ == "__main__":
         elif sys.argv[1] == "interactive":
             interactive = InteractiveNicole()
             interactive.start_interactive()
+        elif sys.argv[1] == "bot":
+            run_production_bot()
     else:
         print("Nicole Telegram Interface")
         print("Команды:")
         print("  python3 nicole_telegram.py test - тестирование")
-        print("  python3 nicole_telegram.py interactive - интерактивный режим")
+        print("  python3 nicole_telegram.py interactive - интерактивный режим") 
+        print("  python3 nicole_telegram.py bot - продакшен бот")
