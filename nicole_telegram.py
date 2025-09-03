@@ -369,15 +369,15 @@ def test_telegram_interface():
     """Тестирование телеграм интерфейса"""
     print("=== NICOLE TELEGRAM INTERFACE TEST ===")
     
-    # Создаем интерфейс
+    # Create interface
     tg_interface = NicoleTelegramInterface()
     tg_interface.start_bot()
     
-    # Симулируем пользователя
+    # Simulate user
     test_chat_id = "test_user_123"
     
-    # Тест команд
-    print("\\n--- Тест команд ---")
+    # Test commands
+    print("\\n--- Command Test ---")
     commands_to_test = [
         "/start",
         "/help",
@@ -389,15 +389,15 @@ def test_telegram_interface():
         response = tg_interface.process_message(test_chat_id, cmd)
         time.sleep(0.2)
         
-    # Тест обычного разговора
-    print("\\n--- Тест разговора ---")
+    # Test regular conversation
+    print("\\n--- Conversation Test ---")
     conversation = [
-        "Привет Nicole! Меня зовут Тестер",
-        "Я изучаю нейронные сети",
-        "Расскажи о себе",
-        "Как ты работаешь без весов?",
-        "Это очень интересно!",
-        "Покажи свою эволюцию"
+        "Hello Nicole! My name is Tester",
+        "I study neural networks",
+        "Tell me about yourself",
+        "How do you work without weights?",
+        "This is very interesting!",
+        "Show me your evolution"
     ]
     
     for msg in conversation:
@@ -405,14 +405,14 @@ def test_telegram_interface():
         response = tg_interface.process_message(test_chat_id, msg)
         time.sleep(0.3)
         
-    # Финальная статистика
-    print("\\n--- Финальная статистика ---")
+    # Final statistics
+    print("\\n--- Final Statistics ---")
     final_stats = tg_interface.process_message(test_chat_id, "/stats")
     
-    print("\\n--- Тест эволюции ---")
+    print("\\n--- Evolution Test ---")
     evolution_result = tg_interface.process_message(test_chat_id, "/evolve")
     
-    print("\\n--- Память после разговора ---")
+    print("\\n--- Memory After Conversation ---")
     memory_result = tg_interface.process_message(test_chat_id, "/memory")
     
     print("\\n=== TELEGRAM TEST COMPLETED ===")
@@ -432,43 +432,43 @@ class InteractiveNicole:
         
         self.tg_interface.start_bot()
         
-        # Приветствие
+        # Welcome
         welcome = self.tg_interface.process_message(self.chat_id, "/start")
         
         while True:
             try:
-                user_input = input("\\n👤 Ты: ").strip()
+                user_input = input("\\n👤 You: ").strip()
                 
-                if user_input.lower() in ['quit', 'exit', 'выход']:
-                    print("👋 До свидания!")
+                if user_input.lower() in ['quit', 'exit']:
+                    print("👋 Goodbye!")
                     break
                     
                 if not user_input:
                     continue
                     
-                # Обрабатываем сообщение
+                # Process message
                 response = self.tg_interface.process_message(self.chat_id, user_input)
                 
             except KeyboardInterrupt:
-                print("\\n\\n👋 До свидания!")
+                print("\\n\\n👋 Goodbye!")
                 break
             except Exception as e:
-                print(f"Ошибка: {e}")
+                print(f"Error: {e}")
 
 def run_production_bot():
     """Запускает продакшен бота с настоящим Telegram API"""
     token = os.getenv('TELEGRAM_TOKEN')
     if not token:
-        print("❌ TELEGRAM_TOKEN не найден в переменных окружения!")
-        print("Создайте .env файл или установите переменную окружения")
+        print("❌ TELEGRAM_TOKEN not found in environment variables!")
+        print("Create .env file or set environment variable")
         return
         
     if not TELEGRAM_AVAILABLE:
-        print("❌ python-telegram-bot не установлен!")
-        print("Установите: pip install python-telegram-bot")
+        print("❌ python-telegram-bot not installed!")
+        print("Install: pip install python-telegram-bot")
         return
         
-    print("🚀 Запускаем Nicole Production Telegram Bot...")
+    print("🚀 Starting Nicole Production Telegram Bot...")
     bot = RealTelegramBot(token)
     bot.run_bot()
 
@@ -483,7 +483,7 @@ if __name__ == "__main__":
             run_production_bot()
     else:
         print("Nicole Telegram Interface")
-        print("Команды:")
-        print("  python3 nicole_telegram.py test - тестирование")
-        print("  python3 nicole_telegram.py interactive - интерактивный режим") 
-        print("  python3 nicole_telegram.py bot - продакшен бот")
+        print("Commands:")
+        print("  python3 nicole_telegram.py test - testing")
+        print("  python3 nicole_telegram.py interactive - interactive mode") 
+        print("  python3 nicole_telegram.py bot - production bot")
