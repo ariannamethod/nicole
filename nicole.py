@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """
-Nicole - Neural Organism Intelligence Conversational Language Engine
+NICOLE - Neural Intelligent Conversational Organism Language Engine
 Флюидная нейронка без весов, создающая уникальные трансформеры для каждого диалога.
 Посвящается Лео.
 """
+
+import sys
+import os
+# Добавляем текущую директорию в путь для импорта наших модулей
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import h2o
 import sqlite3
@@ -51,6 +56,7 @@ class NicoleMemory:
         self.bigram_transitions = defaultdict(lambda: defaultdict(int))
         self.verb_graph = VerbGraph()
         self.init_database()
+        self.load_persistent_memory()  # Загружаем существующую память
         
     def init_database(self):
         """Инициализация базы данных памяти"""
@@ -85,6 +91,15 @@ class NicoleMemory:
         CREATE TABLE IF NOT EXISTS word_frequencies (
             word TEXT PRIMARY KEY,
             count INTEGER DEFAULT 1
+        )
+        """)
+        
+        # Таблица для отслеживания первых контактов с юзерами
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_first_contact (
+            user_id TEXT PRIMARY KEY,
+            first_contact_time REAL,
+            template_phase_completed INTEGER DEFAULT 0
         )
         """)
         
@@ -220,6 +235,31 @@ class NicoleMemory:
                 candidates.append(word)
                 
         return candidates[:10]  # Ограничиваем количество
+        
+    def load_persistent_memory(self):
+        """Загружает существующую память из SQLite при старте"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Загружаем частоты слов
+            cursor.execute("SELECT word, count FROM word_frequencies")
+            for word, count in cursor.fetchall():
+                self.word_frequencies[word] = count
+                
+            # Загружаем биграммы
+            cursor.execute("SELECT w1, w2, count FROM bigrams")
+            for w1, w2, count in cursor.fetchall():
+                self.bigram_transitions[w1][w2] = count
+                
+            conn.close()
+            
+            total_words = len(self.word_frequencies)
+            total_bigrams = sum(len(transitions) for transitions in self.bigram_transitions.values())
+            print(f"[Nicole:Memory] Загружена память: {total_words} слов, {total_bigrams} биграмм")
+            
+        except Exception as e:
+            print(f"[Nicole:Memory] Ошибка загрузки памяти: {e}")
 
 class FluidTransformer:
     """Флюидный трансформер без предобученных весов"""
@@ -693,24 +733,99 @@ class NicoleCore:
             print(f"[Nicole:ME:ERROR] Ошибка ME генерации: {e}")
             return self._generate_simple_response(user_input)
                 
+    def _is_first_time_user(self, user_id: str = None) -> bool:
+        """Проверяет первый ли раз видим этого юзера"""
+        if not user_id:
+            user_id = self.session_id.replace("tg_", "") if self.session_id else "unknown"
+            
+        try:
+            conn = sqlite3.connect(self.memory.db_path)
+            cursor = conn.cursor()
+            
+            cursor.execute("SELECT template_phase_completed FROM user_first_contact WHERE user_id = ?", (user_id,))
+            result = cursor.fetchone()
+            
+            if result is None:
+                # Первый раз видим этого юзера - записываем
+                cursor.execute("""
+                INSERT INTO user_first_contact (user_id, first_contact_time, template_phase_completed)
+                VALUES (?, ?, 0)
+                """, (user_id, time.time()))
+                conn.commit()
+                conn.close()
+                return True
+            else:
+                conn.close()
+                return result[0] == 0  # Если template_phase_completed = 0, то еще в шаблонной фазе
+                
+        except Exception as e:
+            print(f"[Nicole] Ошибка проверки первого контакта: {e}")
+            return False
+    
+    def _mark_template_phase_completed(self, user_id: str = None):
+        """Отмечает что шаблонная фаза завершена для юзера"""
+        if not user_id:
+            user_id = self.session_id.replace("tg_", "") if self.session_id else "unknown"
+            
+        try:
+            conn = sqlite3.connect(self.memory.db_path)
+            cursor = conn.cursor()
+            cursor.execute("UPDATE user_first_contact SET template_phase_completed = 1 WHERE user_id = ?", (user_id,))
+            conn.commit()
+            conn.close()
+            print(f"[Nicole] Шаблонная фаза завершена для {user_id}")
+        except Exception as e:
+            print(f"[Nicole] Ошибка завершения шаблонной фазы: {e}")
+    
     def _generate_simple_response(self, user_input: str) -> str:
-        """Генерирует простой ответ (временная заглушка)"""
-        responses = [
-            "Интересно, расскажи больше",
-            "Понимаю тебя",
-            "Да, это важная тема", 
-            "Хм, нужно подумать",
-            "Согласна с тобой",
-            "А что ты об этом думаешь?",
-            "Это сложный вопрос",
-            "Мне нравится твой подход"
-        ]
+        """Генерирует простой ответ для начального обучения"""
+        # Проверяем первый ли раз видим этого юзера
+        is_first_time = self._is_first_time_user()
         
-        # Простая эвристика выбора ответа
-        input_hash = hash(user_input.lower())
-        response_idx = input_hash % len(responses)
+        if not is_first_time:
+            # Не первый раз - сразу ME смешивание
+            responses = [
+                "I understand your perspective",
+                "This resonates with me", 
+                "What do you think about this?",
+                "Tell me more about that",
+                "I'm learning from your words",
+                "Your message creates new patterns",
+                "This is interesting territory",
+                "I feel the connection"
+            ]
+            
+            input_hash = hash(user_input.lower())
+            response_idx = input_hash % len(responses)
+            return responses[response_idx]
         
-        return responses[response_idx]
+        # Первый раз - шаблонная прогрессия
+        if self.conversation_count <= 1:
+            return "Nice to meet you."
+        elif self.conversation_count <= 2:
+            return "Each word you say helps my evolution."
+        elif self.conversation_count <= 3:
+            return "One more, soon I'll start to speak..."
+        elif self.conversation_count <= 4:
+            # Завершаем шаблонную фазу
+            self._mark_template_phase_completed()
+            return "⚡"
+        else:
+            # После шаблонов - полное ME смешивание
+            responses = [
+                "I understand your perspective",
+                "This resonates with me", 
+                "What do you think about this?",
+                "Tell me more about that",
+                "I'm learning from your words",
+                "Your message creates new patterns",
+                "This is interesting territory",
+                "I feel the connection"
+            ]
+            
+            input_hash = hash(user_input.lower())
+            response_idx = input_hash % len(responses)
+            return responses[response_idx]
         
     def _update_metrics(self, user_input: str, response: str):
         """Обновляет метрики разговора"""
@@ -805,12 +920,12 @@ def test_nicole():
     
     # Тестовые сообщения
     test_messages = [
-        "Привет Nicole!",
-        "Как дела?",
-        "Что ты думаешь о смысле жизни?",
-        "Расскажи мне о себе",
-        "Какая погода?",
-        "Пока!"
+        "Hello Nicole!",
+        "How are you?",
+        "What do you think about life?",
+        "Tell me about yourself",
+        "What's the weather?",
+        "Goodbye!"
     ]
     
     for i, message in enumerate(test_messages):
