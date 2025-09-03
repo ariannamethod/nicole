@@ -22,6 +22,32 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import h2o
 
+def _strip_urls_from_text(text: str) -> str:
+    """
+    Strips URLs from text content, keeping only clean text.
+    Wikipedia is used as knowledge context for generation/training, not as a reference bot.
+    """
+    if not text:
+        return text
+    
+    # Remove URLs with various protocols
+    url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]+|www\.[^\s<>"{}|\\^`\[\]]+|ftp://[^\s<>"{}|\\^`\[\]]+'
+    text = re.sub(url_pattern, '', text, flags=re.IGNORECASE)
+    
+    # Remove Wikipedia-specific reference patterns like [1], [2], etc.
+    text = re.sub(r'\[\d+\]', '', text)
+    
+    # Remove any remaining bracketed content that might contain URLs or references
+    text = re.sub(r'\[[^\]]*(?:http|www|\.com|\.org|\.net)[^\]]*\]', '', text, flags=re.IGNORECASE)
+    
+    # Remove empty brackets left after URL removal
+    text = re.sub(r'\[\s*\]', '', text)
+    
+    # Clean up extra whitespace created by removals
+    text = re.sub(r'\s+', ' ', text).strip()
+    
+    return text
+
 @dataclass
 class FluidContextWindow:
     """Флюидное контекстное окно"""
@@ -178,11 +204,15 @@ class NicoleObjectivity:
             return []
     
     async def _wikipedia_script(self, message: str, analysis: Dict, script_id: str) -> List[FluidContextWindow]:
-        """Флюидный скрипт для Wikipedia поиска"""
+        """
+        Флюидный скрипт для Wikipedia поиска
+        Wikipedia используется как контекст знаний для генерации/обучения, а не как справочный бот.
+        """
         try:
             # Генерируем уникальный скрипт для Wikipedia поиска
             script = f"""
 # Флюидный Wikipedia скрипт {script_id}
+# Wikipedia используется как контекст знаний для генерации/обучения, а не как справочный бот
 import requests
 import json
 import re
@@ -193,17 +223,19 @@ def search_wikipedia_fluid():
     
     for term in search_terms[:2]:  # Максимум 2 термина
         try:
-            # Простой поиск через Wikipedia API
+            # Простой поиск через Wikipedia API - только title и extract
             url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{{term}}"
             response = requests.get(url, timeout=5)
             
             if response.status_code == 200:
                 data = response.json()
+                # Получаем только title и extract, игнорируем все URL поля
+                title = data.get('title', term)
                 extract = data.get('extract', '')[:500]
                 
                 if extract:
                     results.append({{
-                        'term': term,
+                        'term': title,
                         'content': extract,
                         'source': 'wikipedia'
                     }})
@@ -226,7 +258,7 @@ for result in wiki_results:
             # Запускаем через H2O
             result = self.h2o_engine.run_transformer_script(script, script_id)
             
-            # Парсим результат (упрощенно)
+            # Парсим результат (упрощенно) - только title и extract, без URLs
             windows = []
             for term in analysis['proper_nouns'][:1]:
                 try:
@@ -236,15 +268,20 @@ for result in wiki_results:
                     
                     if response.status_code == 200:
                         data = response.json()
+                        # Получаем только title и extract, игнорируем все URL поля
+                        title = data.get('title', term)
                         extract = data.get('extract', '')[:600]
                         
                         if extract:
+                            # Очищаем extract от любых URLs перед использованием
+                            cleaned_extract = _strip_urls_from_text(extract)
+                            
                             window = FluidContextWindow(
-                                content=f"Wikipedia: {term}\\n{extract}",
+                                content=f"Wikipedia: {title}\\n{cleaned_extract}",
                                 source_type='wikipedia',
                                 resonance_score=0.9,
                                 entropy_boost=0.3,
-                                tokens_count=len(extract.split()),
+                                tokens_count=len(cleaned_extract.split()),
                                 creation_time=time.time(),
                                 script_id=script_id
                             )
@@ -370,13 +407,21 @@ h2o_metric('memory_results_count', len(memory_results))
         return result
     
     def format_context_for_nicole(self, windows: List[FluidContextWindow]) -> str:
-        """Форматирует контекст для Nicole"""
+        """
+        Форматирует контекст для Nicole
+        Для Wikipedia источников никогда не выводятся URLs - только знания для контекста генерации.
+        """
         if not windows:
             return ""
             
         formatted = "=== OBJECTIVITY CONTEXT ===\\n"
         for window in windows:
-            formatted += f"[{window.source_type.upper()}:{window.script_id}] {window.content}\\n\\n"
+            # Для Wikipedia источников дополнительно очищаем контент от URLs
+            if window.source_type == 'wikipedia':
+                cleaned_content = _strip_urls_from_text(window.content)
+                formatted += f"[{window.source_type.upper()}:{window.script_id}] {cleaned_content}\\n\\n"
+            else:
+                formatted += f"[{window.source_type.upper()}:{window.script_id}] {window.content}\\n\\n"
             
         formatted += "=== END OBJECTIVITY ===\\n"
         return formatted
