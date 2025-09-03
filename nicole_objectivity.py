@@ -1,110 +1,93 @@
 #!/usr/bin/env python3
 """
-Nicole Objectivity - Dynamic Context Window Generator
-Флюидная система создания контекстных окон через H2O скрипты.
-Каждый поиск = уникальный скрипт, логируемый и адаптивный.
+Nicole Objectivity - Dynamic Context Window Generator (H2O-native)
+Вариант, где провайдеры полностью исполняются в H2O и складывают результат в globals.
+Снаружи мы только забираем их объектные результаты и собираем одно текстовое окно.
 
-Обновления:
-- Шаблоны используются только для первых сообщений (metrics['first_message'] == True)
-- Wikipedia: язык ru/en, добавлены title и extract без ссылок (никаких URL). Wikipedia используется как знание для генерации/обучения, не как справочный бот.
-- Reddit: реальный поиск по публичному JSON API (без ключей)
-- Memory: FTS5-поиск (если доступно), fallback на LIKE; реальные выдержки вместо заглушек
-- Seeds: частотный отбор без стоп-слов вместо random sample
-- Контекст-окна включают title, флаг template_used; форматтер никогда не выводит URL для wikipedia
+Принципы:
+- Никаких ссылок. Это контекст для генерации/обучения, не справочный режим.
+- Шаблоны разрешены только для первых N сообщений после инициализации (persist через nicole_state.json).
+- Тихий фолбэк: если источник молчит — просто пропускаем без служебных сообщений.
+- Контекст записывается в training_buffer.jsonl для последующей выборки/обучения.
+- Влияние контекста на ответ: influence_coeff = 0.5.
+
+Зависимости: стандартная библиотека + локальный h2o.py
 """
 
 import re
-import asyncio
-import requests
+import os
+import sys
 import json
 import time
-import random
-import sys
-import os
 import sqlite3
-from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import quote
-from collections import defaultdict
 
-# Добавляем путь для импорта наших модулей
+# Локальные модули
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import h2o
 
 USER_AGENT = "nicole-objectivity/1.0 (+github.com/ariannamethod/nicole)"
 
-EN_STOPWORDS = {
-    "the","a","an","and","or","but","if","then","else","when","while","for","to","of","in","on","at",
-    "is","are","was","were","be","been","being","it","this","that","these","those","with","as","by",
-    "from","about","into","over","after","before","between","through","during","without","within",
-    "do","does","did","done","can","could","should","would","may","might","must","will","just","not"
-}
+STATE_PATH = "nicole_state.json"
+TRAIN_BUFFER_PATH = "training_buffer.jsonl"
+MEMORY_DB = "nicole_memory.db"
 
-RU_STOPWORDS = {
-    "и","а","но","или","если","то","иначе","когда","пока","для","в","на","по","из","от","о","об","над","под",
-    "после","до","между","через","во","при","без","со","это","тот","эта","те","эти","что","как","так","же",
-    "бы","быть","есть","был","были","будет","мог","могут","должен","должны","может","можно","нельзя","просто","не"
-}
-
-def _now_ms() -> int:
-    return int(time.time() * 1000)
+# Тонкая настройка
+DEFAULT_TEMPLATE_WARMUP = 3      # шаблоны можно во время первых N сообщений после старта
+DEFAULT_INFLUENCE_COEFF = 0.5    # доля влияния контента на ответ
 
 @dataclass
 class FluidContextWindow:
-    """Флюидное контекстное окно"""
     content: str
-    source_type: str  # 'wikipedia', 'web', 'reddit', 'memory'
-    resonance_score: float
-    entropy_boost: float
+    source_type: str           # здесь используем 'objectivity' (единое окно)
+    resonance_score: float     # опционально используем как интегральный скор
+    entropy_boost: float       # опционально
     tokens_count: int
     creation_time: float
-    script_id: str  # ID скрипта который создал это окно
+    script_id: str
     title: Optional[str] = None
-    url: Optional[str] = None
     template_used: bool = False
-    meta: Optional[Dict[str, str]] = None
+    meta: Optional[Dict] = None
 
 class NicoleObjectivity:
-    """Система объективности Nicole - создает контекстные окна через флюидные скрипты"""
-    
-    def __init__(self, max_context_kb: int = 2):
+    def __init__(self,
+                 max_context_kb: int = 4,
+                 template_warmup_messages: int = DEFAULT_TEMPLATE_WARMUP,
+                 influence_coeff: float = DEFAULT_INFLUENCE_COEFF):
         self.max_context_kb = max_context_kb * 1024
+        self.template_warmup_messages = max(0, int(template_warmup_messages))
+        self.influence_coeff = float(influence_coeff)
         self.h2o_engine = h2o.h2o_engine
-        self.script_counter = 0
-        
-        # Паттерны для анализа (как у Клода, но расширенные)
-        self.proper_noun_patterns = [
-            r'\b[A-ZА-Я][a-zа-я]+\b',  # Имена собственные
-            r'\b[A-ZА-Я]{2,}\b',        # Аббревиатуры
-        ]
-        
-        self.technical_patterns = [
-            r'\b(python|javascript|neural|AI|quantum|blockchain)\b',
-            r'\b(programming|coding|algorithm|database)\b',
-        ]
-        
-        self.location_patterns = [
-            r'\b(Berlin|London|Moscow|Paris|Tokyo|New York)\b',
-            r'\b(Берлин|Лондон|Москва|Париж|город|страна)\b',
-        ]
+        self._message_index = self._load_state_message_index()
+        self._ensure_memory_schema()
 
-        # Простой кеш результатов по нормализованному запросу (TTL 2 мин)
-        self._cache: Dict[str, Tuple[float, List[FluidContextWindow]]] = {}
-        self._cache_ttl = 120.0
+    # ---------- State / persistence ----------
 
-    def _lang_heuristic(self, text: str) -> str:
-        # Простая эвристика: преобладающий алфавит
-        latin = len(re.findall(r'[A-Za-z]', text))
-        cyr = len(re.findall(r'[А-Яа-я]', text))
-        if cyr > latin:
-            return 'ru'
-        return 'en'
+    def _load_state_message_index(self) -> int:
+        try:
+            if os.path.exists(STATE_PATH):
+                with open(STATE_PATH, "r", encoding="utf-8") as f:
+                    st = json.load(f)
+                return int(st.get("message_index", 0))
+        except Exception:
+            pass
+        return 0
+
+    def _save_state_message_index(self, idx: int):
+        try:
+            st = {"message_index": int(idx)}
+            with open(STATE_PATH, "w", encoding="utf-8") as f:
+                json.dump(st, f, ensure_ascii=False)
+        except Exception:
+            # Тихо игнорируем: никакой болтовни наружу
+            pass
 
     def _ensure_memory_schema(self):
         try:
-            conn = sqlite3.connect('nicole_memory.db')
+            conn = sqlite3.connect(MEMORY_DB)
             cur = conn.cursor()
-            # Основная таблица (если отсутствует)
             cur.execute("""
             CREATE TABLE IF NOT EXISTS conversations (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -113,580 +96,421 @@ class NicoleObjectivity:
               nicole_output TEXT
             )
             """)
-            # FTS5 (если доступно)
             try:
                 cur.execute("""
                 CREATE VIRTUAL TABLE IF NOT EXISTS conversations_fts
                 USING fts5(user_input, nicole_output, tokenize = 'porter');
                 """)
-                # первичное заполнение если пусто
+                # первичное наполнение FTS, если пусто
                 cur.execute("SELECT count(*) FROM conversations_fts")
-                count = cur.fetchone()[0]
-                if count == 0:
-                    cur.execute("INSERT INTO conversations_fts(rowid, user_input, nicole_output) SELECT id, user_input, nicole_output FROM conversations WHERE user_input IS NOT NULL OR nicole_output IS NOT NULL")
+                if cur.fetchone()[0] == 0:
+                    cur.execute("""
+                    INSERT INTO conversations_fts(rowid, user_input, nicole_output)
+                    SELECT id, user_input, nicole_output FROM conversations
+                    WHERE user_input IS NOT NULL OR nicole_output IS NOT NULL
+                    """)
             except sqlite3.Error:
-                # FTS5 может быть не собран — ок
+                # ок, без fts5
                 pass
-
             conn.commit()
             conn.close()
         except Exception:
             pass
 
-    def _cache_get(self, key: str) -> Optional[List[FluidContextWindow]]:
-        item = self._cache.get(key)
-        if not item:
-            return None
-        ts, value = item
-        if (time.time() - ts) > self._cache_ttl:
-            self._cache.pop(key, None)
-            return None
-        return value
-
-    def _cache_set(self, key: str, value: List[FluidContextWindow]):
-        self._cache[key] = (time.time(), value)
+    # ---------- Public API ----------
 
     async def create_dynamic_context(self, user_message: str, metrics: Dict) -> List[FluidContextWindow]:
-        """Создает динамические контекстные окна через флюидные скрипты"""
-        print(f"[Objectivity] Анализируем: '{user_message}'")
-        
-        # Лингвистический анализ
-        analysis = self._analyze_message(user_message)
-        print(f"[Objectivity] Анализ: {analysis}")
-        
-        # Строго ограничиваем шаблоны первыми сообщениями
-        first_message = bool(metrics.get('first_message', False))
-        print(f"[Objectivity] first_message={first_message}")
+        """
+        Главная точка: формируем единое текстовое окно (или ничего, если контента нет).
+        """
+        # Решаем, допускаем ли шаблоны на этом шаге
+        templates_allowed = (self._message_index < self.template_warmup_messages)
 
-        # Проверка кеша (не кешируем, если first_message — нужно прогреть контекст)
-        cache_key = None if first_message else f"{analysis['language']}::{user_message.strip().lower()}"
-        if cache_key:
-            cached = self._cache_get(cache_key)
-            if cached is not None:
-                print("[Objectivity] Отдаем из кеша")
-                return self._trim_to_limit(cached)
+        # Анализ языка (минимально, без лишних зависимостей)
+        lang = self._lang_heuristic(user_message)
 
-        # Решаем стратегию поиска
-        search_strategies = self._decide_search_strategy(analysis, metrics)
-        print(f"[Objectivity] Стратегии: {search_strategies}")
-        
-        # Создаем флюидные скрипты для каждой стратегии
-        context_windows: List[FluidContextWindow] = []
-        for strategy in search_strategies:
-            script_id = f"objectivity_{strategy}_{_now_ms()}_{self.script_counter}"
-            self.script_counter += 1
-            
-            try:
-                script_result = await self._generate_and_run_script(
-                    strategy, user_message, analysis, script_id, first_message
-                )
-                if script_result:
-                    context_windows.extend(script_result)
-            except Exception as e:
-                print(f"[Objectivity:ERROR] Ошибка скрипта {script_id}: {e}")
-        
-        # Трим и кеш
-        trimmed = self._trim_to_limit(context_windows)
-        if cache_key:
-            self._cache_set(cache_key, trimmed)
-        return trimmed
-    
-    def _analyze_message(self, text: str) -> Dict:
-        """Анализирует сообщение пользователя"""
-        analysis = {
-            'proper_nouns': [],
-            'technical_terms': [],
-            'locations': [],
-            'is_smalltalk': False,
-            'language': 'en' if re.search(r'[a-zA-Z]', text) else 'ru',
-            'has_questions': '?' in text,
-            'word_count': len(text.split())
-        }
-        
-        # Более стабильный детект языка
-        analysis['language'] = self._lang_heuristic(text)
+        # Выбираем стратегии (минимально, без «злобных» эвристик)
+        strategies = self._pick_strategies(user_message, lang)
 
-        # Ищем имена собственные
-        for pattern in self.proper_noun_patterns:
-            matches = re.findall(pattern, text)
-            analysis['proper_nouns'].extend(matches)
-        
-        # Ищем технические термины
-        for pattern in self.technical_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            analysis['technical_terms'].extend(matches)
-            
-        # Ищем локации
-        for pattern in self.location_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            analysis['locations'].extend(matches)
-        
-        # Определяем smalltalk
-        smalltalk_words = ['hello', 'hi', 'how', 'what', 'привет', 'как', 'что']
-        if any(word in text.lower() for word in smalltalk_words) and len(text.split()) < 10:
-            analysis['is_smalltalk'] = True
-            
-        return analysis
-    
-    def _decide_search_strategy(self, analysis: Dict, metrics: Dict) -> List[str]:
-        """Решает какие стратегии поиска использовать"""
-        strategies = []
-        
-        # Имена собственные и локации → Wikipedia
-        if analysis['proper_nouns'] or analysis['locations']:
-            strategies.append('wikipedia')
-            
-        # Технические термины → веб/реддит
-        if analysis['technical_terms']:
-            strategies.append('reddit')
-            strategies.append('wikipedia')
-            
-        # Smalltalk → память системы
-        if analysis['is_smalltalk']:
-            strategies.append('memory')
-        
-        # На основе метрик Nicole
-        perplexity = metrics.get('perplexity', 0)
-        entropy = metrics.get('entropy', 0)
-        resonance = metrics.get('resonance', 0)
-        
-        # Высокая перплексия → внешний контекст
-        if perplexity > 3.0:
-            strategies.append('reddit')
-            
-        # Низкая энтропия → нужно разнообразие
-        if entropy < 2.0:
-            strategies.append('wikipedia')
-            
-        # Низкий резонанс → память
-        if resonance < 0.4:
-            strategies.append('memory')
-        
-        # Приоритизируем: wikipedia > reddit > memory
-        order = {'wikipedia': 0, 'reddit': 1, 'memory': 2}
-        strategies = sorted(list(set(strategies)), key=lambda s: order.get(s, 99))
-        strategies = strategies[:2]  # максимум 2 стратегии
-        return strategies if strategies else ['memory']
-    
-    async def _generate_and_run_script(self, strategy: str, user_message: str, 
-                                       analysis: Dict, script_id: str,
-                                       first_message: bool) -> List[FluidContextWindow]:
-        """Генерирует и запускает флюидный скрипт для поиска"""
-        if strategy == 'wikipedia':
-            return await self._wikipedia_script(user_message, analysis, script_id, first_message)
-        elif strategy == 'web':
-            return await self._web_search_script(user_message, analysis, script_id, first_message)
-        elif strategy == 'reddit':
-            return await self._reddit_script(user_message, analysis, script_id, first_message)
-        elif strategy == 'memory':
-            return await self._memory_script(user_message, analysis, script_id, first_message)
-        else:
-            return []
-    
-    def _wiki_endpoint_for_lang(self, lang: str) -> str:
-        lang = 'ru' if lang == 'ru' else 'en'
-        return f"https://{lang}.wikipedia.org/api/rest_v1/page/summary"
+        # Гоним каждый провайдер через H2O и читаем globals
+        sections: List[str] = []
+        template_used_any = False
 
-    async def _wikipedia_script(self, message: str, analysis: Dict, script_id: str, first_message: bool) -> List[FluidContextWindow]:
-        """Флюидный скрипт для Wikipedia поиска (без ссылок)"""
-        try:
-            # Генерируем и запускаем флюидный скрипт (для логов/метрик)
-            script = f"""
-# Флюидный Wikipedia скрипт {script_id} (no URLs)
-import requests
-import json
-import re
+        if 'wikipedia' in strategies:
+            wiki_text, wiki_template = self._provider_wikipedia_h2o(user_message, lang, templates_allowed)
+            if wiki_text:
+                sections.append(wiki_text)
+            template_used_any = template_used_any or wiki_template
 
-def search_wikipedia_fluid():
-    search_terms = {analysis['proper_nouns'] + analysis['locations']}
-    results = []
-    for term in search_terms[:3]:
-        try:
-            url = "{self._wiki_endpoint_for_lang(analysis['language'])}/" + term.replace(" ", "_")
-            response = requests.get(url, timeout=4, headers={{"User-Agent": "{USER_AGENT}"}})
-            if response.status_code == 200:
-                data = response.json()
-                extract = (data.get('extract') or '')[:600]
-                title = data.get('title') or term
-                if extract:
-                    results.append({{
-                        'term': term,
-                        'title': title,
-                        'content': extract,
-                        'source': 'wikipedia'
-                    }})
-        except Exception as e:
-            h2o_log(f"Wikipedia ошибка для {{term}}: {{e}}")
-            continue
-    h2o_log(f"Wikipedia результаты: {{len(results)}} найдено")
-    h2o_metric('wikipedia_results_count', len(results))
-    return results
+        if 'reddit' in strategies:
+            reddit_text, reddit_template = self._provider_reddit_h2o(user_message, templates_allowed)
+            if reddit_text:
+                sections.append(reddit_text)
+            template_used_any = template_used_any or reddit_template
 
-_ = search_wikipedia_fluid()
-"""
-            self.h2o_engine.run_transformer_script(script, script_id)
+        if 'memory' in strategies:
+            mem_text, mem_template = self._provider_memory_h2o(user_message, templates_allowed)
+            if mem_text:
+                sections.append(mem_text)
+            template_used_any = template_used_any or mem_template
 
-            # Реальные результаты (вне H2O, чтобы вернуть окна)
-            windows: List[FluidContextWindow] = []
-            terms = (analysis['proper_nouns'] + analysis['locations']) or [message.strip()]
-            terms = list(dict.fromkeys(terms))[:3]
-            base = self._wiki_endpoint_for_lang(analysis['language'])
+        # Агрегируем в одно окно
+        aggregated = self._aggregate_text_window(sections)
 
-            for term in terms:
-                try:
-                    url = f"{base}/{quote(term.replace(' ', '_'))}"
-                    resp = requests.get(url, timeout=4, headers={"User-Agent": USER_AGENT})
-                    if resp.status_code != 200:
-                        continue
-                    data = resp.json()
-                    extract = (data.get('extract') or '')[:800]
-                    if not extract and not first_message:
-                        # Никаких шаблонов после первых сообщений
-                        continue
-
-                    title = data.get('title') or term
-                    content = extract if extract else f"[no extract available]"
-                    template_used = not bool(extract)
-
-                    window = FluidContextWindow(
-                        content=f"Wikipedia: {title}\n{content}",
-                        source_type='wikipedia',
-                        resonance_score=0.9 if extract else 0.6,
-                        entropy_boost=0.3,
-                        tokens_count=len(content.split()),
-                        creation_time=time.time(),
-                        script_id=script_id,
-                        title=title,
-                        url=None,              # никаких ссылок
-                        template_used=template_used
-                    )
-                    windows.append(window)
-                except Exception as e:
-                    print(f"[Objectivity] Wikipedia ошибка: {e}")
-
-            return windows
-
-        except Exception as e:
-            print(f"[Objectivity] Ошибка Wikipedia скрипта: {e}")
-            return []
-    
-    async def _web_search_script(self, message: str, analysis: Dict, script_id: str, first_message: bool) -> List[FluidContextWindow]:
-        """Флюидный скрипт для веб-поиска (по умолчанию выключено)"""
-        if first_message:
+        windows: List[FluidContextWindow] = []
+        if aggregated:
             window = FluidContextWindow(
-                content=f"Web search context for: {message}\n[web provider disabled by default]",
-                source_type='web',
-                resonance_score=0.55,
-                entropy_boost=0.35,
-                tokens_count=20,
+                content=aggregated,
+                source_type="objectivity",
+                resonance_score=0.85,
+                entropy_boost=0.25,
+                tokens_count=len(aggregated.split()),
                 creation_time=time.time(),
-                script_id=script_id,
-                title="Web Search (disabled)",
-                url=None,
-                template_used=True
+                script_id=f"objectivity_{int(time.time()*1000)}",
+                title=f"OBJECTIVITY (influence={self.influence_coeff:.2f})",
+                template_used=template_used_any,
+                meta={
+                    "influence_coeff": self.influence_coeff,
+                    "strategies": strategies,
+                    "lang": lang
+                }
             )
-            return [window]
-        return []
-    
-    async def _reddit_script(self, message: str, analysis: Dict, script_id: str, first_message: bool) -> List[FluidContextWindow]:
-        """Флюидный скрипт для Reddit поиска (публичный JSON, без ключей)"""
-        query = message.strip()
-        try:
-            # Логи/метрики в H2O
-            script = f"""
-# Флюидный Reddit скрипт {script_id}
-import requests, json
-def reddit_search_fluid():
-    url = "https://www.reddit.com/search.json"
-    params = {{"q": {json.dumps(query)}, "limit": 3, "sort": "relevance", "t": "year"}}
-    headers = {{"User-Agent": "{USER_AGENT}"}}
-    try:
-        r = requests.get(url, params=params, headers=headers, timeout=5)
-        h2o_metric("reddit_status", r.status_code)
-    except Exception as e:
-        h2o_log(f"Reddit ошибка: {{e}}")
-reddit_search_fluid()
-"""
-            self.h2o_engine.run_transformer_script(script, script_id)
+            windows.append(window)
 
-            # Реальный вызов
-            r = requests.get(
-                "https://www.reddit.com/search.json",
-                params={"q": query, "limit": 3, "sort": "relevance", "t": "year"},
-                headers={"User-Agent": USER_AGENT},
-                timeout=6,
-            )
-            windows: List[FluidContextWindow] = []
-            if r.status_code == 200:
-                data = r.json()
-                posts = (data.get("data") or {}).get("children") or []
-                for p in posts[:3]:
-                    d = p.get("data") or {}
-                    title = d.get("title") or "Reddit"
-                    url = f"https://www.reddit.com{d.get('permalink', '')}" if d.get("permalink") else d.get("url_overridden_by_dest") or None
-                    text = (d.get("selftext") or "")[:600]
-                    if not text:
-                        text = (d.get("title") or "")[:600]
-                    if not text and not first_message:
-                        continue
-                    content = text if text else "[no text available]"
-                    window = FluidContextWindow(
-                        content=f"Reddit: {title}\n{content}",
-                        source_type='reddit',
-                        resonance_score=0.7 if content else 0.55,
-                        entropy_boost=0.5,
-                        tokens_count=len(content.split()),
-                        creation_time=time.time(),
-                        script_id=script_id,
-                        title=title,
-                        url=url,              # для Reddit URL допустим
-                        template_used=not bool(text)
-                    )
-                    windows.append(window)
-            else:
-                if first_message:
-                    windows.append(
-                        FluidContextWindow(
-                            content=f"Reddit trends for: {message}\n[unavailable]",
-                            source_type='reddit',
-                            resonance_score=0.55,
-                            entropy_boost=0.45,
-                            tokens_count=10,
-                            creation_time=time.time(),
-                            script_id=script_id,
-                            title="Reddit",
-                            url=None,
-                            template_used=True
-                        )
-                    )
-            return windows
-        except Exception as e:
-            print(f"[Objectivity] Reddit ошибка: {e}")
-            if first_message:
-                return [FluidContextWindow(
-                    content=f"Reddit trends for: {message}\n[error]",
-                    source_type='reddit',
-                    resonance_score=0.5,
-                    entropy_boost=0.45,
-                    tokens_count=8,
-                    creation_time=time.time(),
-                    script_id=script_id,
-                    title="Reddit",
-                    url=None,
-                    template_used=True
-                )]
-            return []
-    
-    async def _memory_script(self, message: str, analysis: Dict, script_id: str, first_message: bool) -> List[FluidContextWindow]:
-        """Флюидный скрипт для поиска в памяти Nicole"""
-        try:
-            # Создаем схему (если нужно)
-            self._ensure_memory_schema()
+            # Записываем в training-буфер
+            self._record_for_training(user_message, aggregated, strategies, lang, self.influence_coeff)
 
-            # Логи/метрики через H2O
-            script = f"""
-# Флюидный Memory скрипт {script_id}
-import sqlite3
-def search_memory_fluid():
-    try:
-        conn = sqlite3.connect('nicole_memory.db')
-        cursor = conn.cursor()
-        cursor.execute("SELECT count(*) FROM conversations")
-        total = cursor.fetchone()[0]
-        h2o_metric('memory_total', total)
-        conn.close()
-    except Exception as e:
-        h2o_log(f"Memory ошибка: {{e}}")
-search_memory_fluid()
-"""
-            self.h2o_engine.run_transformer_script(script, script_id)
-            
-            # Реальный поиск
-            conn = sqlite3.connect('nicole_memory.db')
-            conn.row_factory = sqlite3.Row
-            cur = conn.cursor()
+        # Увеличиваем счётчик сообщений и сохраняем
+        self._message_index += 1
+        self._save_state_message_index(self._message_index)
 
-            query_words = [w for w in re.findall(r'\w{3,}', message.lower())][:4]
-            query = " ".join(query_words) if query_words else message
+        # Триммим по размеру (единичное окно — но на всякий случай)
+        return self._trim_to_limit(windows)
 
-            windows: List[FluidContextWindow] = []
-            used_fts = False
-            try:
-                # Пробуем FTS5
-                cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='conversations_fts'")
-                if cur.fetchone():
-                    used_fts = True
-                    cur.execute("""
-                        SELECT highlight(conversations_fts, 0, '[', ']') AS u_h,
-                               highlight(conversations_fts, 1, '[', ']') AS n_h
-                        FROM conversations_fts
-                        WHERE conversations_fts MATCH ?
-                        LIMIT 3
-                    """, (query,))
-                    rows = cur.fetchall()
-                    for r in rows:
-                        user_h = r['u_h'] or ''
-                        nicole_h = r['n_h'] or ''
-                        snippet = (nicole_h or user_h)
-                        snippet = re.sub(r'\s+', ' ', snippet)[:600]
-                        if not snippet and not first_message:
-                            continue
-                        content = snippet if snippet else "[no memory snippet]"
-                        windows.append(
-                            FluidContextWindow(
-                                content=f"Memory: {content}",
-                                source_type='memory',
-                                resonance_score=0.8 if snippet else 0.6,
-                                entropy_boost=0.2,
-                                tokens_count=len(content.split()),
-                                creation_time=time.time(),
-                                script_id=script_id,
-                                title="Nicole Memory",
-                                url=None,
-                                template_used=not bool(snippet)
-                            )
-                        )
-            except Exception:
-                used_fts = False
-
-            if not used_fts:
-                # Fallback LIKE
-                for w in query_words[:3] or [message]:
-                    cur.execute("""
-                    SELECT user_input, nicole_output FROM conversations
-                    WHERE LOWER(user_input) LIKE ? OR LOWER(nicole_output) LIKE ?
-                    ORDER BY timestamp DESC LIMIT 2
-                    """, (f'%{w}%', f'%{w}%'))
-                    rows = cur.fetchall()
-                    for r in rows:
-                        snippet = (r['nicole_output'] or r['user_input'] or '')[:600]
-                        if not snippet and not first_message:
-                            continue
-                        content = snippet if snippet else "[no memory snippet]"
-                        windows.append(
-                            FluidContextWindow(
-                                content=f"Memory: {content}",
-                                source_type='memory',
-                                resonance_score=0.7 if snippet else 0.55,
-                                entropy_boost=0.2,
-                                tokens_count=len(content.split()),
-                                creation_time=time.time(),
-                                script_id=script_id,
-                                title="Nicole Memory",
-                                url=None,
-                                template_used=not bool(snippet)
-                            )
-                        )
-
-            conn.close()
-            return windows
-            
-        except Exception as e:
-            print(f"[Objectivity] Ошибка Memory скрипта: {e}")
-            if first_message:
-                return [FluidContextWindow(
-                    content=f"Memory context for: {message}\n[error]",
-                    source_type='memory',
-                    resonance_score=0.5,
-                    entropy_boost=0.2,
-                    tokens_count=10,
-                    creation_time=time.time(),
-                    script_id=script_id,
-                    title="Nicole Memory",
-                    url=None,
-                    template_used=True
-                )]
-            return []
-    
-    def _trim_to_limit(self, windows: List[FluidContextWindow]) -> List[FluidContextWindow]:
-        """Обрезает до лимита размера"""
-        # Сортируем по резонансу, затем по отсутствию шаблона
-        windows.sort(key=lambda x: (x.resonance_score, not x.template_used), reverse=True)
-        
-        total_size = 0
-        result = []
-        
-        for window in windows:
-            window_size = len(window.content.encode('utf-8'))
-            if total_size + window_size <= self.max_context_kb:
-                result.append(window)
-                total_size += window_size
-            else:
-                break
-                
-        return result
-    
     def format_context_for_nicole(self, windows: List[FluidContextWindow]) -> str:
-        """Форматирует контекст для Nicole"""
         if not windows:
             return ""
-            
-        formatted = "=== OBJECTIVITY CONTEXT ===\n"
-        for window in windows:
-            header = f"[{window.source_type.upper()}:{window.script_id}]"
-            if window.title:
-                header += f" {window.title}"
-            # Никогда не выводим URL для wikipedia
-            if window.source_type != 'wikipedia' and window.url:
-                header += f" ({window.url})"
-            if window.template_used:
-                header += " [template]"
-            formatted += f"{header}\n{window.content}\n\n"
-        formatted += "=== END OBJECTIVITY ===\n"
-        return formatted
-    
-    def extract_response_seeds(self, context: str, target_percent: float = 0.15) -> List[str]:
-        """Извлекает семена для ответа: частотные ключевые токены без стоп-слов"""
-        if not context:
-            return []
-        lang = self._lang_heuristic(context)
-        stopwords = RU_STOPWORDS if lang == 'ru' else EN_STOPWORDS
+        # Одно окно. Без ссылок, без служебщины.
+        w = windows[0]
+        header = w.title or "OBJECTIVITY"
+        return f"=== {header} ===\n{w.content}\n=== END OBJECTIVITY ===\n"
 
-        words = re.findall(r'\b[\w-]{3,}\b', context.lower())
-        counts = defaultdict(int)
-        for w in words:
-            if w in stopwords:
-                continue
-            counts[w] += 1
-        if not counts:
-            return []
+    # ---------- Internals ----------
 
-        # Сортируем по частоте и длине (как proxy «важности»)
-        ranked = sorted(counts.items(), key=lambda kv: (kv[1], len(kv[0])), reverse=True)
-        max_count = max(counts.values())
-        top_n = max(3, min(20, int(len(words) * target_percent)))
-        seeds = [w for (w, c) in ranked[:top_n] if c >= 1 and c >= max(1, max_count // 4)]
-        return seeds or [w for (w, _) in ranked[:top_n]]
+    def _lang_heuristic(self, text: str) -> str:
+        latin = len(re.findall(r'[A-Za-z]', text))
+        cyr = len(re.findall(r'[А-Яа-я]', text))
+        return 'ru' if cyr > latin else 'en'
+
+    def _pick_strategies(self, message: str, lang: str) -> List[str]:
+        # Минималистично: если есть имена/локации → wikipedia, техтермины → reddit, smalltalk → memory
+        strategies: List[str] = []
+        if re.search(r'\b([A-ZА-Я][a-zа-я]+|[A-ZА-Я]{2,})\b', message):
+            strategies.append('wikipedia')
+        if re.search(r'\b(python|javascript|neural|ai|quantum|blockchain|programming|algorithm|database)\b', message, re.I):
+            strategies.append('reddit')
+        if len(message.split()) < 8:
+            strategies.append('memory')
+
+        # Всегда полезно смотреть память, но без навязчивости
+        if 'memory' not in strategies:
+            strategies.append('memory')
+
+        # Удаляем дубли, сохраняем порядок
+        seen = set()
+        ordered = []
+        for s in strategies:
+            if s not in seen:
+                seen.add(s)
+                ordered.append(s)
+        # Ограничим 2-3 источниками
+        return ordered[:3]
+
+    def _aggregate_text_window(self, sections: List[str]) -> str:
+        text = "\n\n".join(s for s in sections if s)
+        if not text.strip():
+            return ""
+        # ограничение размера окна
+        while len(text.encode('utf-8')) > self.max_context_kb:
+            # грубое усечение: обрезаем самый длинный абзац
+            parts = text.split("\n\n")
+            if len(parts) <= 1:
+                text = text[: max(0, int(self.max_context_kb/2))]  # совсем грубо
+                break
+            longest_i = max(range(len(parts)), key=lambda i: len(parts[i]))
+            parts[longest_i] = parts[longest_i][: max(0, len(parts[longest_i])//2)]
+            text = "\n\n".join(parts)
+        return text
+
+    def _trim_to_limit(self, windows: List[FluidContextWindow]) -> List[FluidContextWindow]:
+        if not windows:
+            return []
+        total = 0
+        out: List[FluidContextWindow] = []
+        for w in windows:
+            size = len(w.content.encode('utf-8'))
+            if total + size <= self.max_context_kb:
+                out.append(w)
+                total += size
+            else:
+                break
+        return out
+
+    def _record_for_training(self, user_message: str, context_text: str,
+                             strategies: List[str], lang: str, influence: float):
+        try:
+            rec = {
+                "ts": time.time(),
+                "user_message": user_message,
+                "context": context_text,
+                "strategies": strategies,
+                "lang": lang,
+                "influence_coeff": influence
+            }
+            with open(TRAIN_BUFFER_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        except Exception:
+            # тихо
+            pass
+
+    # ---------- Providers via H2O (results in globals) ----------
+
+    def _provider_wikipedia_h2o(self, message: str, lang: str, templates_allowed: bool) -> Tuple[str, bool]:
+        """
+        Возвращает (текст-секция, template_used).
+        Все HTTP — внутри H2O; здесь только чтение globals.
+        Никаких ссылок, только title + extract.
+        """
+        base = f"https://{'ru' if lang=='ru' else 'en'}.wikipedia.org/api/rest_v1/page/summary"
+        terms = self._extract_terms(message)[:3] or [message.strip()[:64]]
+
+        script_id = f"wiki_{int(time.time()*1000)}"
+        code = f"""
+import requests, json, re
+
+def _wiki_terms():
+    return {json.dumps(terms, ensure_ascii=False)}
+
+def _fetch(term):
+    url = "{base}/" + term.replace(" ", "_")
+    try:
+        r = requests.get(url, headers={{"User-Agent": "{USER_AGENT}"}}, timeout=5)
+        if r.status_code != 200:
+            return None
+        d = r.json()
+        title = d.get("title") or term
+        extract = (d.get("extract") or "")[:900]
+        if not extract:
+            return None
+        # Никаких ссылок
+        return {{"title": title, "content": extract}}
+    except Exception:
+        return None
+
+res = []
+for t in _wiki_terms():
+    item = _fetch(t)
+    if item:
+        res.append(item)
+
+objectivity_results_wikipedia = res
+h2o_metric("wikipedia_results_count", len(res))
+"""
+        self.h2o_engine.run_transformer_script(code, script_id)
+        g = self.h2o_engine.executor.active_transformers.get(script_id, {}).get("globals", {})
+        raw = g.get("objectivity_results_wikipedia") or []
+
+        lines: List[str] = []
+        for it in raw:
+            title = (it.get("title") or "").strip()
+            content = (it.get("content") or "").strip()
+            if title and content:
+                lines.append(f"Wikipedia: {title}\n{content}")
+
+        if lines:
+            return "\n\n".join(lines), False
+
+        # Пусто — никаких болтовен
+        if templates_allowed:
+            # Мягкий шаблон: просто молчим, не добавляем секцию
+            return "", True
+        return "", False
+
+    def _provider_reddit_h2o(self, message: str, templates_allowed: bool) -> Tuple[str, bool]:
+        """
+        Reddit: без ссылок, только заголовки/текст срезанный.
+        """
+        query = message.strip()[:128]
+        script_id = f"reddit_{int(time.time()*1000)}"
+        code = f"""
+import requests, json, re
+
+def _fetch():
+    try:
+        r = requests.get(
+            "https://www.reddit.com/search.json",
+            params={{"q": {json.dumps(query)}, "limit": 3, "sort": "relevance", "t": "year"}},
+            headers={{"User-Agent": "{USER_AGENT}"}},
+            timeout=6
+        )
+        if r.status_code != 200:
+            return []
+        data = r.json()
+        posts = (data.get("data") or {{}}).get("children") or []
+        out = []
+        for p in posts[:3]:
+            d = p.get("data") or {{}}
+            title = (d.get("title") or "")[:200]
+            text = (d.get("selftext") or "")[:900]
+            if not text:
+                text = title
+            text = text.strip()
+            if text:
+                out.append({{"title": title, "content": text}})
+        return out
+    except Exception:
+        return []
+
+objectivity_results_reddit = _fetch()
+h2o_metric("reddit_results_count", len(objectivity_results_reddit))
+"""
+        self.h2o_engine.run_transformer_script(code, script_id)
+        g = self.h2o_engine.executor.active_transformers.get(script_id, {}).get("globals", {})
+        raw = g.get("objectivity_results_reddit") or []
+
+        lines: List[str] = []
+        for it in raw:
+            title = (it.get("title") or "").strip()
+            content = (it.get("content") or "").strip()
+            if content:
+                header = f"Reddit: {title}" if title else "Reddit"
+                lines.append(f"{header}\n{content}")
+
+        if lines:
+            return "\n\n".join(lines), False
+
+        if templates_allowed:
+            return "", True
+        return "", False
+
+    def _provider_memory_h2o(self, message: str, templates_allowed: bool) -> Tuple[str, bool]:
+        """
+        Memory через sqlite в H2O: FTS5 при наличии, иначе LIKE.
+        Возвращаем компактные срезы, без служебщины.
+        """
+        # простая токенизация запроса
+        qwords = re.findall(r"\w{3,}", message.lower())[:4]
+        query = " ".join(qwords) if qwords else message.strip()[:64]
+
+        script_id = f"memory_{int(time.time()*1000)}"
+        code = f"""
+import sqlite3, re
+
+def _fetch_memory():
+    out = []
+    try:
+        conn = sqlite3.connect("{MEMORY_DB}")
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+
+        # FTS?
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='conversations_fts'")
+        has_fts = bool(c.fetchone())
+
+        if has_fts:
+            try:
+                c.execute(\"""
+                    SELECT highlight(conversations_fts, 1, '', '') AS n_h,
+                           highlight(conversations_fts, 0, '', '') AS u_h
+                    FROM conversations_fts
+                    WHERE conversations_fts MATCH ?
+                    LIMIT 3
+                \""", ({json.dumps(query)},))
+                rows = c.fetchall()
+                for r in rows:
+                    snippet = (r["n_h"] or r["u_h"] or "").strip()
+                    if snippet:
+                        out.append({{"content": snippet[:900]}})
+            except Exception:
+                pass
+
+        if not out:
+            # LIKE fallback
+            words = {json.dumps(qwords)}
+            if not words:
+                words = [{json.dumps(message.strip())}]
+            seen = set()
+            for w in words[:3]:
+                try:
+                    c.execute(\"""
+                        SELECT user_input, nicole_output FROM conversations
+                        WHERE LOWER(user_input) LIKE ? OR LOWER(nicole_output) LIKE ?
+                        ORDER BY timestamp DESC LIMIT 2
+                    \""", (f"%{{w}}%", f"%{{w}}%"))
+                    for row in c.fetchall():
+                        s = (row["nicole_output"] or row["user_input"] or "").strip()
+                        s = re.sub(r"\\s+", " ", s)[:900]
+                        if s and s not in seen:
+                            seen.add(s)
+                            out.append({{"content": s}})
+                except Exception:
+                    pass
+
+        conn.close()
+    except Exception:
+        pass
+    return out
+
+objectivity_results_memory = _fetch_memory()
+"""
+        self.h2o_engine.run_transformer_script(code, script_id)
+        g = self.h2o_engine.executor.active_transformers.get(script_id, {}).get("globals", {})
+        raw = g.get("objectivity_results_memory") or []
+
+        lines = []
+        for it in raw:
+            s = (it.get("content") or "").strip()
+            if s:
+                lines.append(f"Memory:\n{s}")
+
+        if lines:
+            return "\n\n".join(lines), False
+
+        if templates_allowed:
+            return "", True
+        return "", False
+
+    # ---------- Helpers ----------
+
+    def _extract_terms(self, message: str) -> List[str]:
+        terms = []
+        terms += re.findall(r'\b[A-ZА-Я][a-zа-я]+\b', message)
+        terms += re.findall(r'\b[A-ZА-Я]{2,}\b', message)
+        # локации (простые)
+        locs = re.findall(r'\b(Berlin|London|Moscow|Paris|Tokyo|New York|Берлин|Лондон|Москва|Париж)\b', message, flags=re.I)
+        terms += locs
+        # уникализируем, сохраняем порядок
+        seen = set()
+        out = []
+        for t in terms:
+            if t not in seen:
+                seen.add(t)
+                out.append(t)
+        return out
 
 # Глобальный экземпляр
 nicole_objectivity = NicoleObjectivity()
 
-async def test_objectivity():
-    """Тест системы объективности"""
-    print("=== NICOLE OBJECTIVITY TEST ===")
-    
-    test_cases = [
-        ("Tell me about Berlin", {'perplexity': 2.0, 'entropy': 3.0, 'resonance': 0.5, 'first_message': True}),
-        ("How does Python work?", {'perplexity': 4.0, 'entropy': 2.0, 'resonance': 0.3, 'first_message': False}),
-        ("Привет, как дела?", {'perplexity': 1.0, 'entropy': 1.5, 'resonance': 0.8, 'first_message': False}),
-    ]
-    
-    for message, metrics in test_cases:
-        print(f"\n--- Тест: '{message}' ---")
-        
-        windows = await nicole_objectivity.create_dynamic_context(message, metrics)
-        context = nicole_objectivity.format_context_for_nicole(windows)
-        seeds = nicole_objectivity.extract_response_seeds(context)
-        
-        print(f"Контекстных окон: {len(windows)}")
-        print(f"Семена ответа: {seeds}")
-        print(f"Контекст:\n{context[:400]}...")
-        
-    print("\n=== OBJECTIVITY TEST COMPLETED ===")
-
+# Простой тест
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "test":
-        asyncio.run(test_objectivity())
-    else:
-        print("Nicole Objectivity System готова")
-        print("Для тестирования: python3 nicole_objectivity.py test")
+    import asyncio
+    async def _t():
+        cases = [
+            ("Tell me about Berlin and Python internals", {}),
+            ("Привет", {}),
+            ("Как работает память модели?", {}),
+        ]
+        for m, mt in cases:
+            ws = await nicole_objectivity.create_dynamic_context(m, mt)
+            print(nicole_objectivity.format_context_for_nicole(ws))
+    asyncio.run(_t())
