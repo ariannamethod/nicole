@@ -99,31 +99,23 @@ class RealTelegramBot:
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Команда /start"""
         chat_id = str(update.effective_chat.id)
-        welcome_msg = """🧠 Привет! Я Nicole - Neural Intelligent Conversational Organism Engine.
-        
-Я работаю без предобученных весов, создаю уникальные трансформеры для каждого диалога.
-Использую принципы Method Engine для правильной речи и резонанса.
+        welcome_msg = """🧠 Hello! I'm NICOLE - Neural Intelligent Conversational Organism Language Engine.
 
-Команды:
-/help - помощь
-/stats - статистика сессии  
-/reset - новая сессия
-/debug - отладочная информация"""
+I work without pre-trained weights, creating unique transformers for each dialogue.
+I use Method Engine principles for proper speech and resonance.
+
+Commands:
+/newconvo - start new conversation"""
         
         await update.message.reply_text(welcome_msg)
         
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Команда /help"""
-        help_text = """🤖 Nicole Commands:
-/start - начать
-/help - эта помощь
-/stats - метрики разговора
-/reset - сбросить сессию
-/debug - техническая информация
-/memory - состояние памяти
-/evolve - принудительная эволюция
+        help_text = """🤖 NICOLE: Neural Intelligent Conversational Organism Language Engine
 
-Просто пиши мне сообщения - я буду учиться и адаптироваться!"""
+/newconvo - start new conversation
+
+Just write me messages - I will learn and adapt!"""
         
         await update.message.reply_text(help_text)
         
@@ -167,10 +159,23 @@ class RealTelegramBot:
             print(f"[RealTelegramBot:ERROR] {error_msg}")
             await update.message.reply_text(error_msg)
     
+    async def newconvo_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Команда /newconvo - новый разговор"""
+        chat_id = str(update.effective_chat.id)
+        
+        # Завершаем текущую сессию но сохраняем память
+        if chat_id in self.chat_sessions:
+            old_session = self.chat_sessions[chat_id]
+            # Память остается в SQLite, просто создаем новую сессию
+            del self.chat_sessions[chat_id]
+            
+        await update.message.reply_text("⚡ New conversation started. Memory preserved.")
+    
     def setup_handlers(self):
         """Настраивает обработчики команд"""
         self.application.add_handler(CommandHandler("start", self.start_command))
         self.application.add_handler(CommandHandler("help", self.help_command))
+        self.application.add_handler(CommandHandler("newconvo", self.newconvo_command))
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.message_handler))
         
     def run_bot(self):
@@ -189,13 +194,7 @@ class NicoleTelegramInterface:
         self.command_handlers = {
             '/start': self._cmd_start,
             '/help': self._cmd_help,
-            '/stats': self._cmd_stats,
-            '/reset': self._cmd_reset,
-            '/debug': self._cmd_debug,
-            '/py': self._cmd_python,  # Секретная команда для тестов
-            '/chaos': self._cmd_chaos,
-            '/memory': self._cmd_memory,
-            '/evolve': self._cmd_evolve
+            '/newconvo': self._cmd_reset
         }
         
     def _setup_enhanced_nicole(self):
@@ -293,42 +292,23 @@ class NicoleTelegramInterface:
             
     def _cmd_start(self, chat_id: str, text: str) -> str:
         """Команда /start"""
-        return """🤖 Привет! Я Nicole - флюидная нейронная сеть без весов!
+        return """🧠 Hello! I'm NICOLE - Neural Intelligent Conversational Organism Language Engine.
 
-Особенности:
-• Создаю уникальный трансформер для каждого разговора
-• Учусь и эволюционирую в реальном времени  
-• Использую память и ассоциативные связи
-• CPU-only, никакого GPU говна!
+I work without pre-trained weights, creating unique transformers for each dialogue.
+I use Method Engine principles for proper speech and resonance.
 
-Команды:
-/help - помощь
-/stats - статистика системы
-/reset - сброс сессии
-/debug - отладочная информация
-/memory - статус памяти
-/chaos - включить хаотичный режим
+Commands:
+/newconvo - start new conversation
 
-Просто пиши мне что угодно! 🚀"""
+Just write me messages - I will learn and adapt!"""
 
     def _cmd_help(self, chat_id: str, text: str) -> str:
         """Команда /help"""
-        return """📖 Справка по Nicole:
+        return """🤖 NICOLE: Neural Intelligent Conversational Organism Language Engine
 
-Nicole - это экспериментальная нейронная сеть, которая:
+/newconvo - start new conversation
 
-🧠 Создает уникальный трансформер для каждого разговора
-🔄 Эволюционирует архитектуру на основе метрик
-💾 Запоминает и использует контекст из прошлых разговоров
-📊 Анализирует энтропию, резонанс, перплексию
-🎲 Может работать в хаотичном режиме для креативности
-
-Команды:
-/stats - полная статистика
-/reset - начать новый разговор
-/debug - техническая информация
-/memory - что помню о тебе
-/chaos - переключить хаос режим"""
+Just write me messages - I will learn and adapt!"""
 
     def _cmd_stats(self, chat_id: str, text: str) -> str:
         """Команда /stats"""
@@ -362,129 +342,15 @@ Nicole - это экспериментальная нейронная сеть, 
             return f"Ошибка получения статистики: {e}"
             
     def _cmd_reset(self, chat_id: str, text: str) -> str:
-        """Команда /reset"""
+        """Команда /newconvo"""
         try:
             if self.enhanced_nicole.core.session_id:
                 self.enhanced_nicole.core.end_conversation()
                 
-            return "🔄 Сессия сброшена! Начинаем новый разговор с чистого листа."
+            return "⚡ New conversation started. Memory preserved."
             
         except Exception as e:
-            return f"Ошибка сброса: {e}"
-            
-    def _cmd_debug(self, chat_id: str, text: str) -> str:
-        """Команда /debug"""
-        try:
-            if not self.enhanced_nicole.core.current_transformer:
-                return "🔧 Нет активного трансформера"
-                
-            transformer = self.enhanced_nicole.core.current_transformer
-            
-            debug_info = f"""🔧 Отладочная информация:
-
-Трансформер: {transformer.transformer_id}
-Архитектура:
-• Слоев: {transformer.architecture['num_layers']}
-• Голов внимания: {transformer.architecture['attention_heads']} 
-• Скрытое измерение: {transformer.architecture['hidden_dim']}
-• Температура: {transformer.architecture['temperature']:.3f}
-• Контекстное окно: {transformer.architecture['context_window']}
-
-Метрики:
-• Энтропия: {transformer.current_metrics.entropy:.3f}
-• Перплексия: {transformer.current_metrics.perplexity:.3f}
-• Резонанс: {transformer.current_metrics.resonance:.3f}
-• Связность: {transformer.current_metrics.coherence:.3f}
-• Вовлеченность: {transformer.current_metrics.engagement:.3f}
-
-Время жизни: {time.time() - transformer.creation_time:.1f} сек"""
-
-            return debug_info
-            
-        except Exception as e:
-            return f"Ошибка отладки: {e}"
-            
-    def _cmd_python(self, chat_id: str, text: str) -> str:
-        """Секретная команда /py для выполнения Python кода"""
-        try:
-            # Извлекаем код после /py
-            code_parts = text.split(' ', 1)
-            if len(code_parts) < 2:
-                return "Использование: /py <код>"
-                
-            code = code_parts[1]
-            
-            # Выполняем через H2O
-            result = h2o.h2o_engine.run_transformer_script(
-                f"result = {code}\\nh2o_log(f'Результат: {{result}}')",
-                f"py_test_{int(time.time() * 1000)}"
-            )
-            
-            return f"🐍 Код выполнен через H2O!"
-            
-        except Exception as e:
-            return f"Ошибка выполнения: {e}"
-            
-    def _cmd_chaos(self, chat_id: str, text: str) -> str:
-        """Команда /chaos"""
-        try:
-            current_chaos = self.enhanced_nicole.rag.retriever.chaos_factor
-            new_chaos = 0.3 if current_chaos < 0.2 else 0.05
-            
-            self.enhanced_nicole.rag.retriever.chaos_factor = new_chaos
-            
-            return f"🎲 Хаос режим: {new_chaos:.2f} (было {current_chaos:.2f})"
-            
-        except Exception as e:
-            return f"Ошибка переключения хаоса: {e}"
-            
-    def _cmd_memory(self, chat_id: str, text: str) -> str:
-        """Команда /memory"""
-        try:
-            # Ищем воспоминания о пользователе
-            memories = self.enhanced_nicole.memory.recall_memories(f"chat_id:{chat_id}", limit=5)
-            
-            if not memories:
-                return "🧠 Пока не помню ничего о тебе"
-                
-            memory_text = "🧠 Что я помню о тебе:\\n\\n"
-            for mem in memories:
-                memory_text += f"• {mem.content[:100]}...\\n"
-                memory_text += f"  (важность: {mem.importance:.2f}, обращений: {mem.access_count})\\n\\n"
-                
-            return memory_text
-            
-        except Exception as e:
-            return f"Ошибка доступа к памяти: {e}"
-            
-    def _cmd_evolve(self, chat_id: str, text: str) -> str:
-        """Команда /evolve"""
-        try:
-            if not self.enhanced_nicole.core.current_transformer:
-                return "🧬 Нет активного трансформера для эволюции"
-                
-            # Принудительная эволюция
-            old_arch = self.enhanced_nicole.core.current_transformer.architecture.copy()
-            
-            # Случайная мутация архитектуры
-            transformer = self.enhanced_nicole.core.current_transformer
-            transformer.architecture['temperature'] *= random.uniform(0.8, 1.2)
-            transformer.architecture['num_heads'] = max(1, transformer.architecture['num_heads'] + random.randint(-1, 2))
-            
-            # Пересоздаем трансформер
-            self.enhanced_nicole.core._respawn_transformer()
-            
-            new_arch = self.enhanced_nicole.core.current_transformer.architecture
-            
-            changes = []
-            for key in old_arch:
-                if abs(old_arch[key] - new_arch[key]) > 0.001:
-                    changes.append(f"{key}: {old_arch[key]:.3f} -> {new_arch[key]:.3f}")
-                    
-            return f"🧬 Трансформер эволюционировал!\\n\\nИзменения:\\n" + "\\n".join(changes)
-            
-        except Exception as e:
-            return f"Ошибка эволюции: {e}"
+            return f"Error: {e}"
 
     def process_message(self, chat_id: str, message_text: str) -> str:
         """Обрабатывает сообщение от пользователя"""
@@ -514,12 +380,8 @@ def test_telegram_interface():
     print("\\n--- Тест команд ---")
     commands_to_test = [
         "/start",
-        "/help", 
-        "/stats",
-        "/debug",
-        "/py 2 + 2",
-        "/chaos",
-        "/memory"
+        "/help",
+        "/newconvo"
     ]
     
     for cmd in commands_to_test:
