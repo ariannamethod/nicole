@@ -15,6 +15,11 @@ from typing import Dict, Any, Optional
 import sqlite3
 
 # Импортируем все компоненты Nicole
+import sys
+import os
+# Добавляем текущую директорию в путь для импорта наших модулей
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import h2o
 import nicole
 import nicole2nicole  
@@ -136,13 +141,29 @@ class RealTelegramBot:
                 'type': 'user_message'
             })
             
-            # Здесь будет интеграция с Nicole
-            response = f"[Nicole] Получил: '{user_input}' (интеграция в процессе)"
+            # Создаем Nicole сессию если нет
+            if chat_id not in self.chat_sessions:
+                self.chat_sessions[chat_id] = nicole.NicoleCore(session_id=f"tg_{chat_id}")
+                print(f"[RealTelegramBot] Создана Nicole сессия для {chat_id}")
+            
+            # Обрабатываем через Nicole с ME принципами
+            nicole_session = self.chat_sessions[chat_id]
+            response = nicole_session.process_message(user_input)
+            
+            # Логируем ответ
+            self.message_history.append({
+                'chat_id': chat_id,
+                'text': response,
+                'timestamp': time.time(),
+                'type': 'bot_message'
+            })
             
             await update.message.reply_text(response)
             
         except Exception as e:
-            await update.message.reply_text(f"Ошибка: {str(e)}")
+            error_msg = f"Ошибка Nicole: {str(e)}"
+            print(f"[RealTelegramBot:ERROR] {error_msg}")
+            await update.message.reply_text(error_msg)
     
     def setup_handlers(self):
         """Настраивает обработчики команд"""
