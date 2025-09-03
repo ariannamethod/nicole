@@ -80,7 +80,37 @@ class EntropyCalculator:
         return EntropyCalculator.word_entropy(all_text)
 
 class ResonanceAnalyzer:
-    """Анализатор резонанса между сообщениями"""
+    """Анализатор резонанса между сообщениями - интегрированы принципы ME"""
+    
+    @staticmethod
+    def find_resonant_word(text: str, word_frequencies: Dict[str, int] = None) -> Tuple[str, float]:
+        """
+        Находит самое заряженное слово по принципу ME - частота vs новизна
+        Возвращает (слово, резонанс_скор)
+        """
+        words = text.lower().split()
+        if not words:
+            return "", 0.0
+            
+        if word_frequencies is None:
+            word_frequencies = defaultdict(int)
+            
+        best_word = ""
+        best_score = 0.0
+        
+        for word in words:
+            # Частота слова в истории
+            frequency = word_frequencies.get(word, 0)
+            # Новизна = обратная частота
+            novelty = 1.0 / (frequency + 1)
+            # Резонанс = баланс между знакомостью и новизной
+            resonance_score = frequency * novelty
+            
+            if resonance_score > best_score:
+                best_score = resonance_score
+                best_word = word
+                
+        return best_word, best_score
     
     @staticmethod
     def semantic_resonance(text1: str, text2: str) -> float:
@@ -582,6 +612,154 @@ def test_metrics_system():
         print("Аномалий не обнаружено")
         
     print("\\n=== METRICS TEST COMPLETED ===")
+
+class MEPunctuationFilters:
+    """Пунктуационные фильтры из Method Engine для правильной речи"""
+    
+    @staticmethod
+    def invert_pronouns(text: str) -> str:
+        """Инверсия местоимений you→I, I→you из ME"""
+        words = text.split()
+        result = []
+        
+        for word in words:
+            lower_word = word.lower()
+            if lower_word == "you":
+                result.append("I" if word[0].isupper() else "i")
+            elif lower_word == "i":
+                result.append("You" if word[0].isupper() else "you")
+            elif lower_word == "me":
+                result.append("you")
+            elif lower_word == "my":
+                result.append("your")
+            elif lower_word == "your":
+                result.append("my")
+            else:
+                result.append(word)
+                
+        return " ".join(result)
+    
+    @staticmethod
+    def filter_repetitions(words: List[str]) -> List[str]:
+        """Убирает повторы подряд идущих слов"""
+        if not words:
+            return words
+            
+        filtered = [words[0]]
+        for i in range(1, len(words)):
+            if words[i].lower() != words[i-1].lower():
+                filtered.append(words[i])
+                
+        return filtered
+    
+    @staticmethod
+    def filter_single_chars(words: List[str]) -> List[str]:
+        """Убирает односимвольные слова подряд"""
+        if not words:
+            return words
+            
+        filtered = []
+        prev_was_single = False
+        
+        for word in words:
+            is_single = len(word) == 1 and word.isalpha()
+            if not (is_single and prev_was_single):
+                filtered.append(word)
+            prev_was_single = is_single
+            
+        return filtered
+    
+    @staticmethod
+    def fix_capitalization(text: str) -> str:
+        """Исправляет заглавные буквы посреди предложения"""
+        if not text:
+            return text
+            
+        # Разбиваем на предложения
+        sentences = []
+        current = ""
+        
+        for char in text:
+            current += char
+            if char in '.!?':
+                sentences.append(current.strip())
+                current = ""
+        
+        if current.strip():
+            sentences.append(current.strip())
+        
+        # Исправляем каждое предложение
+        fixed_sentences = []
+        for sentence in sentences:
+            if sentence:
+                # Первая буква заглавная
+                fixed = sentence[0].upper() + sentence[1:].lower()
+                # Исправляем "The" посреди предложения
+                fixed = fixed.replace(" The ", " the ")
+                fixed_sentences.append(fixed)
+        
+        return " ".join(fixed_sentences)
+    
+    @staticmethod
+    def apply_all_filters(text: str) -> str:
+        """Применяет все фильтры ME для чистой речи"""
+        # Инверсия местоимений
+        text = MEPunctuationFilters.invert_pronouns(text)
+        
+        # Разбиваем на слова
+        words = text.split()
+        
+        # Фильтры слов
+        words = MEPunctuationFilters.filter_repetitions(words)
+        words = MEPunctuationFilters.filter_single_chars(words)
+        
+        # Собираем обратно
+        text = " ".join(words)
+        
+        # Исправляем заглавные буквы
+        text = MEPunctuationFilters.fix_capitalization(text)
+        
+        return text
+
+class VerbGraph:
+    """Граф глаголов из ME - отслеживает как заканчиваются глаголы"""
+    
+    def __init__(self):
+        self.verb_endings = defaultdict(lambda: defaultdict(int))
+        # Простые глаголы для начала
+        self.common_verbs = {"run", "walk", "talk", "think", "know", "see", "go", "come", "say", "tell", 
+                           "работаю", "делаю", "думаю", "знаю", "вижу", "иду", "говорю", "понимаю"}
+    
+    def observe_verb_ending(self, verb: str, punctuation: str):
+        """Записывает как закончился глагол"""
+        verb = verb.lower()
+        if punctuation in '.!?':
+            self.verb_endings[verb][punctuation] += 1
+    
+    def predict_verb_ending(self, verb: str) -> str:
+        """Предсказывает как должен закончиться глагол"""
+        verb = verb.lower()
+        if verb not in self.verb_endings:
+            return "."  # По умолчанию точка
+            
+        endings = self.verb_endings[verb]
+        if not endings:
+            return "."
+            
+        # Выбираем самую частую пунктуацию для этого глагола
+        best_punct = max(endings.items(), key=lambda x: x[1])[0]
+        return best_punct
+    
+    def analyze_text_for_verbs(self, text: str):
+        """Анализирует текст и записывает окончания глаголов"""
+        words = text.split()
+        for i, word in enumerate(words):
+            clean_word = word.strip('.,!?').lower()
+            if clean_word in self.common_verbs:
+                # Ищем пунктуацию после глагола
+                if i == len(words) - 1:  # Последнее слово
+                    punct = word[-1] if word[-1] in '.!?' else '.'
+                    self.observe_verb_ending(clean_word, punct)
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "test":
