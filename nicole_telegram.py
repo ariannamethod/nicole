@@ -185,12 +185,27 @@ Just write me messages - I will learn and adapt!"""
         self.application.add_handler(CommandHandler("newconvo", self.newconvo_command))
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.message_handler))
         
-    async def run_bot(self):
+    def run_bot(self):
         """Runs the bot"""
         self.setup_handlers()
-        await self.setup_menu()  # Устанавливаем menu button
         print(f"[RealTelegramBot] Starting bot with token: {self.token[:10]}...")
-        await self.application.run_polling()
+        
+        # Настраиваем menu button синхронно
+        async def setup_and_run():
+            await self.setup_menu()
+            await self.application.run_polling()
+        
+        # Запускаем только если нет активного event loop
+        try:
+            asyncio.run(setup_and_run())
+        except RuntimeError:
+            # Если event loop уже запущен (например на Railway)
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # Создаем task в существующем loop
+                asyncio.create_task(setup_and_run())
+            else:
+                loop.run_until_complete(setup_and_run())
 
 class NicoleTelegramInterface:
     """Nicole interface for Telegram"""
@@ -478,7 +493,7 @@ def run_production_bot():
         
     print("🚀 Starting Nicole Production Telegram Bot...")
     bot = RealTelegramBot(token)
-    asyncio.run(bot.run_bot())
+    bot.run_bot()
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
