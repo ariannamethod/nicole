@@ -190,22 +190,22 @@ Just write me messages - I will learn and adapt!"""
         self.setup_handlers()
         print(f"[RealTelegramBot] Starting bot with token: {self.token[:10]}...")
         
-        # Настраиваем menu button синхронно
-        async def setup_and_run():
-            await self.setup_menu()
-            await self.application.run_polling()
-        
-        # Запускаем только если нет активного event loop
+        # Простой запуск без async проблем
         try:
-            asyncio.run(setup_and_run())
-        except RuntimeError:
-            # Если event loop уже запущен (например на Railway)
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # Создаем task в существующем loop
-                asyncio.create_task(setup_and_run())
-            else:
-                loop.run_until_complete(setup_and_run())
+            # Пытаемся установить menu button через sync метод
+            import asyncio
+            try:
+                # Если есть loop - используем его
+                loop = asyncio.get_running_loop()
+                loop.create_task(self.setup_menu())
+            except RuntimeError:
+                # Нет loop - создаем новый только для menu
+                asyncio.run(self.setup_menu())
+        except Exception as e:
+            print(f"[RealTelegramBot] Menu setup failed: {e}")
+        
+        # Запускаем polling обычным способом
+        self.application.run_polling()
 
 class NicoleTelegramInterface:
     """Nicole interface for Telegram"""
