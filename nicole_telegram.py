@@ -99,7 +99,7 @@ class RealTelegramBot:
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Команда /start"""
         chat_id = str(update.effective_chat.id)
-        welcome_msg = """🧠 Привет! Я Nicole - Neural Intelligent Conversational Organism Language Engine.
+        welcome_msg = """🧠 Привет! Я Nicole - Neural Organism Intelligence Conversational Language Engine.
         
 Я работаю без предобученных весов, создаю уникальные трансформеры для каждого диалога.
 Использую принципы Method Engine для правильной речи и резонанса.
@@ -143,7 +143,9 @@ class RealTelegramBot:
             
             # Создаем Nicole сессию если нет
             if chat_id not in self.chat_sessions:
-                self.chat_sessions[chat_id] = nicole.NicoleCore(session_id=f"tg_{chat_id}")
+                nicole_core = nicole.NicoleCore()
+                nicole_core.start_conversation(f"tg_{chat_id}")
+                self.chat_sessions[chat_id] = nicole_core
                 print(f"[RealTelegramBot] Создана Nicole сессия для {chat_id}")
             
             # Обрабатываем через Nicole с ME принципами
