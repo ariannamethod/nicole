@@ -15,6 +15,23 @@ import threading
 import sys
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
+from collections import defaultdict
+
+# Импорт ME принципов из nicole_metrics
+try:
+    from nicole_metrics import MEPunctuationFilters, VerbGraph, ResonanceAnalyzer
+except ImportError:
+    # Заглушки если модуль недоступен
+    class MEPunctuationFilters:
+        @staticmethod
+        def apply_all_filters(text): return text
+    class VerbGraph:
+        def __init__(self): pass
+        def analyze_text_for_verbs(self, text): pass
+        def predict_verb_ending(self, verb): return "."
+    class ResonanceAnalyzer:
+        @staticmethod
+        def find_resonant_word(text, freq=None): return "", 0.0
 
 @dataclass
 class ConversationMetrics:
@@ -26,10 +43,13 @@ class ConversationMetrics:
     engagement: float = 0.0
     
 class NicoleMemory:
-    """Система памяти Nicole без весов"""
+    """Система памяти Nicole без весов + принципы ME"""
     
     def __init__(self, db_path: str = "nicole_memory.db"):
         self.db_path = db_path
+        self.word_frequencies = defaultdict(int)
+        self.bigram_transitions = defaultdict(lambda: defaultdict(int))
+        self.verb_graph = VerbGraph()
         self.init_database()
         
     def init_database(self):
@@ -46,6 +66,25 @@ class NicoleMemory:
             nicole_output TEXT,
             metrics TEXT,
             transformer_config TEXT
+        )
+        """)
+        
+        # ME принципы: таблица биграмм
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS bigrams (
+            id INTEGER PRIMARY KEY,
+            w1 TEXT,
+            w2 TEXT,
+            count INTEGER DEFAULT 1,
+            UNIQUE(w1, w2)
+        )
+        """)
+        
+        # ME принципы: частоты слов
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS word_frequencies (
+            word TEXT PRIMARY KEY,
+            count INTEGER DEFAULT 1
         )
         """)
         
@@ -109,6 +148,78 @@ class NicoleMemory:
         
         conn.commit()
         conn.close()
+        
+    def update_word_frequencies(self, text: str):
+        """Обновляет частоты слов из ME принципов"""
+        words = text.lower().split()
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        for word in words:
+            self.word_frequencies[word] += 1
+            cursor.execute("""
+            INSERT OR REPLACE INTO word_frequencies (word, count)
+            VALUES (?, COALESCE((SELECT count FROM word_frequencies WHERE word = ?), 0) + 1)
+            """, (word, word))
+            
+        conn.commit()
+        conn.close()
+        
+    def update_bigrams(self, text: str):
+        """Обновляет биграммы из ME для марковских цепей"""
+        words = text.lower().split()
+        if len(words) < 2:
+            return
+            
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        for i in range(len(words) - 1):
+            w1, w2 = words[i], words[i + 1]
+            self.bigram_transitions[w1][w2] += 1
+            
+            cursor.execute("""
+            INSERT OR REPLACE INTO bigrams (w1, w2, count)
+            VALUES (?, ?, COALESCE((SELECT count FROM bigrams WHERE w1 = ? AND w2 = ?), 0) + 1)
+            """, (w1, w2, w1, w2))
+            
+        conn.commit()
+        conn.close()
+        
+    def get_semantic_candidates(self, resonant_word: str, distance_percent: float = 0.5) -> List[str]:
+        """Получает кандидатов на семантической дистанции от резонантного слова (ME принцип)"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Получаем все слова из истории
+        cursor.execute("SELECT word, count FROM word_frequencies ORDER BY count DESC LIMIT 200")
+        word_data = cursor.fetchall()
+        conn.close()
+        
+        if not word_data:
+            return [resonant_word]
+            
+        candidates = []
+        target_distance = distance_percent
+        
+        for word, freq in word_data:
+            if word == resonant_word:
+                continue
+                
+            # Простая семантическая дистанция через частоты
+            resonant_freq = self.word_frequencies.get(resonant_word, 1)
+            word_freq = freq
+            
+            # Нормализуем частоты и считаем дистанцию
+            max_freq = max(resonant_freq, word_freq)
+            min_freq = min(resonant_freq, word_freq)
+            distance = 1.0 - (min_freq / max_freq) if max_freq > 0 else 1.0
+            
+            # Берем слова близкие к целевой дистанции
+            if abs(distance - target_distance) < 0.2:
+                candidates.append(word)
+                
+        return candidates[:10]  # Ограничиваем количество
 
 class FluidTransformer:
     """Флюидный трансформер без предобученных весов"""
@@ -469,13 +580,31 @@ class NicoleCore:
             self.current_transformer = None
             
     def process_message(self, user_input: str) -> str:
-        """Обрабатывает сообщение пользователя"""
+        """Обрабатывает сообщение пользователя с ME принципами"""
         with self.lock:
             if not self.current_transformer:
                 self._spawn_new_transformer()
                 
-            # Простой ответ (пока что)
-            response = self._generate_simple_response(user_input)
+            # ME принципы: обновляем частоты слов и биграммы
+            self.memory.update_word_frequencies(user_input)
+            self.memory.update_bigrams(user_input)
+            
+            # ME принципы: находим резонантное слово
+            resonant_word, resonance_score = ResonanceAnalyzer.find_resonant_word(
+                user_input, self.memory.word_frequencies
+            )
+            
+            print(f"[Nicole:ME] Резонантное слово: '{resonant_word}' (скор: {resonance_score:.3f})")
+            
+            # ME принципы: генерируем ответ на основе резонантного слова
+            response = self._generate_me_enhanced_response(user_input, resonant_word)
+            
+            # ME принципы: применяем пунктуационные фильтры
+            response = MEPunctuationFilters.apply_all_filters(response)
+            
+            # ME принципы: анализируем глаголы для будущих ответов
+            self.memory.verb_graph.analyze_text_for_verbs(user_input)
+            self.memory.verb_graph.analyze_text_for_verbs(response)
             
             # Обновляем метрики
             self._update_metrics(user_input, response)
@@ -494,6 +623,75 @@ class NicoleCore:
             
             self.conversation_count += 1
             return response
+    
+    def _generate_me_enhanced_response(self, user_input: str, resonant_word: str) -> str:
+        """Генерирует ответ на основе принципов ME - резонантное слово + семантическая дистанция"""
+        try:
+            # Получаем кандидатов на 50% и 70% семантической дистанции (как в ME)
+            candidates_50 = self.memory.get_semantic_candidates(resonant_word, 0.5)
+            candidates_70 = self.memory.get_semantic_candidates(resonant_word, 0.7)
+            
+            # Комбинируем кандидатов
+            all_candidates = list(set(candidates_50 + candidates_70))
+            
+            if not all_candidates:
+                # Фоллбек на простые ответы
+                return self._generate_simple_response(user_input)
+            
+            # Строим ответ на основе биграмм (марковские цепи из ME)
+            response_words = []
+            
+            # Начинаем с резонантного слова или близкого к нему
+            if resonant_word and resonant_word in self.memory.bigram_transitions:
+                current_word = resonant_word
+            elif all_candidates:
+                current_word = random.choice(all_candidates)
+            else:
+                current_word = "понимаю"
+                
+            response_words.append(current_word)
+            
+            # Генерируем следующие слова через биграммы (как в ME)
+            for _ in range(random.randint(3, 8)):  # Длина ответа 4-9 слов
+                if current_word in self.memory.bigram_transitions:
+                    next_words = self.memory.bigram_transitions[current_word]
+                    if next_words:
+                        # Выбираем следующее слово по весам
+                        total_count = sum(next_words.values())
+                        r = random.randint(1, total_count)
+                        cumsum = 0
+                        for word, count in next_words.items():
+                            cumsum += count
+                            if cumsum >= r:
+                                current_word = word
+                                break
+                    else:
+                        # Если нет биграммы, берем случайный кандидат
+                        current_word = random.choice(all_candidates) if all_candidates else "да"
+                else:
+                    current_word = random.choice(all_candidates) if all_candidates else "хорошо"
+                    
+                response_words.append(current_word)
+            
+            # Собираем ответ
+            response = " ".join(response_words)
+            
+            # Добавляем пунктуацию на основе verb graph
+            if response_words:
+                last_word = response_words[-1]
+                if last_word in self.memory.verb_graph.common_verbs:
+                    punct = self.memory.verb_graph.predict_verb_ending(last_word)
+                    if not response.endswith(('.', '!', '?')):
+                        response += punct
+                elif not response.endswith(('.', '!', '?')):
+                    response += "."
+            
+            print(f"[Nicole:ME] Генерация: '{resonant_word}' -> {len(all_candidates)} кандидатов -> '{response}'")
+            return response
+            
+        except Exception as e:
+            print(f"[Nicole:ME:ERROR] Ошибка ME генерации: {e}")
+            return self._generate_simple_response(user_input)
                 
     def _generate_simple_response(self, user_input: str) -> str:
         """Генерирует простой ответ (временная заглушка)"""
