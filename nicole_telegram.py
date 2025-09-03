@@ -22,6 +22,15 @@ import nicole_memory
 import nicole_rag
 import nicole_metrics
 
+# Telegram Bot API (если доступен)
+try:
+    from telegram import Update, Bot
+    from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+    TELEGRAM_AVAILABLE = True
+except ImportError:
+    TELEGRAM_AVAILABLE = False
+    print("[TelegramBot] python-telegram-bot не установлен, используем мок")
+
 class MockTelegramBot:
     """Мок телеграм бота для тестирования без API"""
     
@@ -62,6 +71,83 @@ class MockTelegramBot:
         self.message_history.append(message)
         print(f"[{chat_id} -> Bot] {text}")
         return message
+
+class RealTelegramBot:
+    """Настоящий Telegram бот для продакшена"""
+    
+    def __init__(self, token: str):
+        if not TELEGRAM_AVAILABLE:
+            raise ImportError("python-telegram-bot не установлен")
+            
+        self.token = token
+        self.application = Application.builder().token(token).build()
+        self.chat_sessions = {}
+        self.message_history = []
+        
+    async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Команда /start"""
+        chat_id = str(update.effective_chat.id)
+        welcome_msg = """🧠 Привет! Я Nicole - Neural Organism Intelligence Conversational Language Engine.
+        
+Я работаю без предобученных весов, создаю уникальные трансформеры для каждого диалога.
+Использую принципы Method Engine для правильной речи и резонанса.
+
+Команды:
+/help - помощь
+/stats - статистика сессии  
+/reset - новая сессия
+/debug - отладочная информация"""
+        
+        await update.message.reply_text(welcome_msg)
+        
+    async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Команда /help"""
+        help_text = """🤖 Nicole Commands:
+/start - начать
+/help - эта помощь
+/stats - метрики разговора
+/reset - сбросить сессию
+/debug - техническая информация
+/memory - состояние памяти
+/evolve - принудительная эволюция
+
+Просто пиши мне сообщения - я буду учиться и адаптироваться!"""
+        
+        await update.message.reply_text(help_text)
+        
+    async def message_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Обработчик обычных сообщений"""
+        try:
+            chat_id = str(update.effective_chat.id)
+            user_input = update.message.text
+            
+            # Логируем сообщение
+            self.message_history.append({
+                'chat_id': chat_id,
+                'text': user_input,
+                'timestamp': time.time(),
+                'type': 'user_message'
+            })
+            
+            # Здесь будет интеграция с Nicole
+            response = f"[Nicole] Получил: '{user_input}' (интеграция в процессе)"
+            
+            await update.message.reply_text(response)
+            
+        except Exception as e:
+            await update.message.reply_text(f"Ошибка: {str(e)}")
+    
+    def setup_handlers(self):
+        """Настраивает обработчики команд"""
+        self.application.add_handler(CommandHandler("start", self.start_command))
+        self.application.add_handler(CommandHandler("help", self.help_command))
+        self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.message_handler))
+        
+    def run_bot(self):
+        """Запускает бота"""
+        self.setup_handlers()
+        print(f"[RealTelegramBot] Запускаем бота с токеном: {self.token[:10]}...")
+        self.application.run_polling()
 
 class NicoleTelegramInterface:
     """Интерфейс Nicole для Telegram"""
