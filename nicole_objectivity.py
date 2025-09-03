@@ -91,11 +91,28 @@ class NicoleObjectivity:
             cur.execute("""
             CREATE TABLE IF NOT EXISTS conversations (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
+              session_id TEXT,
               timestamp REAL DEFAULT (strftime('%s','now')),
               user_input TEXT,
-              nicole_output TEXT
+              nicole_output TEXT,
+              metrics TEXT,
+              transformer_config TEXT
             )
             """)
+            
+            # Добавляем недостающие колонки для совместимости
+            try:
+                cur.execute("ALTER TABLE conversations ADD COLUMN session_id TEXT")
+            except sqlite3.OperationalError:
+                pass
+            try:
+                cur.execute("ALTER TABLE conversations ADD COLUMN metrics TEXT")
+            except sqlite3.OperationalError:
+                pass
+            try:
+                cur.execute("ALTER TABLE conversations ADD COLUMN transformer_config TEXT")
+            except sqlite3.OperationalError:
+                pass
             try:
                 cur.execute("""
                 CREATE VIRTUAL TABLE IF NOT EXISTS conversations_fts
@@ -194,6 +211,17 @@ class NicoleObjectivity:
         w = windows[0]
         header = w.title or "OBJECTIVITY"
         return f"=== {header} ===\n{w.content}\n=== END OBJECTIVITY ===\n"
+
+    def extract_response_seeds(self, context: str, influence: float) -> List[str]:
+        """Извлекает семена для ответа из контекста"""
+        if not context:
+            return []
+        
+        words = re.findall(r'\b[a-zA-Z]{3,}\b', context.lower())
+        # Берем случайные слова согласно influence коэффициенту
+        import random
+        seed_count = max(1, int(len(words) * influence))
+        return random.sample(words, min(seed_count, len(words)))
 
     # ---------- Internals ----------
 
