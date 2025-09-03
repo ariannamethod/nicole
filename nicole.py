@@ -38,6 +38,17 @@ except ImportError:
         @staticmethod
         def find_resonant_word(text, freq=None): return "", 0.0
 
+# Импорт Objectivity для динамических весов
+try:
+    from nicole_objectivity import nicole_objectivity
+except ImportError:
+    # Заглушка если модуль недоступен
+    class MockObjectivity:
+        async def create_dynamic_context(self, msg, metrics): return []
+        def extract_response_seeds(self, context, percent=0.5): return []
+        def format_context_for_nicole(self, windows): return ""
+    nicole_objectivity = MockObjectivity()
+
 @dataclass
 class ConversationMetrics:
     """Метрики текущего разговора"""
@@ -664,15 +675,51 @@ class NicoleCore:
             self.conversation_count += 1
             return response
     
-    def _generate_me_enhanced_response(self, user_input: str, resonant_word: str) -> str:
-        """Генерирует ответ на основе принципов ME - резонантное слово + семантическая дистанция"""
+    async def _get_objectivity_context(self, user_input: str) -> Tuple[str, List[str]]:
+        """Получает объективный контекст через динамические веса"""
         try:
+            # Получаем текущие метрики
+            metrics = {}
+            if self.current_transformer and self.current_transformer.current_metrics:
+                m = self.current_transformer.current_metrics
+                metrics = {
+                    'perplexity': m.perplexity,
+                    'entropy': m.entropy, 
+                    'resonance': m.resonance
+                }
+            
+            # Создаем динамический контекст
+            context_windows = await nicole_objectivity.create_dynamic_context(user_input, metrics)
+            
+            # Форматируем для Nicole
+            context = nicole_objectivity.format_context_for_nicole(context_windows)
+            
+            # Извлекаем семена для ответа (50% из контекста)
+            response_seeds = nicole_objectivity.extract_response_seeds(context, 0.5)
+            
+            print(f"[Nicole:Objectivity] Контекст: {len(context)} символов, семена: {response_seeds}")
+            return context, response_seeds
+            
+        except Exception as e:
+            print(f"[Nicole:Objectivity:ERROR] {e}")
+            return "", []
+    
+    def _generate_me_enhanced_response(self, user_input: str, resonant_word: str) -> str:
+        """Генерирует ответ на основе принципов ME + Objectivity"""
+        try:
+            # Получаем объективный контекст асинхронно
+            import asyncio
+            try:
+                context, objectivity_seeds = asyncio.run(self._get_objectivity_context(user_input))
+            except:
+                context, objectivity_seeds = "", []
+            
             # Получаем кандидатов на 50% и 70% семантической дистанции (как в ME)
             candidates_50 = self.memory.get_semantic_candidates(resonant_word, 0.5)
             candidates_70 = self.memory.get_semantic_candidates(resonant_word, 0.7)
             
-            # Комбинируем кандидатов
-            all_candidates = list(set(candidates_50 + candidates_70))
+            # Комбинируем ME кандидатов с Objectivity семенами
+            all_candidates = list(set(candidates_50 + candidates_70 + objectivity_seeds))
             
             if not all_candidates:
                 # Фоллбек на простые ответы
