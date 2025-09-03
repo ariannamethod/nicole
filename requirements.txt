@@ -1,0 +1,22 @@
+# Nicole - Neural Organism Intelligence Conversational Language Engine
+# Минимальные зависимости для CPU-only системы без тяжелых библиотек
+
+# Telegram bot (единственная внешняя зависимость)
+python-telegram-bot==20.7
+
+# Для асинхронности (если нужно)
+asyncio-mqtt==0.16.1
+
+# Для веб интерфейса (опционально)
+flask==3.0.0
+flask-cors==4.0.0
+
+# Все остальное - стандартная библиотека Python:
+# - sqlite3 (встроенный)
+# - json (встроенный) 
+# - time (встроенный)
+# - threading (встроенный)
+# - math (встроенный)
+# - random (встроенный)
+# - collections (встроенный)
+# - typing (встроенный)
