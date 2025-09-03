@@ -99,7 +99,7 @@ class RealTelegramBot:
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Команда /start"""
         chat_id = str(update.effective_chat.id)
-        welcome_msg = """🧠 Привет! Я Nicole - Neural Organism Intelligence Conversational Language Engine.
+        welcome_msg = """🧠 Привет! Я Nicole - Neural Intelligent Conversational Organism Language Engine.
         
 Я работаю без предобученных весов, создаю уникальные трансформеры для каждого диалога.
 Использую принципы Method Engine для правильной речи и резонанса.
