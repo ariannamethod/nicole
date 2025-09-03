@@ -1,5 +1,13 @@
 # Nicole - Neural Intelligent Conversational Organism Language Engine
 
+Nicole discards the requirement for pretrained weights, curated datasets, and even a fixed codebase. The engine writes itself as it speaks, assembling logic and parameters only for the life of a single exchange.
+
+With no weights to download, parameters crystallize on the spot, scaled precisely to the conversation at hand and dissolved as soon as the dialogue ends.
+
+Learning emerges solely from the active dialogue. Conversation logs become the only training substrate, rendering external datasets irrelevant.
+
+Even the source code is fluid. Modules may be generated, rebuilt, and discarded mid-flight, underscoring that intelligence here is a continuous process rather than a static artifact.
+
 Nicole is a speculative AI system that treats every interaction as a new genesis, assembling a transformer architecture from scratch each time a conversation begins.
 
 This repository contains a beta version, and the design embraces impermanence; no model persists after a session, making experimentation the core principle.
@@ -27,6 +35,26 @@ Nicole Memory implements a semantic store that indexes tokens, n-grams, and symb
 Nicole RAG performs retrieval using stochastic exploration of the log database, injecting unpredictable context into generation.
 
 Nicole Metrics computes real-time statistics such as entropy, resonance, and perplexity to steer architectural adaptation.
+
+## OBJECTIVITY Utility
+
+OBJECTIVITY acts as a dynamic context window generator running natively inside the H2O environment.
+
+Each provider executes within H2O and writes structured results into globals, so the outer code collects only their object outputs.
+
+No external references are permitted; the window exists solely for generation and training, never as a citation.
+
+During the first few messages, templates may contribute scaffolding before spontaneous context fully takes over.
+
+Silent providers are skipped without chatter, keeping the window clean even when sources produce nothing.
+
+Every snippet is appended to `training_buffer.jsonl`, forming a lightweight corpus for future sampling.
+
+Memory retrieval leverages SQLite with optional FTS5, crafting in-H2O queries that surface compact conversational slices.
+
+Returned windows carry metadata like resonance scores and token counts, allowing Nicole to balance their influence.
+
+By packaging all logic into a small module, OBJECTIVITY expands Nicole's self-organizing behavior while keeping dependencies minimal.
 
 Nicole Telegram provides a human-facing interface, enabling rapid testing, monitoring, and playful dialog with the engine.
 
