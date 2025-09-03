@@ -72,11 +72,19 @@ class H2ORuntime:
                 'property': property,
                 'staticmethod': staticmethod,
                 'classmethod': classmethod,
+                'Exception': Exception,
+                'ValueError': ValueError,
+                'TypeError': TypeError,
+                'KeyError': KeyError,
+                'IndexError': IndexError,
+                'AttributeError': AttributeError,
             },
             '__name__': '__h2o__',
             'math': self._create_math_module(),
             'random': self._create_random_module(),
             'time': self._create_time_module(),
+            'requests': self._create_requests_module(),
+            'sqlite3': self._create_sqlite_module(),
         }
         self.locals_dict = {}
         self.execution_stack = []
@@ -114,6 +122,42 @@ class H2ORuntime:
             time=time.time,
             sleep=time.sleep,
             perf_counter=time.perf_counter
+        )
+    
+    def _create_requests_module(self):
+        """Минимальный requests модуль для objectivity"""
+        try:
+            import requests
+            return types.SimpleNamespace(
+                get=requests.get,
+                post=requests.post,
+                put=requests.put,
+                delete=requests.delete,
+                Session=requests.Session,
+                RequestException=requests.RequestException
+            )
+        except ImportError:
+            # Заглушка если requests не установлен
+            def mock_get(*args, **kwargs):
+                class MockResponse:
+                    status_code = 200
+                    def json(self): return {}
+                    def text(self): return ""
+                return MockResponse()
+            
+            return types.SimpleNamespace(
+                get=mock_get,
+                post=mock_get,
+                RequestException=Exception
+            )
+    
+    def _create_sqlite_module(self):
+        """Минимальный sqlite3 модуль"""
+        import sqlite3
+        return types.SimpleNamespace(
+            connect=sqlite3.connect,
+            Row=sqlite3.Row,
+            Error=sqlite3.Error
         )
 
 class H2OCompiler:
