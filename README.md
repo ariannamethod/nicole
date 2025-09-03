@@ -1,1 +1,1 @@
-# Nicole - Neural Organism Intelligence Conversational Language Engine
+# Nicole - Neural Intelligent Conversational Organism Language Engine
