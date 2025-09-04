@@ -255,51 +255,71 @@ class HighMathEngine:
         
         used_words = set(user_words)  # Не повторяем слова юзера
         
+        # ME ПРИНЦИП: строгий used set между предложениями
+        used_between_sentences = set(user_words)  # Не повторяем слова юзера
+        
         # Генерируем первое предложение
         first_sentence = self._generate_sentence_me_style(
-            all_candidates, base1, used_words, pronoun_preferences
+            all_candidates, base1, used_between_sentences, pronoun_preferences
         )
         
-        # Генерируем второе предложение
+        # Генерируем второе предложение (used обновлен первым предложением)
         second_sentence = self._generate_sentence_me_style(
-            all_candidates, base2, used_words, pronoun_preferences
+            all_candidates, base2, used_between_sentences, pronoun_preferences
         )
         
-        # Объединяем предложения
-        return first_sentence + second_sentence
+        # ME ПРИНЦИП: два предложения с точкой между ними
+        result = first_sentence + ["."] + second_sentence
+        
+        # Убираем повторы внутри итогового ответа
+        return self.remove_word_repetitions(result)
     
     def _generate_sentence_me_style(self, candidates: List[str], length: int, 
-                                   used: set, pronouns: List[str]) -> List[str]:
-        """Генерация одного предложения по принципам ME"""
+                                   used_global: set, pronouns: List[str]) -> List[str]:
+        """Генерация одного предложения по принципам ME с строгими фильтрами"""
         sentence = []
+        used_local = set()  # Локальный used для этого предложения
         
-        # Сначала местоимения (приоритет ME)
+        # ME ПРИНЦИП: сначала местоимения (приоритет)
         for pronoun in pronouns:
             if len(sentence) >= length:
                 break
-            if pronoun not in used and pronoun not in sentence:
+            # ME ФИЛЬТР: не в глобальном used, не в локальном, не односимвольное
+            if (pronoun not in used_global and pronoun not in used_local and 
+                len(pronoun) > 1):
                 sentence.append(pronoun)
-                used.add(pronoun)
+                used_local.add(pronoun)
+                used_global.add(pronoun)  # Обновляем глобальный
         
-        # Затем кандидаты
+        # ME ПРИНЦИП: затем кандидаты с строгими фильтрами
         random.shuffle(candidates)
         for word in candidates:
             if len(sentence) >= length:
                 break
-            if word not in used and word not in sentence and len(word) > 1:
+            # ME ФИЛЬТР: строгая проверка повторов + длина > 1
+            if (word not in used_global and word not in used_local and 
+                len(word) > 1 and word not in sentence):
                 sentence.append(word)
-                used.add(word)
+                used_local.add(word)
+                used_global.add(word)
         
-        # Дополняем если нужно (с защитой от бесконечного цикла)
+        # ME ПРИНЦИП: дополняем с защитой от циклов
         attempts = 0
-        while len(sentence) < length and candidates and attempts < 50:
+        while len(sentence) < length and candidates and attempts < 20:
             word = random.choice(candidates)
-            if word not in sentence and word not in used:
+            # ME ФИЛЬТР: строгая проверка
+            if (word not in used_global and word not in used_local and 
+                word not in sentence and len(word) > 1):
                 sentence.append(word)
-                used.add(word)
+                used_local.add(word)
+                used_global.add(word)
             attempts += 1
         
-        # Капитализация первого слова (как в ME)
+        # ME ПРИНЦИП: исправляем плохой конец
+        if sentence and len(sentence[-1]) == 1:
+            sentence[-1] = "hmm"
+        
+        # ME ПРИНЦИП: капитализация первого слова
         if sentence:
             sentence[0] = sentence[0].capitalize()
             
