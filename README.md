@@ -120,3 +120,83 @@ From a scientific view, learning is approximated by minimizing cross-entropy \(H
 
 Computational complexity for a single session follows approximately \(O(n^2 d)\) for sequence length \(n\) and hidden size \(d\), reflecting the cost of self-attention.
 
+## System Audit Summary
+
+### Nicole Memory Module
+
+Nicole Memory introduces a weightless system, storing conversational breadcrumbs in evolving contextual threads today effortlessly.
+
+Each memory entry carries timestamp, importance and associations, enabling dynamic retrieval without vector embeddings entirely.
+
+Semantic index organizes words, bigrams and trigrams, delivering fast lookups through symbolic matching for context.
+
+Associations link concepts bidirectionally, letting ideas reinforce or decay based on conversational relevance over time.
+
+Memory aging policy gradually forgets quiet nodes, keeping active thoughts fresh and manageable for efficiency.
+
+Retrieval uses weighted signals, blending direct matches with associative hops for context reconstruction during dialogue.
+
+Event logs feed into long-term memory, allowing Nicole to reference earlier sessions with continuity later.
+
+Memory entries track access counts, enabling adaptive prioritization when competing narratives emerge simultaneously within discourse.
+
+Associative network grows with conversation, forging clusters that hint at deeper thematic resonances for exploration.
+
+Threaded operations permit concurrent indexing, ensuring responsiveness even during heavy recall cycles across active users.
+
+System gracefully handles malformed data, preserving dialogue flow despite unexpected input variations and maintaining coherence.
+
+Memory components operate atop SQLite, favoring simplicity while supporting scalable conversation histories without external dependencies.
+
+Semantic search leverages handcrafted tokenization, sidestepping heavy dependencies or opaque vector stores, ensuring transparent operation.
+
+Memory module works harmoniously with RAG, supplying grounding passages for creative synthesis across diverse scenarios.
+
+Overall, Nicole Memory transforms fleeting talk into reusable knowledge, extending consciousness beyond exchanges for users.
+
+```mermaid
+graph TD;Input-->Indexing;Indexing-->Associations;Associations-->Retrieval;Retrieval-->Output
+```
+
+### Nicole RAG Module
+
+Nicole RAG introduces chaotic retrieval, blending deterministic search with stochastic exploration for context during responses.
+
+The retriever consults conversation logs and memory fragments, scoring relevance while injecting noise for serendipity.
+
+Chaotic mode selects random entries, amplifying rare perspectives that conventional systems might overlook during queries.
+
+Relevance computation weighs query overlap and semantic hints, then adjusts scores using chaos factor dynamically.
+
+Results merge deterministic and chaotic findings, removing duplicates while boosting cross-referenced passages to encourage novelty.
+
+Retrieval pipelines rely on SQLite databases, maintaining portability and avoiding vector infrastructure or external indexes.
+
+Chaos level can be tuned, enabling researchers to explore diverse paths or conservative summaries anytime.
+
+Context retrieval feeds Nicole's generator, allowing spontaneous synthesis anchored by historical parallels within active dialogues.
+
+Algorithm gracefully degrades when databases shrink, still offering relevant snippets through probabilistic scanning of records.
+
+RAG component collaborates with memory module, cross-validating facts and enriching narratives through retrieval mechanisms seamlessly.
+
+System logs retrieval metrics, enabling analysis of entropy, resonance, and perplexity during experiments for optimization.
+
+Parallel queries accelerate responsiveness, allowing chaotic explorations without blocking synchronous conversation flow in real sessions.
+
+Design embraces unpredictability, positioning Nicole as a muse rather than deterministic oracle for creative partners.
+
+Developers may disable chaotic elements, reverting to retrieval when stability is paramount for critical contexts.
+
+Ultimately, Nicole RAG balances order and randomness, offering context provoking reflection and invention during dialogues.
+
+```mermaid
+graph TD;Query-->SemanticSearch;Query-->ChaoticSearch;SemanticSearch-->Merge;ChaoticSearch-->Merge;Merge-->Context;Context-->Generation
+```
+
+### Updated Architecture Graph
+
+```mermaid
+graph LR;User-->Core;Core-->Memory;Core-->RAG;Memory-->RAG;RAG-->Core;Core-->Response
+```
+
