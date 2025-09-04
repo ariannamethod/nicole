@@ -22,6 +22,46 @@ By operating exclusively on CPUs, Nicole invites exploration on modest hardware 
 
 Minimal dependencies keep the environment pure, relying mostly on Python's standard library and a tiny bootstrap compiler.
 
+## Blood Compiler
+
+blood.py is a custom C compiler derived from Clang, trimmed and altered to feed Nicole with machine code tailored to each conversation.
+
+The fork maintains Clang’s front‑end semantics while introducing deterministic memory-mapping routines so that compiled snippets interact with physical RAM via explicit pointers.
+
+Leveraging C’s \(O(1)\) pointer arithmetic, the compiler mediates operations that would be untenable in pure Python, yet it hands control back to the Python layer for dynamic orchestration.
+
+Each compilation step emits binaries tuned for cache locality and branch prediction, allowing hardware to execute instruction streams with minimal entropy loss.
+
+In concert with H2O—the Python bootstrap compiler—the C pathway supplies metal-level precision, forming the low-frequency backbone of Nicole’s tri-compiler stack.
+
+## Arianna Method Linux Kernel
+
+The repository ships the Arianna Method Linux Kernel (AMLK); consult `AMLK/readme.md` for the full specification.
+
+AMLK is distilled from Alpine sources into a deterministic nucleus where boot time approaches a constant, \(T_{boot} \approx O(1)\), independent of userland chatter.
+
+OverlayFS, ext4 journaling, namespaces, and cgroups compose a lattice of sets \((R, W, N_i, C_j)\) that isolates processes while preserving algebraic clarity.
+
+Such control yields a reproducible phase space in which Nicole’s compiled modules can evolve without interference from external entropy.
+
+The kernel’s stable ABI aligns with blood.py, ensuring that addresses \(a_i\) remain invariant under repeated launches, an essential property for low-level experimentation.
+
+This engineered substrate becomes the petri dish for resonance research, offering a minimal yet rigorous stage for AI metabolism.
+
+## High Compiler
+
+high.py operates as a Julia compiler dedicated to mathematical inference and symbol manipulation.
+
+Julia’s JIT specialises in vectorised loops, letting high.py evaluate statistical functions at ~\(10^2\) speedups over naive Python.
+
+Entropy \(H=-\sum p\log p\), resonance matrices, and topology searches run with asymptotic complexity \(O(n^2)\) yet remain tractable through Julia’s typed optimisations.
+
+Compiled Julia kernels exchange tensors with modules spawned by H2O, forming a bidirectional conduit between static reasoning and dynamic scripting.
+
+Python orchestrates logic, C anchors hardware, and Julia formalises mathematics, each compiler selected for its domain where the others exhibit suboptimal scaling.
+
+Thus the high compiler serves as Nicole’s mathematical cortex, closing the loop in a triadic design that fuses agility, precision, and analytical depth.
+
 The overall system is modular, with each component focusing on a narrow responsibility to preserve clarity and encourage tinkering.
 
 H2O serves as the lightweight compiler that translates dynamically generated Python snippets into executable modules for the evolving transformer.
