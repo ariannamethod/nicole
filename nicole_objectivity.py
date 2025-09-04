@@ -339,9 +339,14 @@ for term in _terms():
 objectivity_results_wikipedia = out
 h2o_metric("wikipedia_results_count", len(out))
 """
-        self.h2o_engine.run_transformer_script(code, script_id)
-        g = self.h2o_engine.executor.active_transformers.get(script_id, {}).get("globals", {})
-        raw = g.get("objectivity_results_wikipedia") or []
+        try:
+            self.h2o_engine.run_transformer_script(code, script_id)
+            g = self.h2o_engine.executor.active_transformers.get(script_id, {}).get("globals", {})
+            raw = g.get("objectivity_results_wikipedia") or []
+            print(f"[Objectivity:Wikipedia] H2O globals: {list(g.keys())[:10]}")
+        except Exception as e:
+            print(f"[Objectivity:Wikipedia:ERROR] H2O script failed: {e}")
+            raw = []
 
         lines: List[str] = []
         for it in raw:
@@ -393,9 +398,14 @@ def _fetch():
 objectivity_results_reddit = _fetch()
 h2o_metric("reddit_results_count", len(objectivity_results_reddit))
 """
-        self.h2o_engine.run_transformer_script(code, script_id)
-        g = self.h2o_engine.executor.active_transformers.get(script_id, {}).get("globals", {})
-        raw = g.get("objectivity_results_reddit") or []
+        try:
+            self.h2o_engine.run_transformer_script(code, script_id)
+            g = self.h2o_engine.executor.active_transformers.get(script_id, {}).get("globals", {})
+            raw = g.get("objectivity_results_reddit") or []
+            print(f"[Objectivity:Reddit] H2O globals: {list(g.keys())[:10]}")
+        except Exception as e:
+            print(f"[Objectivity:Reddit:ERROR] H2O script failed: {e}")
+            raw = []
 
         lines: List[str] = []
         for it in raw:
@@ -462,7 +472,7 @@ def _fetch_memory():
                     \""", (f"%{{w}}%", f"%{{w}}%"))
                     for row in c.fetchall():
                         s = (row["nicole_output"] or row["user_input"] or "").strip()
-                        s = re.sub(r"\\s+", " ", s)[:900]
+                        s = re.sub(r"\\s+", " ", s)[:200]
                         if s and s not in seen:
                             seen.add(s)
                             out.append({{"content": s}})
@@ -476,9 +486,14 @@ def _fetch_memory():
 
 objectivity_results_memory = _fetch_memory()
 """
-        self.h2o_engine.run_transformer_script(code, script_id)
-        g = self.h2o_engine.executor.active_transformers.get(script_id, {}).get("globals", {})
-        raw = g.get("objectivity_results_memory") or []
+        try:
+            self.h2o_engine.run_transformer_script(code, script_id)
+            g = self.h2o_engine.executor.active_transformers.get(script_id, {}).get("globals", {})
+            raw = g.get("objectivity_results_memory") or []
+            print(f"[Objectivity:Memory] H2O результат: {len(raw)} записей")
+        except Exception as e:
+            print(f"[Objectivity:Memory:ERROR] H2O script failed: {e}")
+            raw = []
 
         lines: List[str] = []
         for it in raw:
