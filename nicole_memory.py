@@ -637,9 +637,10 @@ def add_compatibility_methods():
     def is_response_repetitive(self, response: str, threshold: float = 0.8) -> bool:
         return False
     
-    def get_semantic_candidates(self, word: str, limit: int = 10) -> List[str]:
-        """Получает семантические кандидаты (совместимость)"""
-        # Простая заглушка на основе ассоциаций
+    def get_semantic_candidates(self, word: str, distance_percent: float = 0.5) -> List[str]:
+        """Получает семантические кандидаты (совместимость с nicole.py)"""
+        # Конвертируем distance_percent в limit для совместимости
+        limit = max(5, int(distance_percent * 20))  # 0.5 -> 10, 0.7 -> 14
         candidates = []
         if word in self.associative_network.associations:
             candidates = list(self.associative_network.associations[word].keys())[:limit]
