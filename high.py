@@ -499,7 +499,7 @@ class HighMathEngine:
         
         # Инвертированные местоимения как приоритет (принцип ME)
         inverted_pronouns = self.invert_pronouns_me_style(grammar_corrected)
-        pronoun_preferences = [w for w in inverted_pronouns if w in ['i', 'you', 'я', 'ты', 'my', 'мой', 'меня', 'мне']]
+        pronoun_preferences = inverted_pronouns  # Берем ВСЕ инвертированные слова!
         
         # Добавляем базовые местоимения если нет инверсии
         if not pronoun_preferences:
