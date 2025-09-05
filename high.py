@@ -491,7 +491,7 @@ class HighMathEngine:
             if user_words:
                 all_candidates = user_words  # Все слова пользователя
             else:
-                all_candidates = ["input", "processing"]  # Минимальный fallback
+                all_candidates = ["input"]  # Минимальный fallback без "processing"
         
         # НОВОЕ: применяем грамматические правила ДО инверсии местоимений
         print(f"[High:Debug] user_words type: {type(user_words)}, content: {user_words}")
