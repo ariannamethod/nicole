@@ -118,6 +118,14 @@ except ImportError:
         def format_context_for_nicole(self, windows): return ""
     nicole_objectivity = MockObjectivity()
 
+# Импорт продвинутой памяти и RAG
+try:
+    from nicole_memory import NicoleMemoryCore
+    from nicole_rag import nicole_rag
+    ADVANCED_MEMORY_AVAILABLE = True
+except ImportError:
+    ADVANCED_MEMORY_AVAILABLE = False
+
 # Импорт AMLK интеграции
 try:
     from nicole_amlk import get_amlk_bridge, start_nicole_in_amlk
@@ -711,7 +719,16 @@ class NicoleCore:
     """Ядро системы Nicole"""
     
     def __init__(self):
-        self.memory = NicoleMemory()
+        # Используем продвинутую память если доступна
+        if ADVANCED_MEMORY_AVAILABLE:
+            self.memory = NicoleMemoryCore()
+            self.rag_system = nicole_rag
+            print("[Nicole] Продвинутая память и RAG активированы ✅")
+        else:
+            self.memory = NicoleMemory()
+            self.rag_system = None
+            print("[Nicole] Базовая память (продвинутая недоступна)")
+            
         self.h2o_engine = h2o.h2o_engine
         self.current_transformer = None
         self.session_id = None
@@ -894,7 +911,7 @@ class NicoleCore:
                 self.session_id,
                 self.current_transformer.architecture,
                 self.current_transformer.creation_time,
-                death_time=time.time()
+                time.time()
             )
             
             # Убиваем в H2O
@@ -948,7 +965,20 @@ class NicoleCore:
             print(f"[Nicole:ME] Резонантное слово: '{resonant_word}' (скор: {resonance_score:.3f})")
             
             # ME принципы: генерируем ответ на основе резонантного слова
-            response = self._generate_me_enhanced_response(user_input, resonant_word)
+            base_response = self._generate_me_enhanced_response(user_input, resonant_word)
+            
+            # RAG дополнение если доступно
+            if self.rag_system:
+                try:
+                    response, rag_context = self.rag_system.generate_augmented_response(
+                        user_input, base_response, strategy='balanced'
+                    )
+                    print(f"[Nicole:RAG] Ответ дополнен контекстом: {len(rag_context)} символов")
+                except Exception as e:
+                    print(f"[Nicole:RAG] Ошибка RAG: {e}")
+                    response = base_response
+            else:
+                response = base_response
             
             # ME принципы: применяем пунктуационные фильтры
             response = MEPunctuationFilters.apply_all_filters(response)
