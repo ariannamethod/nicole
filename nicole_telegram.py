@@ -141,12 +141,21 @@ Just write me messages - I will learn and adapt!"""
                 'type': 'user_message'
             })
             
-            # Create Nicole session if none exists
+            # Create or restore Nicole session
             if chat_id not in self.chat_sessions:
                 nicole_core = nicole.NicoleCore()
                 nicole_core.start_conversation(f"tg_{chat_id}")
                 self.chat_sessions[chat_id] = nicole_core
-                print(f"[RealTelegramBot] Created Nicole session for {chat_id}")
+                print(f"[RealTelegramBot] Created NEW Nicole session for {chat_id}")
+            else:
+                # Проверяем что сессия все еще активна
+                nicole_session = self.chat_sessions[chat_id]
+                expected_session = f"tg_{chat_id}"
+                if not nicole_session.session_id or nicole_session.session_id != expected_session:
+                    print(f"[RealTelegramBot] ВОССТАНАВЛИВАЕМ сессию {expected_session} - была потеряна!")
+                    nicole_session.start_conversation(expected_session)
+                else:
+                    print(f"[RealTelegramBot] Продолжаем сессию {nicole_session.session_id}")
             
             # Process through Nicole with ME principles
             nicole_session = self.chat_sessions[chat_id]
@@ -226,9 +235,13 @@ class NicoleTelegramInterface:
             def process_message(self, user_input: str, chat_id: str) -> str:
                 """Processes message through entire system"""
                 
-                # If no active session - create one
-                if not self.core.session_id:
-                    self.core.start_conversation(f"tg_{chat_id}")
+                # ИСПРАВЛЕНО: Проверяем сессию более надежно
+                expected_session = f"tg_{chat_id}"
+                if not self.core.session_id or self.core.session_id != expected_session:
+                    print(f"[TelegramInterface] Создаем/восстанавливаем сессию {expected_session}")
+                    self.core.start_conversation(expected_session)
+                else:
+                    print(f"[TelegramInterface] Продолжаем существующую сессию {self.core.session_id}")
                     
                 # Get context from memory
                 memory_context = self.memory.get_conversation_context(user_input)
