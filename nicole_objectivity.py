@@ -188,7 +188,7 @@ class NicoleObjectivity:
         # ИСПРАВЛЕНО: убираем Wikipedia для служебных слов, добавляем интернет-поиск
         strategies: List[str] = []
         
-        # Wikipedia только для явных имен собственных (заглавные слова > 3 символов)
+        # Wikipedia только для явных имен собственных (заглавные слова > 4 символов)
         proper_nouns = re.findall(r'\b[A-Z][a-z]{3,}\b', message)
         if proper_nouns and any(len(noun) > 4 for noun in proper_nouns):
             strategies.append('wikipedia')
@@ -537,9 +537,9 @@ h2o_metric("internet_results_count", len(objectivity_results_internet))
             content = (item.get("content") or "").strip()
             if content:
                 header = f"Internet: {title}" if title else "Internet"
-                lines.append(f"{header}\\n{content}")
+                lines.append(f"{header}\n{content}")
 
-        return "\\n\\n".join(lines) if lines else ""
+        return "\n\n".join(lines) if lines else ""
 
     def _provider_memory_h2o(self, message: str) -> str:
         """
@@ -567,15 +567,14 @@ def _fetch_memory():
         if has_fts:
             try:
                 c.execute(\"""
-                    SELECT highlight(conversations_fts, 1, '', '') AS n_h,
-                           highlight(conversations_fts, 0, '', '') AS u_h
+                    SELECT user_input, nicole_output
                     FROM conversations_fts
                     WHERE conversations_fts MATCH ?
                     LIMIT 3
                 \""", ({json.dumps(query)},))
                 rows = c.fetchall()
                 for r in rows:
-                    snippet = (r["n_h"] or r["u_h"] or "").strip()
+                    snippet = (r["nicole_output"] or r["user_input"] or "").strip()
                     if snippet:
                         out.append({{"content": snippet[:900]}})
             except Exception:
