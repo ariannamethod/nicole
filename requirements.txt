@@ -1,8 +1,9 @@
 # Nicole - Neural Organism Intelligence Conversational Language Engine
 # Минимальные зависимости для CPU-only системы без тяжелых библиотек
 
-# Telegram bot (единственная внешняя зависимость)
+# Telegram bot и HTTP requests
 python-telegram-bot==20.7
+requests==2.31.0
 
 # Для асинхронности (если нужно)
 asyncio-mqtt==0.16.1
