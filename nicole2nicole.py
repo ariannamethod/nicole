@@ -15,7 +15,7 @@ import sys
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
 import h2o
-import nicole
+# import nicole  # Убираем циклический импорт
 
 @dataclass 
 class LearningPattern:
@@ -356,11 +356,13 @@ class Nicole2NicoleCore:
             return False
 
 # Интеграция с основной Nicole системой
-class EnhancedFluidTransformer(nicole.FluidTransformer):
+class EnhancedFluidTransformer:  # Убираем наследование от nicole.FluidTransformer
     """Расширенный трансформер с дообучением"""
     
     def __init__(self, transformer_id: str, session_context: Dict = None, learning_core = None):
-        super().__init__(transformer_id, session_context)
+        # Убираем super() вызов
+        self.transformer_id = transformer_id
+        self.session_context = session_context or {}
         self.learning_core = learning_core
         
         # Применяем изученные улучшения архитектуры
@@ -392,11 +394,11 @@ class EnhancedFluidTransformer(nicole.FluidTransformer):
                     
         return evolved
 
-class EnhancedNicoleCore(nicole.NicoleCore):
+class EnhancedNicoleCore:  # Убираем наследование
     """Расширенное ядро Nicole с дообучением"""
     
     def __init__(self):
-        super().__init__()
+        # Убираем super() - это отдельный класс
         self.learning_core = Nicole2NicoleCore()
         self.learning_core.start_continuous_learning()
         
