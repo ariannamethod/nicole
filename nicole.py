@@ -126,6 +126,13 @@ try:
 except ImportError:
     ADVANCED_MEMORY_AVAILABLE = False
 
+# Импорт Nicole2Nicole обучения
+try:
+    from nicole2nicole import Nicole2NicoleCore
+    NICOLE2NICOLE_AVAILABLE = True
+except ImportError:
+    NICOLE2NICOLE_AVAILABLE = False
+
 # Импорт AMLK интеграции
 try:
     from nicole_amlk import get_amlk_bridge, start_nicole_in_amlk
@@ -728,6 +735,15 @@ class NicoleCore:
             self.memory = NicoleMemory()
             self.rag_system = None
             print("[Nicole] Базовая память (продвинутая недоступна)")
+        
+        # Добавляем Nicole2Nicole обучение
+        if NICOLE2NICOLE_AVAILABLE:
+            self.learning_core = Nicole2NicoleCore()
+            self.learning_core.start_continuous_learning()
+            print("[Nicole] Nicole2Nicole непрерывное обучение активировано ✅")
+        else:
+            self.learning_core = None
+            print("[Nicole] Nicole2Nicole недоступно")
             
         self.h2o_engine = h2o.h2o_engine
         self.current_transformer = None
@@ -874,7 +890,18 @@ class NicoleCore:
             optimization = self.high_core.optimize_transformer_for_nicole(session_context)
             session_context.update(optimization)
         
-        # Создаем новый трансформер с Julia оптимизацией
+        # NICOLE2NICOLE ОПТИМИЗАЦИЯ: улучшения архитектуры на основе обучения
+        if self.learning_core:
+            arch_improvements = self.learning_core.suggest_architecture_improvements(
+                {'num_layers': 3, 'context_window': 512}, 
+                f"Session {self.session_id}"
+            )
+            if arch_improvements:
+                session_context['learned_architecture'] = arch_improvements
+                transformer_id = f"learned_{self.session_id}_{int(time.time() * 1000000)}"
+                print(f"[Nicole] Трансформер улучшен обучением: {list(arch_improvements.keys())}")
+        
+        # Создаем новый трансформер с оптимизациями
         self.current_transformer = FluidTransformer(transformer_id, session_context)
         
         # Генерируем скрипт трансформера (теперь с Julia оптимизацией)
