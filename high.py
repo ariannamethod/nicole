@@ -505,8 +505,8 @@ class HighMathEngine:
         if not pronoun_preferences:
             pronoun_preferences = ['i', 'my']
         
-        # ME ПРИНЦИП: строгий used set между предложениями (БЕЗ блокировки слов пользователя!)
-        used_between_sentences = set()  # Пустой - позволяем мутировать слова пользователя
+        # ME ПРИНЦИП: строгий used set между предложениями
+        used_between_sentences = set(user_words)  # Не повторяем слова юзера
         
         # Генерируем первое предложение
         first_sentence = self._generate_sentence_me_style(
@@ -547,8 +547,9 @@ class HighMathEngine:
         for pronoun in pronouns:
             if len(sentence) >= length:
                 break
-            # ME ФИЛЬТР: не в глобальном used, не в локальном (РАЗРЕШАЕМ "i"!)
-            if (pronoun not in used_global and pronoun not in used_local):
+            # ME ФИЛЬТР: не в глобальном used, не в локальном, не односимвольное
+            if (pronoun not in used_global and pronoun not in used_local and 
+                len(pronoun) > 1):
                 sentence.append(pronoun)
                 used_local.add(pronoun)
                 used_global.add(pronoun)  # Обновляем глобальный
