@@ -1117,7 +1117,11 @@ class NicoleCore:
             import asyncio
             try:
                 context, objectivity_seeds = asyncio.run(self._get_objectivity_context(user_input))
-            except:
+                print(f"[Nicole:Objectivity:DEBUG] Контекст получен: {len(context)} символов, семена: {len(objectivity_seeds)}")
+            except Exception as e:
+                print(f"[Nicole:Objectivity:ERROR] Ошибка получения контекста: {e}")
+                import traceback
+                traceback.print_exc()
                 context, objectivity_seeds = "", []
             
             # Получаем кандидатов на 50% и 70% семантической дистанции (как в ME)
