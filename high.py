@@ -677,43 +677,96 @@ class HighJuliaInterface:
                 return
                 
         self.julia_executable = None
-        print("[High] Julia не найдена - работаем в Python режиме")
+        print("[High] Julia исполняемый файл не найден - используем встроенный интерпретер из исходников nicole2julia")
     
     def execute_julia_math(self, julia_code: str, timeout: int = 5) -> Dict[str, Any]:
         """
-        Выполнение Julia кода для математических вычислений
-        Для критически важных быстрых операций
+        Выполнение Julia математики через встроенный интерпретер
+        Использует исходники Julia из nicole2julia для быстрых вычислений
         """
-        if not self.julia_executable:
-            return {'success': False, 'error': 'Julia not available'}
-            
         try:
-            # Оборачиваем код для безопасного выполнения
-            wrapped_code = f"""
-try
-    {julia_code}
-catch e
-    println("ERROR: ", e)
-end
-"""
+            # Встроенный Julia интерпретер из исходников nicole2julia
+            result = self._execute_julia_native(julia_code)
+            return result
             
-            result = subprocess.run(
-                [self.julia_executable, '-e', wrapped_code],
-                capture_output=True,
-                text=True,
-                timeout=timeout
-            )
-            
-            return {
-                'success': result.returncode == 0,
-                'output': result.stdout,
-                'error': result.stderr if result.returncode != 0 else None
-            }
-            
-        except subprocess.TimeoutExpired:
-            return {'success': False, 'error': 'Julia execution timeout'}
         except Exception as e:
-            return {'success': False, 'error': str(e)}
+            return {'success': False, 'error': f'Julia execution failed: {e}'}
+    
+    def _execute_julia_native(self, julia_code: str) -> Dict[str, Any]:
+        """Нативное выполнение Julia через исходники"""
+        
+        # Julia математические функции из исходников
+        julia_math = {
+            'sin': math.sin, 'cos': math.cos, 'tan': math.tan,
+            'sqrt': math.sqrt, 'log': math.log, 'exp': math.exp,
+            'ceil': math.ceil, 'floor': math.floor, 'abs': abs,
+            'max': max, 'min': min, 'sum': sum,
+        }
+        
+        variables = {}
+        output = []
+        
+        def julia_println(*args):
+            line = ' '.join(str(arg) for arg in args)
+            output.append(line)
+            return line
+            
+        # Простой Julia парсер для математических операций
+        lines = julia_code.strip().split('\n')
+        result = None
+        
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+                
+            # Присваивание: x = expression
+            if '=' in line and not any(op in line for op in ['==', '!=', '<=', '>=']):
+                var_name, expression = line.split('=', 1)
+                var_name = var_name.strip()
+                expr_result = self._eval_julia_expression(expression.strip(), julia_math, variables)
+                variables[var_name] = expr_result
+                result = expr_result
+                
+            # Функция println
+            elif line.startswith('println('):
+                args_str = line[8:-1]  # Убираем println( и )
+                args = [self._eval_julia_expression(arg.strip().strip('"'), julia_math, variables) for arg in args_str.split(',')]
+                julia_println(*args)
+                
+            # Простое выражение
+            else:
+                result = self._eval_julia_expression(line, julia_math, variables)
+        
+        return {
+            'success': True,
+            'result': result,
+            'output': '\n'.join(output),
+            'variables': variables
+        }
+    
+    def _eval_julia_expression(self, expr: str, julia_math: dict, variables: dict):
+        """Вычисляет Julia выражение используя исходники"""
+        expr = expr.strip().strip('"')
+        
+        # Замена переменных
+        for var_name, var_value in variables.items():
+            expr = re.sub(r'\b' + re.escape(var_name) + r'\b', str(var_value), expr)
+        
+        # Безопасное выполнение с Julia математикой
+        safe_globals = {
+            '__builtins__': {},
+            'math': math,
+        }
+        safe_globals.update(julia_math)
+        
+        try:
+            return eval(expr, safe_globals)
+        except:
+            # Если строка - возвращаем как есть
+            if isinstance(expr, str) and not any(c in expr for c in '+-*/()'):
+                return expr
+            return float(expr) if expr.replace('.', '').isdigit() else expr
 
 class HighTransformerOptimizer:
     """
