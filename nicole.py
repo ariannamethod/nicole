@@ -93,8 +93,10 @@ from collections import defaultdict
 
 # Импорт ME принципов из nicole_metrics
 try:
-    from nicole_metrics import MEPunctuationFilters, VerbGraph, ResonanceAnalyzer
+    from nicole_metrics import MEPunctuationFilters, VerbGraph, ResonanceAnalyzer, NicoleMetricsCore
+    ADVANCED_METRICS_AVAILABLE = True
 except ImportError:
+    ADVANCED_METRICS_AVAILABLE = False
     # Заглушки если модуль недоступен
     class MEPunctuationFilters:
         @staticmethod
@@ -744,6 +746,14 @@ class NicoleCore:
         else:
             self.learning_core = None
             print("[Nicole] Nicole2Nicole недоступно")
+        
+        # Добавляем продвинутые метрики
+        if ADVANCED_METRICS_AVAILABLE:
+            self.metrics_core = NicoleMetricsCore()
+            print("[Nicole] Продвинутые метрики активированы ✅")
+        else:
+            self.metrics_core = None
+            print("[Nicole] Продвинутые метрики недоступны")
             
         self.h2o_engine = h2o.h2o_engine
         self.current_transformer = None
@@ -1293,8 +1303,35 @@ class NicoleCore:
         """Обновляет метрики разговора"""
         if not self.current_transformer:
             return
-            
-        # Простые метрики
+        
+        # Используем продвинутые метрики если доступны
+        if self.metrics_core:
+            try:
+                # Продвинутый анализ через NicoleMetricsCore
+                snapshot = self.metrics_core.analyze_conversation_turn(
+                    user_input, response, 
+                    self.current_transformer.transformer_id, 
+                    self.session_id
+                )
+                
+                self.current_transformer.current_metrics = ConversationMetrics(
+                    entropy=snapshot.entropy,
+                    perplexity=snapshot.perplexity,
+                    resonance=snapshot.resonance,
+                    coherence=snapshot.coherence,
+                    engagement=snapshot.engagement
+                )
+                print(f"[Nicole:Metrics] Продвинутые метрики: энтропия={snapshot.entropy:.3f}, резонанс={snapshot.resonance:.3f}")
+                
+            except Exception as e:
+                print(f"[Nicole:Metrics] Ошибка продвинутых метрик: {e}")
+                self._update_simple_metrics(user_input, response)
+        else:
+            # Fallback на простые метрики
+            self._update_simple_metrics(user_input, response)
+    
+    def _update_simple_metrics(self, user_input: str, response: str):
+        """Простые метрики как fallback"""
         input_words = set(user_input.lower().split())
         response_words = set(response.lower().split())
         
@@ -1302,7 +1339,7 @@ class NicoleCore:
         perplexity = len(response.split()) / max(1, len(user_input.split()))
         resonance = len(input_words & response_words) / max(1, len(input_words))
         coherence = 1.0 - (abs(len(response) - len(user_input)) / max(len(response), len(user_input)))
-        engagement = min(1.0, len(user_input) / 50.0)  # Чем длиннее сообщение, тем больше вовлеченность
+        engagement = min(1.0, len(user_input) / 50.0)
         
         self.current_transformer.current_metrics = ConversationMetrics(
             entropy=entropy,
