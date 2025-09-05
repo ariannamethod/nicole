@@ -703,8 +703,7 @@ class MEPunctuationFilters:
     @staticmethod
     def apply_all_filters(text: str) -> str:
         """Применяет все фильтры ME для чистой речи"""
-        # Инверсия местоимений
-        text = MEPunctuationFilters.invert_pronouns(text)
+        # ИСПРАВЛЕНО: инверсия местоимений уже применена в High системе
         
         # Разбиваем на слова
         words = text.split()
