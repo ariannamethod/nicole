@@ -115,16 +115,16 @@ class NicoleObjectivity:
         Формируем единое текстовое окно (или ничего, если контента нет).
         """
         strategies = self._pick_strategies(user_message)
+        print(f"[Objectivity:DEBUG] Сообщение: '{user_message}' -> стратегии: {strategies}")
 
         sections: List[str] = []
 
-        if 'wikipedia' in strategies:
-            wiki_text = self._provider_wikipedia_h2o(user_message)
-            if wiki_text:
-                sections.append(wiki_text)
+        # УБРАНО: Wikipedia провайдер полностью удален
 
         if 'internet' in strategies:
+            print(f"[Objectivity:DEBUG] Запускаю internet поиск для: '{user_message}'")
             internet_text = self._provider_internet_h2o(user_message)
+            print(f"[Objectivity:DEBUG] Internet результат: {len(internet_text) if internet_text else 0} символов")
             if internet_text:
                 sections.append(internet_text)
 
@@ -188,16 +188,8 @@ class NicoleObjectivity:
         # ИСПРАВЛЕНО: убираем Wikipedia для служебных слов, добавляем интернет-поиск
         strategies: List[str] = []
         
-        # Wikipedia только для явных имен собственных (заглавные слова > 4 символов)
-        proper_nouns = re.findall(r'\b[A-Z][a-z]{3,}\b', message)
-        if proper_nouns and any(len(noun) > 4 for noun in proper_nouns):
-            strategies.append('wikipedia')
-        
-        # Интернет-поиск для вопросов и обычных фраз
-        if re.search(r'\b(how|what|why|when|where|who|can|should|will|would|could)\b', message, re.I):
-            strategies.append('internet')
-        elif not proper_nouns:  # Если нет имен собственных - ищем в интернете
-            strategies.append('internet')
+        # ГРУБЫЙ ИНТЕРНЕТ ПОИСК: всегда используем интернет вместо Wikipedia
+        strategies.append('internet')
             
         # Reddit для технических тем
         if re.search(r'\b(python|javascript|neural|ai|quantum|blockchain|programming|algorithm|database|code|tech)\b', message, re.I):
@@ -523,12 +515,17 @@ h2o_metric("internet_results_count", len(objectivity_results_internet))
 """
         
         try:
+            print(f"[Objectivity:Internet:DEBUG] Запуск H2O скрипта для запроса: '{query}'")
             self.h2o_engine.run_transformer_script(code, script_id)
             g = self.h2o_engine.executor.active_transformers.get(script_id, {}).get("globals", {})
             raw = g.get("objectivity_results_internet") or []
             print(f"[Objectivity:Internet] H2O результат: {len(raw)} записей")
+            if raw:
+                print(f"[Objectivity:Internet:DEBUG] Первый результат: {str(raw[0])[:100]}...")
         except Exception as e:
             print(f"[Objectivity:Internet:ERROR] H2O script failed: {e}")
+            import traceback
+            traceback.print_exc()
             raw = []
 
         lines: List[str] = []
