@@ -747,6 +747,9 @@ class NicoleCore:
         # Запускаем H2O сессию
         self.h2o_engine.start_session(session_id)
         
+        # ИСПРАВЛЕНО: Активируем High систему для нормальной генерации
+        self.activate_high_system()
+        
         # Создаем первый трансформер
         self._spawn_new_transformer()
         
