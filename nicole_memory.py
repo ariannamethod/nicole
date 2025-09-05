@@ -161,6 +161,7 @@ class NicoleMemoryCore:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
+        # Новые таблицы для продвинутой памяти
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS memory_entries (
             id TEXT PRIMARY KEY,
@@ -182,6 +183,45 @@ class NicoleMemoryCore:
             strength REAL,
             last_update REAL,
             PRIMARY KEY (concept1, concept2)
+        )
+        """)
+        
+        # СОВМЕСТИМОСТЬ: создаем старые таблицы для обратной совместимости
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS conversations (
+            id INTEGER PRIMARY KEY,
+            session_id TEXT,
+            timestamp REAL,
+            user_input TEXT,
+            nicole_output TEXT,
+            metrics TEXT,
+            transformer_config TEXT
+        )
+        """)
+        
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS word_frequencies (
+            word TEXT PRIMARY KEY,
+            count INTEGER DEFAULT 1
+        )
+        """)
+        
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS bigrams (
+            id INTEGER PRIMARY KEY,
+            w1 TEXT,
+            w2 TEXT,
+            count INTEGER DEFAULT 1,
+            UNIQUE(w1, w2)
+        )
+        """)
+        
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_first_contact (
+            user_id TEXT PRIMARY KEY,
+            first_contact_time REAL,
+            template_phase_completed INTEGER DEFAULT 0,
+            message_count INTEGER DEFAULT 0
         )
         """)
         
@@ -219,13 +259,24 @@ class NicoleMemoryCore:
             self.associative_network.associations[concept1][concept2] = strength
             
         conn.close()
+        
+        # МИГРАЦИЯ: загружаем старые данные если новых нет
+        if len(self.memory_cache) == 0:
+            self.migrate_old_memory_data()
+        
         print(f"[NicoleMemory] Загружено {len(self.memory_cache)} воспоминаний")
         
         # Добавляем совместимость с основной Nicole
         self.word_frequencies = defaultdict(int)
         self.bigram_transitions = defaultdict(lambda: defaultdict(int))
-        from nicole_metrics import VerbGraph
-        self.verb_graph = VerbGraph()
+        try:
+            from nicole_metrics import VerbGraph
+            self.verb_graph = VerbGraph()
+        except ImportError:
+            self.verb_graph = None
+            
+        # Загружаем word_frequencies и bigrams
+        self.load_compatibility_data()
         
     def store_memory(self, content: str, context: str = "", importance: float = 1.0, 
                     associations: List[str] = None) -> str:
@@ -547,6 +598,69 @@ class NicoleMemoryCore:
             'total_associations': sum(len(assocs) for assocs in self.associative_network.associations.values()),
             'recent_memories': len(self.recent_memories)
         }
+    
+    def migrate_old_memory_data(self):
+        """Мигрирует данные из старых таблиц в новую систему памяти"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Проверяем есть ли старые данные
+            cursor.execute("SELECT COUNT(*) FROM conversations")
+            old_conversations = cursor.fetchone()[0]
+            
+            if old_conversations > 0:
+                print(f"[NicoleMemory] Мигрирую {old_conversations} старых разговоров...")
+                
+                # Загружаем старые разговоры
+                cursor.execute("""
+                    SELECT user_input, nicole_output, timestamp, session_id 
+                    FROM conversations 
+                    WHERE user_input IS NOT NULL AND nicole_output IS NOT NULL
+                    ORDER BY timestamp DESC 
+                    LIMIT 500
+                """)
+                
+                for user_input, nicole_output, timestamp, session_id in cursor.fetchall():
+                    # Создаем воспоминание из разговора
+                    content = f"User: {user_input} | Nicole: {nicole_output}"
+                    context = f"conversation_{session_id or 'unknown'}"
+                    importance = 0.7  # Средняя важность для мигрированных данных
+                    
+                    memory_id = self.store_memory(content, context, importance)
+                    
+                print(f"[NicoleMemory] Миграция завершена!")
+                
+            conn.close()
+            
+        except Exception as e:
+            print(f"[NicoleMemory] Ошибка миграции: {e}")
+    
+    def load_compatibility_data(self):
+        """Загружает word_frequencies и bigrams для совместимости"""
+        try:
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            
+            # Загружаем частоты слов
+            cursor.execute("SELECT word, count FROM word_frequencies")
+            for word, count in cursor.fetchall():
+                self.word_frequencies[word] = count
+                
+            # Загружаем биграммы  
+            cursor.execute("SELECT w1, w2, count FROM bigrams")
+            for w1, w2, count in cursor.fetchall():
+                self.bigram_transitions[w1][w2] = count
+                
+            conn.close()
+            
+            words_count = len(self.word_frequencies)
+            bigrams_count = sum(len(transitions) for transitions in self.bigram_transitions.values())
+            if words_count > 0 or bigrams_count > 0:
+                print(f"[NicoleMemory] Загружена совместимость: {words_count} слов, {bigrams_count} биграмм")
+                
+        except Exception as e:
+            print(f"[NicoleMemory] Ошибка загрузки совместимости: {e}")
 
 # Интеграция будет добавлена позже
 # TODO: Интегрировать с основной Nicole системой
