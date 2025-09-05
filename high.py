@@ -499,11 +499,13 @@ class HighMathEngine:
         
         # Инвертированные местоимения как приоритет (принцип ME)
         inverted_pronouns = self.invert_pronouns_me_style(grammar_corrected)
-        pronoun_preferences = inverted_pronouns  # Берем ВСЕ инвертированные слова!
+        pronoun_preferences = [w for w in inverted_pronouns if w in ['i', 'you', 'я', 'ты', 'my', 'мой', 'меня', 'мне']]
         
         # Добавляем базовые местоимения если нет инверсии
         if not pronoun_preferences:
             pronoun_preferences = ['i', 'my']
+        
+        used_words = set(user_words)  # Не повторяем слова юзера
         
         # ME ПРИНЦИП: строгий used set между предложениями
         used_between_sentences = set(user_words)  # Не повторяем слова юзера
@@ -547,8 +549,9 @@ class HighMathEngine:
         for pronoun in pronouns:
             if len(sentence) >= length:
                 break
-            # ME ФИЛЬТР: не в глобальном used, не в локальном (разрешаем "i"!)
-            if (pronoun not in used_global and pronoun not in used_local):
+            # ME ФИЛЬТР: не в глобальном used, не в локальном, не односимвольное
+            if (pronoun not in used_global and pronoun not in used_local and 
+                len(pronoun) > 1):
                 sentence.append(pronoun)
                 used_local.add(pronoun)
                 used_global.add(pronoun)  # Обновляем глобальный
