@@ -207,7 +207,7 @@ class HighMathEngine:
     
     def invert_pronouns_me_style(self, words: List[str]) -> List[str]:
         """
-        Инверсия местоимений по принципу ME
+        Инверсия местоимений по принципу ME + грамматические правила
         you↔i, your↔my, me↔you для правильной перспективы
         """
         pronoun_mapping = {
@@ -216,7 +216,20 @@ class HighMathEngine:
             'we': 'you'
         }
         
-        return [pronoun_mapping.get(w.lower(), w) for w in words]
+        result = [pronoun_mapping.get(w.lower(), w) for w in words]
+        
+        # КРИТИЧНО: Грамматические правила после инверсии
+        # Исправляем "you am" → "you are", "i is" → "i am"
+        for i in range(len(result) - 1):
+            current = result[i].lower()
+            next_word = result[i + 1].lower()
+            
+            if current == 'you' and next_word == 'am':
+                result[i + 1] = 'are'
+            elif current == 'i' and next_word in ['is', 'are']:
+                result[i + 1] = 'am'
+                
+        return result
     
     def generate_linguistically_agnostic_response(self, user_words: List[str], semantic_candidates: List[str], 
                                                  objectivity_seeds: List[str], entropy: float, perplexity: float, 
@@ -328,11 +341,29 @@ class HighMathEngine:
     def _extract_charged_tokens(self, text: str) -> List[str]:
         """
         ПРИНЦИП SUBJECTIVITY: charged tokens - капитализованные или длинные слова
-        Языково-агностичное выделение важных токенов
+        НОВОЕ: заглавные слова = имена/важные понятия, усиленный поиск!
         """
         tokens = re.findall(r"\b\w+\b", text)
-        charged = [t.lower() for t in tokens if (t[:1].isupper() and len(t) > 1) or len(t) > 7]
+        charged = []
+        
+        for t in tokens:
+            if t[:1].isupper() and len(t) > 1 and t.lower() != 'i':
+                # СОХРАНЯЕМ регистр для имен собственных!
+                charged.append(t)  # "Berlin", не "berlin"!
+                self._mark_as_proper_noun(t)
+            elif len(t) > 7:
+                charged.append(t.lower())
+                
         return charged or [t.lower() for t in tokens[:3]]
+    
+    def _mark_as_proper_noun(self, word: str):
+        """
+        Помечает слово как собственное имя для усиленного поиска в objectivity
+        """
+        if not hasattr(self, '_proper_nouns'):
+            self._proper_nouns = set()
+        self._proper_nouns.add(word)
+        print(f"[High:ProperNoun] Detected: {word} - усиленный поиск в интернете")
     
     def _extract_content_words(self, text: str) -> List[str]:
         """
