@@ -96,6 +96,16 @@ Returned windows carry metadata like resonance scores and token counts, allowing
 
 By packaging all logic into a small module, OBJECTIVITY expands Nicole's self-organizing behavior while keeping dependencies minimal.
 
+Objectivity's providers are implemented as lightweight scripts executed inside H2O, insulating the host process from network or parsing faults. The module currently ships with Reddit and Google readers that scrape short summaries of public conversations and search results.
+
+Each provider enforces a strict size budget and deduplicates overlapping snippets, ensuring the assembled window never exceeds four kilobytes of plain text. Results are tagged with resonance and entropy estimates so downstream logic can weight their influence deterministically.
+
+Captured text flows directly into `training_buffer.jsonl` and the in-memory window; no external URLs or identifiers survive beyond the session, preserving a weightless stance on attribution.
+
+Developers may tune the `influence_coeff` parameter or drop in additional providers by extending `NicoleObjectivity._pick_strategies` and implementing matching `_provider_*` methods.
+
+Running `python3 nicole_objectivity.py` in isolation performs a dry run that prints the generated window and the seeds extracted for response synthesis, allowing rapid experimentation outside the full Nicole stack.
+
 Nicole Telegram provides a human-facing interface, enabling rapid testing, monitoring, and playful dialog with the engine.
 
 The nicole_env directory packages a minimal CPython subset used by H2O to compile generated modules within a controlled sandbox.
