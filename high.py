@@ -238,8 +238,8 @@ class HighMathEngine:
     
     def fast_ngram_analysis(self, text: str, n: int = 3) -> Dict[str, float]:
         """
-        Быстрый анализ n-граммов для пунктуации
-        Векторизованная обработка для определения правил
+        Fast n-gram analysis for punctuation
+        Vectorized processing for rule determination
         """
         words = text.lower().split()
         if len(words) < n:
