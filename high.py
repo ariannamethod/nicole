@@ -493,22 +493,17 @@ class HighMathEngine:
             else:
                 all_candidates = ["input"]  # Минимальный fallback без "processing"
         
-        # НОВОЕ: применяем грамматические правила ДО инверсии местоимений
-        print(f"[High:Debug] user_words type: {type(user_words)}, content: {user_words}")
-        grammar_corrected = self._apply_final_grammar_rules(user_words)
-        
         # Инвертированные местоимения как приоритет (принцип ME)
-        inverted_pronouns = self.invert_pronouns_me_style(grammar_corrected)
+        # ИСПРАВЛЕНО: НЕ применяем грамматические правила к словам пользователя!
+        inverted_pronouns = self.invert_pronouns_me_style(user_words)
         pronoun_preferences = [w for w in inverted_pronouns if w in ['i', 'you', 'я', 'ты', 'my', 'мой', 'меня', 'мне']]
         
         # Добавляем базовые местоимения если нет инверсии
         if not pronoun_preferences:
             pronoun_preferences = ['i', 'my']
         
-        used_words = set(user_words)  # Не повторяем слова юзера
-        
-        # ME ПРИНЦИП: строгий used set между предложениями
-        used_between_sentences = set(user_words)  # Не повторяем слова юзера
+        # ME ПРИНЦИП: строгий used set между предложениями (только для повторов в ответе)
+        used_between_sentences = set()  # Пустой в начале, будет заполняться словами ответа
         
         # Генерируем первое предложение
         first_sentence = self._generate_sentence_me_style(
@@ -536,8 +531,10 @@ class HighMathEngine:
         # НОВОЕ: улучшаем sentence flow
         flow_improved = self._improve_sentence_flow(cleaned)
         
-        # УБИРАЕМ: грамматические правила применяются раньше в процессе
-        return flow_improved
+        # ИСПРАВЛЕНО: применяем грамматические правила к готовому ответу
+        grammar_final = self._apply_final_grammar_rules(flow_improved)
+        
+        return grammar_final
     
     def _generate_sentence_me_style(self, candidates: List[str], length: int, 
                                    used_global: set, pronouns: List[str]) -> List[str]:
@@ -549,9 +546,8 @@ class HighMathEngine:
         for pronoun in pronouns:
             if len(sentence) >= length:
                 break
-            # ME ФИЛЬТР: не в глобальном used, не в локальном, не односимвольное
-            if (pronoun not in used_global and pronoun not in used_local and 
-                len(pronoun) > 1):
+            # ME ФИЛЬТР: не в глобальном used, не в локальном (местоимения ВСЕГДА разрешены)
+            if (pronoun not in used_global and pronoun not in used_local):
                 sentence.append(pronoun)
                 used_local.add(pronoun)
                 used_global.add(pronoun)  # Обновляем глобальный
