@@ -51,12 +51,12 @@ class NicoleAMLKBridge:
             
             return True
         except Exception as e:
-            # Логируем ошибку вместо вывода юзеру
+            # Log error instead of user output
             self._log_error(f"AMLK startup failed: {e}")
             return False
     
     def _start_output_monitor(self):
-        """Мониторинг вывода AMLK в отдельном потоке"""
+        """AMLK output monitoring in separate thread"""
         def monitor():
             while self.is_running and self.amlk_process:
                 try:
