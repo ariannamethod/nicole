@@ -453,7 +453,7 @@ h2o_metric("reddit_results_count", len(objectivity_results_reddit))
                 reddit_query = f"{message.strip()} reddit"
         else:
             # Для обычных сообщений ищем по ключевым словам
-            words = re.findall(r'\b[a-zA-Z]{{3,}}\b', message)
+            words = re.findall(r'\b[a-zA-Z]{3,}\b', message)
             query = ' '.join(words[:4]) if words else message.strip()
             reddit_query = f"{query} reddit"
         
