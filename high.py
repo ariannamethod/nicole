@@ -651,12 +651,33 @@ class HighJuliaInterface:
         
     def _find_julia(self):
         """Поиск Julia исполняемого файла"""
+        # Сначала ищем в системе
         try:
             result = subprocess.run(['which', 'julia'], capture_output=True, text=True)
             if result.returncode == 0:
                 self.julia_executable = result.stdout.strip()
+                return
         except:
-            self.julia_executable = None
+            pass
+            
+        # Ищем в локальном каталоге nicole2julia
+        local_julia_paths = [
+            Path(__file__).parent / "nicole2julia" / "julia",
+            Path(__file__).parent / "nicole2julia" / "bin" / "julia",
+            "/usr/local/bin/julia",
+            "/opt/homebrew/bin/julia"
+        ]
+        
+        for path in local_julia_paths:
+            if isinstance(path, str):
+                path = Path(path)
+            if path.exists() and path.is_file():
+                self.julia_executable = str(path)
+                print(f"[High] Найдена Julia: {self.julia_executable}")
+                return
+                
+        self.julia_executable = None
+        print("[High] Julia не найдена - работаем в Python режиме")
     
     def execute_julia_math(self, julia_code: str, timeout: int = 5) -> Dict[str, Any]:
         """
