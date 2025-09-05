@@ -218,76 +218,37 @@ class NicoleTelegramInterface:
         }
         
     def _setup_enhanced_nicole(self):
-        """Sets up full Nicole system"""
-        # Create integrated system with all modules
-        class FullNicole:
+        """ИСПРАВЛЕНО: Telegram просто использует основную систему Nicole"""
+        class TelegramNicole:
             def __init__(self):
+                # Используем глобальный экземпляр, не создаем свои модули
                 self.core = nicole.nicole_core
-                self.learning = nicole2nicole.Nicole2NicoleCore()
-                self.memory = nicole_memory.NicoleMemoryCore()
-                self.rag = nicole_rag.nicole_rag
-                self.metrics = nicole_metrics.nicole_metrics
-                
-                # Start background processes
-                self.learning.start_continuous_learning()
-                self.memory.start_maintenance()
                 
             def process_message(self, user_input: str, chat_id: str) -> str:
-                """Processes message through entire system"""
+                """Простая передача сообщения в основную систему Nicole"""
                 
-                # ИСПРАВЛЕНО: Проверяем сессию более надежно
+                # Проверяем/создаем сессию для этого чата
                 expected_session = f"tg_{chat_id}"
                 if not self.core.session_id or self.core.session_id != expected_session:
-                    print(f"[TelegramInterface] Создаем/восстанавливаем сессию {expected_session}")
+                    print(f"[TelegramInterface] Создаем сессию {expected_session}")
                     self.core.start_conversation(expected_session)
                 else:
-                    print(f"[TelegramInterface] Продолжаем существующую сессию {self.core.session_id}")
+                    print(f"[TelegramInterface] Сессия {self.core.session_id} активна")
                     
-                # Get context from memory
-                memory_context = self.memory.get_conversation_context(user_input)
-                
-                # Enhance context through RAG
-                enhanced_response, rag_context = self.rag.generate_augmented_response(
-                    user_input, 
-                    strategy=self.rag.get_best_strategy()
-                )
-                
-                # Process through main Nicole
-                base_response = self.core.process_message(user_input)
-                
-                # Improve response
-                if enhanced_response and enhanced_response != "Programming is cool":
-                    final_response = enhanced_response
-                else:
-                    final_response = base_response
-                    
-                # Analyze metrics
-                if self.core.current_transformer:
-                    self.metrics.analyze_conversation_turn(
-                        user_input,
-                        final_response, 
-                        self.core.current_transformer.transformer_id,
-                        self.core.session_id
-                    )
-                    
-                # Save to memory
-                self.memory.learn_from_conversation(user_input, final_response)
-                
-                return final_response
+                # Передаем в основную систему - она сама все сделает
+                return self.core.process_message(user_input)
                 
             def get_system_status(self) -> Dict:
-                """Status of entire system"""
+                """Status of core Nicole system"""
                 return {
                     'h2o_active_transformers': len(self.core.h2o_engine.executor.active_transformers),
                     'current_session': self.core.session_id,
                     'conversation_count': self.core.conversation_count,
-                    'learning_stats': self.learning.get_learning_statistics(),
-                    'memory_stats': self.memory.get_memory_statistics(),
-                    'rag_stats': self.rag.get_rag_statistics(),
+                    'high_enabled': self.core.high_enabled,
                     'current_transformer': self.core.current_transformer.transformer_id if self.core.current_transformer else None
                 }
                 
-        return FullNicole()
+        return TelegramNicole()
         
     def start_bot(self):
         """Starts telegram bot"""
