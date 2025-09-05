@@ -21,6 +21,8 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import h2o
+import high  # КРИТИЧНО: импортируем high ДО nicole!
+import blood  # КРИТИЧНО: импортируем blood ДО nicole!
 import nicole
 import nicole2nicole  
 import nicole_memory
@@ -141,21 +143,16 @@ Just write me messages - I will learn and adapt!"""
                 'type': 'user_message'
             })
             
-            # Create or restore Nicole session
+            # ИСПРАВЛЕНО: НЕ ПЕРЕЗАПУСКАЕМ сессию при каждом сообщении!
             if chat_id not in self.chat_sessions:
-                # КРИТИЧНО: используем ГЛОБАЛЬНЫЙ nicole_core, не создаем новый!
+                # Создаем сессию ТОЛЬКО ОДИН РАЗ для нового чата
                 chat_session_id = f"tg_{chat_id}"
                 nicole.nicole_core.start_conversation(chat_session_id)
-                self.chat_sessions[chat_id] = nicole.nicole_core
-                print(f"[RealTelegramBot] Using GLOBAL Nicole core for {chat_id} - High: {nicole.nicole_core.high_enabled}")
+                self.chat_sessions[chat_id] = True  # Помечаем что сессия создана
+                print(f"[RealTelegramBot] СОЗДАНА новая сессия для {chat_id} - High: {nicole.nicole_core.high_enabled}")
             else:
-                # Проверяем что сессия все еще активна
-                expected_session = f"tg_{chat_id}"
-                if not nicole.nicole_core.session_id or nicole.nicole_core.session_id != expected_session:
-                    print(f"[RealTelegramBot] ВОССТАНАВЛИВАЕМ сессию {expected_session} - была потеряна!")
-                    nicole.nicole_core.start_conversation(expected_session)
-                else:
-                    print(f"[RealTelegramBot] Продолжаем сессию {nicole.nicole_core.session_id}")
+                # Сессия уже создана - НЕ ТРОГАЕМ ЕЕ!
+                print(f"[RealTelegramBot] Используем существующую сессию {nicole.nicole_core.session_id}")
             
             # ДИАГНОСТИКА: проверяем состояние систем перед обработкой
             print(f"[ДИАГНОСТИКА] High enabled: {nicole.nicole_core.high_enabled}")
