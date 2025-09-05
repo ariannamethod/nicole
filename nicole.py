@@ -1203,7 +1203,7 @@ class NicoleCore:
         except:
             # АНТИ-ШАБЛОННЫЙ FALLBACK: только из слов пользователя
             user_words = user_input.lower().split()
-            memory_words = user_words[:3] if user_words else ["input", "processing"]
+            memory_words = user_words[:3] if user_words else ["input"]
         
         # ЖИВАЯ МУТАЦИЯ: смешиваем инвертированные слова пользователя + память
         response_words = inverted[:2] + memory_words + inverted[2:]
@@ -1225,7 +1225,7 @@ class NicoleCore:
             if user_words:
                 unique_words.extend(user_words[:2])
             else:
-                unique_words.extend(['processing', 'input'])
+                unique_words.extend(['input'])
             
         return ' '.join(unique_words) + '.'
         
