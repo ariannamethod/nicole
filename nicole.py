@@ -127,13 +127,7 @@ except ImportError:
     def start_nicole_in_amlk(): return None
 
 # Импорт Blood системы - кровь Nicole
-try:
-    from blood import get_blood_core, activate_blood_system, deactivate_blood_system
-except ImportError:
-    # Заглушка если Blood недоступен
-    def get_blood_core(): return None
-    def activate_blood_system(): return False
-    def deactivate_blood_system(): pass
+from blood import get_blood_core, activate_blood_system as blood_activate, deactivate_blood_system as blood_deactivate
 
 # Импорт High системы - математический мозг Nicole
 try:
@@ -750,6 +744,9 @@ class NicoleCore:
         # ИСПРАВЛЕНО: Активируем High систему для нормальной генерации
         self.activate_high_system()
         
+        # Активируем Blood систему для контроля железа
+        self.activate_blood_system()
+        
         # Создаем первый трансформер
         self._spawn_new_transformer()
         
@@ -777,10 +774,13 @@ class NicoleCore:
     
     def activate_blood_system(self):
         """Активация Blood системы - кровь Nicole"""
-        if self.blood_core and activate_blood_system():
+        if self.blood_core and blood_activate():
             self.blood_enabled = True
+            print("[Nicole] Blood система (C железо) активирована ✅")
             return True
-        return False
+        else:
+            print("[Nicole] Blood система недоступна ❌")
+            return False
     
     def execute_c_in_transformer(self, c_code: str) -> dict:
         """Выполнение C кода в текущем трансформере"""
@@ -805,7 +805,7 @@ class NicoleCore:
     def shutdown_blood_system(self):
         """Завершение Blood системы"""
         if self.blood_core:
-            deactivate_blood_system()
+            blood_deactivate()
             self.blood_enabled = False
     
     def activate_high_system(self):
