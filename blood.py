@@ -331,12 +331,12 @@ class BloodCore:
             return False
     
     def deactivate(self):
-        """Деактивация Blood системы"""
-        # Очищаем память
+        """Blood system deactivation"""
+        # Clear memory blocks
         for addr in list(self.memory_manager.allocated_blocks.keys()):
             self.memory_manager.deallocate_raw(addr)
         
-        # Завершаем процессы
+        # Terminate processes
         for proc_id in list(self.process_controller.controlled_processes.keys()):
             self.process_controller.kill_process(proc_id, force=True)
         
@@ -345,8 +345,8 @@ class BloodCore:
     
     def execute_transformer_c_script(self, transformer_id: str, c_code: str) -> Dict[str, Any]:
         """
-        Выполнение C скрипта в контексте трансформера Nicole
-        Это ключевая функция для интеграции с трансформерами
+        Execute C script in Nicole transformer context
+        Key function for transformer integration
         """
         if not self.is_active:
             return {'success': False, 'error': 'Blood system not active'}
