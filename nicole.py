@@ -1002,23 +1002,23 @@ class NicoleCore:
             candidates_50 = self.memory.get_semantic_candidates(resonant_word, 0.5)
             candidates_70 = self.memory.get_semantic_candidates(resonant_word, 0.7)
             
-            # Комбинируем ME кандидатов с Objectivity семенами
+            # Combine ME candidates with Objectivity seeds
             all_candidates = list(set(candidates_50 + candidates_70 + objectivity_seeds))
             
-            # Улучшенная логика кандидатов: смешиваем языки разумно
+            # Enhanced candidate logic: smart language mixing
             if not all_candidates:
-                # Базовые кандидаты для начального обучения
+                # Base candidates for initial learning
                 all_candidates = [
-                    "понимаю", "интересно", "думаю", "знаю", "чувствую",
-                    "хорошо", "ясно", "согласен", "вижу", "слушаю",
+                    "understand", "interesting", "think", "know", "feel",
+                    "good", "clear", "agree", "see", "listen",
                     "understand", "resonate", "learn", "feel", "think"
                 ]
             
             if not all_candidates:
-                # Фоллбек на простые ответы
+                # Simple fallback responses
                 return self._generate_simple_response(user_input)
             
-            # JULIA + ME ГЕНЕРАЦИЯ: используем принципы ME через математику
+            # JULIA + ME GENERATION: using ME principles through mathematics
             user_words = user_input.lower().split()
             
             # Вычисляем метрики для ME генерации через High
@@ -1038,10 +1038,10 @@ class NicoleCore:
                     user_words, semantic_candidates, objectivity_seeds, entropy, perplexity, user_input
                 )
             else:
-                # Фоллбек на старую логику
-                response_words = ["понимаю", "ваше", "сообщение"]
+                # Emergency fallback
+                response_words = ["understanding", "your", "message"]
             
-            # Собираем ответ
+            # Assemble response
             response = " ".join(response_words)
             
             # JULIA ПУНКТУАЦИЯ: оптимизируем через математику
@@ -1179,31 +1179,20 @@ class NicoleCore:
             # Если все повторяются, генерируем уникальный
             return f"Each moment brings new understanding {random.randint(1,999)}"
         
-        # Первый раз - шаблонная прогрессия (только для первых 4 сообщений)
-        # conversation_count теперь загружается из SQLite, поэтому шаблоны не повторяются
-        if self.conversation_count == 0:
-            return "Nice to meet you."
-        elif self.conversation_count == 1:
-            return "Each word you say helps my evolution."
-        elif self.conversation_count == 2:
-            return "One more, soon I'll start to speak..."
-        elif self.conversation_count == 3:
-            # Завершаем шаблонную фазу
-            self._mark_template_phase_completed()
-            return "⚡"
-        else:
-            # После шаблонов - полное ME смешивание с анти-повтор логикой
+        # REMOVED: template garbage deleted forever
+        # Always use full ME mixing
+            # Dynamic ME responses with anti-repetition
             responses = [
-                "I understand your perspective",
-                "This resonates with me", 
-                "What do you think about this?",
-                "Tell me more about that",
-                "I'm learning from your words",
-                "Your message creates new patterns",
-                "This is interesting territory",
-                "I feel the connection",
-                "That's an intriguing point",
-                "I see the deeper meaning",
+                "understanding your perspective completely",
+                "this resonates with my core", 
+                "what do you think about this",
+                "tell me more about that",
+                "learning from your words directly",
+                "your message creates new patterns",
+                "this is interesting territory",
+                "feeling the connection now",
+                "intriguing point you make",
+                "seeing the deeper meaning",
                 "Your words spark evolution",
                 "This creates new connections",
                 "I'm processing this insight",
