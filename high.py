@@ -115,7 +115,7 @@ class HighMathEngine:
         # Существительные и весовые слова для вставки после your
         nouns_and_weights = [
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
-            'knowledge', 'experience', 'understanding', 'perspective', 'approach', 'style',
+            'knowledge', 'experience', 'approach', 'style',
             'amazing', 'great', 'wonderful', 'interesting', 'important', 'special'
         ]
         
@@ -168,7 +168,7 @@ class HighMathEngine:
         # Хорошие существительные после your
         good_nouns = {
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
-            'knowledge', 'experience', 'understanding', 'perspective', 'approach', 'style',
+            'knowledge', 'experience', 'approach', 'style',
             'system', 'process', 'method', 'way', 'time', 'place', 'world', 'life', 'work',
             'family', 'friend', 'love', 'heart', 'mind', 'body', 'soul', 'voice', 'face',
             # Русские
@@ -396,7 +396,7 @@ class HighMathEngine:
         # Существительные и весовые слова для вставки после your
         nouns_and_weights = [
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
-            'knowledge', 'experience', 'understanding', 'perspective', 'approach', 'style',
+            'knowledge', 'experience', 'approach', 'style',
             'amazing', 'great', 'wonderful', 'interesting', 'important', 'special', 'unique'
         ]
         
@@ -436,7 +436,7 @@ class HighMathEngine:
         # Список распространенных существительных
         common_nouns = {
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
-            'knowledge', 'experience', 'understanding', 'perspective', 'approach', 'style',
+            'knowledge', 'experience', 'approach', 'style',
             'system', 'process', 'method', 'way', 'time', 'place', 'thing', 'person',
             'world', 'life', 'work', 'home', 'family', 'friend', 'love', 'heart', 'mind',
             # Русские существительные
@@ -485,9 +485,13 @@ class HighMathEngine:
             content_words = self._extract_content_words(user_input)
             all_candidates = charged_tokens + content_words
             
-        # Фоллбек если совсем пусто
+        # АНТИ-ШАБЛОННЫЙ ФОЛЛБЕК: только из входящих слов!
         if not all_candidates:
-            all_candidates = ["understand", "know", "think", "feel", "see", "work", "create", "learn"]
+            user_words = user_input.lower().split()
+            if user_words:
+                all_candidates = user_words  # Все слова пользователя
+            else:
+                all_candidates = ["input", "processing"]  # Минимальный fallback
         
         # НОВОЕ: применяем грамматические правила ДО инверсии местоимений
         print(f"[High:Debug] user_words type: {type(user_words)}, content: {user_words}")
