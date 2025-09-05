@@ -157,8 +157,17 @@ Just write me messages - I will learn and adapt!"""
                 else:
                     print(f"[RealTelegramBot] Продолжаем сессию {nicole.nicole_core.session_id}")
             
+            # ДИАГНОСТИКА: проверяем состояние систем перед обработкой
+            print(f"[ДИАГНОСТИКА] High enabled: {nicole.nicole_core.high_enabled}")
+            print(f"[ДИАГНОСТИКА] High is_active: {nicole.nicole_core.high_core.is_active if nicole.nicole_core.high_core else 'None'}")
+            print(f"[ДИАГНОСТИКА] Длина сообщения: {len(user_input)} символов")
+            
             # Process through Nicole with ME principles
             response = nicole.nicole_core.process_message(user_input)
+            
+            # ДИАГНОСТИКА: проверяем результат
+            print(f"[ДИАГНОСТИКА] Длина ответа: {len(response)} символов")
+            print(f"[ДИАГНОСТИКА] Ответ: {response[:100]}...")
             
             # Log response
             self.message_history.append({
