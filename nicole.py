@@ -608,7 +608,7 @@ class H2OTransformer:
         
         # Выбираем слова на основе вероятностей
         response_words = []
-        for _ in range(min(10, len(tokens) + 2)):  # Ограничиваем длину ответа
+        for _ in range(min(20, len(tokens) + 5)):  # Увеличиваем длину ответа для длинных текстов
             # Простой сэмплинг
             r = random.random()
             cumsum = 0
@@ -625,10 +625,12 @@ class H2OTransformer:
                 if memory_words and selected_idx < len(memory_words):
                     response_words.append(memory_words[selected_idx])
                 else:
-                    # Создаем мутацию из входного текста
+                    # ИСПРАВЛЕНО: используем ВСЕ слова из текста, не только начало
                     input_words = input_text.lower().split()
                     if input_words:
-                        mutated_word = input_words[selected_idx % len(input_words)]
+                        # Используем random выбор вместо модуло чтобы не зацикливаться на начале
+                        word_idx = random.randint(0, len(input_words) - 1)
+                        mutated_word = input_words[word_idx]
                         response_words.append(mutated_word)
                     else:
                         response_words.append("...")
