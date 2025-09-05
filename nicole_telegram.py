@@ -143,23 +143,22 @@ Just write me messages - I will learn and adapt!"""
             
             # Create or restore Nicole session
             if chat_id not in self.chat_sessions:
-                nicole_core = nicole.NicoleCore()
-                nicole_core.start_conversation(f"tg_{chat_id}")
-                self.chat_sessions[chat_id] = nicole_core
-                print(f"[RealTelegramBot] Created NEW Nicole session for {chat_id}")
+                # КРИТИЧНО: используем ГЛОБАЛЬНЫЙ nicole_core, не создаем новый!
+                chat_session_id = f"tg_{chat_id}"
+                nicole.nicole_core.start_conversation(chat_session_id)
+                self.chat_sessions[chat_id] = nicole.nicole_core
+                print(f"[RealTelegramBot] Using GLOBAL Nicole core for {chat_id} - High: {nicole.nicole_core.high_enabled}")
             else:
                 # Проверяем что сессия все еще активна
-                nicole_session = self.chat_sessions[chat_id]
                 expected_session = f"tg_{chat_id}"
-                if not nicole_session.session_id or nicole_session.session_id != expected_session:
+                if not nicole.nicole_core.session_id or nicole.nicole_core.session_id != expected_session:
                     print(f"[RealTelegramBot] ВОССТАНАВЛИВАЕМ сессию {expected_session} - была потеряна!")
-                    nicole_session.start_conversation(expected_session)
+                    nicole.nicole_core.start_conversation(expected_session)
                 else:
-                    print(f"[RealTelegramBot] Продолжаем сессию {nicole_session.session_id}")
+                    print(f"[RealTelegramBot] Продолжаем сессию {nicole.nicole_core.session_id}")
             
             # Process through Nicole with ME principles
-            nicole_session = self.chat_sessions[chat_id]
-            response = nicole_session.process_message(user_input)
+            response = nicole.nicole_core.process_message(user_input)
             
             # Log response
             self.message_history.append({
