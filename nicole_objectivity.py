@@ -115,16 +115,13 @@ class NicoleObjectivity:
         Формируем единое текстовое окно (или ничего, если контента нет).
         """
         strategies = self._pick_strategies(user_message)
-        print(f"[Objectivity:DEBUG] Сообщение: '{user_message}' -> стратегии: {strategies}")
 
         sections: List[str] = []
 
         # УБРАНО: Wikipedia провайдер полностью удален
 
         if 'internet' in strategies:
-            print(f"[Objectivity:DEBUG] Запускаю internet поиск для: '{user_message}'")
             internet_text = self._provider_internet_h2o(user_message)
-            print(f"[Objectivity:DEBUG] Internet результат: {len(internet_text) if internet_text else 0} символов")
             if internet_text:
                 sections.append(internet_text)
 
@@ -515,17 +512,11 @@ h2o_metric("internet_results_count", len(objectivity_results_internet))
 """
         
         try:
-            print(f"[Objectivity:Internet:DEBUG] Запуск H2O скрипта для запроса: '{query}'")
             self.h2o_engine.run_transformer_script(code, script_id)
             g = self.h2o_engine.executor.active_transformers.get(script_id, {}).get("globals", {})
             raw = g.get("objectivity_results_internet") or []
-            print(f"[Objectivity:Internet] H2O результат: {len(raw)} записей")
-            if raw:
-                print(f"[Objectivity:Internet:DEBUG] Первый результат: {str(raw[0])[:100]}...")
         except Exception as e:
             print(f"[Objectivity:Internet:ERROR] H2O script failed: {e}")
-            import traceback
-            traceback.print_exc()
             raw = []
 
         lines: List[str] = []
