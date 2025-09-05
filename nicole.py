@@ -1113,13 +1113,97 @@ class NicoleCore:
             self._last_objectivity_context = ""
             return "", []
     
+    def _get_objectivity_context_sync(self, user_input: str) -> Tuple[str, List[str]]:
+        """Синхронная версия получения objectivity контекста"""
+        try:
+            # Получаем текущие метрики
+            metrics = {
+                'perplexity': 2.0,
+                'entropy': 1.5, 
+                'resonance': 0.5
+            }
+            if self.current_transformer and self.current_transformer.current_metrics:
+                m = self.current_transformer.current_metrics
+                if m.perplexity > 0:
+                    metrics = {
+                        'perplexity': m.perplexity,
+                        'entropy': m.entropy, 
+                        'resonance': m.resonance
+                    }
+            
+            # СИНХРОННЫЙ вызов objectivity без async
+            import nicole_objectivity
+            obj = nicole_objectivity.NicoleObjectivity()
+            
+            # Создаем контекст синхронно (убираем await)
+            strategies = obj._pick_strategies(user_input)
+            sections = []
+            
+            if 'internet' in strategies:
+                internet_text = obj._provider_internet_h2o(user_input)
+                if internet_text:
+                    sections.append(internet_text)
+            
+            if 'memory' in strategies:
+                mem_text = obj._provider_memory_h2o(user_input)
+                if mem_text:
+                    sections.append(mem_text)
+            
+            aggregated = obj._aggregate_text_window(sections)
+            
+            if aggregated:
+                # Создаем window
+                from nicole_objectivity import FluidContextWindow
+                window = FluidContextWindow(
+                    content=aggregated,
+                    source_type="objectivity",
+                    resonance_score=0.85,
+                    entropy_boost=0.25,
+                    tokens_count=len(aggregated.split()),
+                    creation_time=time.time(),
+                    script_id=f"objectivity_{int(time.time()*1000)}",
+                    title="OBJECTIVITY"
+                )
+                context = obj.format_context_for_nicole([window])
+                response_seeds = obj.extract_response_seeds(context, 0.5)
+                
+                if context:
+                    print(f"[Nicole:Objectivity] ✅ SYNC Контекст: {len(context)} символов, семена: {len(response_seeds)}")
+                else:
+                    print(f"[Nicole:Objectivity] ❌ SYNC Контекст пустой! Семена: {len(response_seeds)}")
+                
+                return context, response_seeds
+            else:
+                print(f"[Nicole:Objectivity] ❌ SYNC Нет данных от провайдеров")
+                return "", []
+                
+        except Exception as e:
+            print(f"[Nicole:Objectivity:SYNC:ERROR] {e}")
+            import traceback
+            traceback.print_exc()
+            return "", []
+    
     def _generate_me_enhanced_response(self, user_input: str, resonant_word: str) -> str:
         """Генерирует ответ на основе принципов ME + Objectivity"""
         try:
             # Получаем объективный контекст асинхронно
             import asyncio
             try:
-                context, objectivity_seeds = asyncio.run(self._get_objectivity_context(user_input))
+                # ИСПРАВЛЕНО: используем await вместо asyncio.run() внутри event loop
+                import asyncio
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # Создаем task в существующем loop
+                    task = asyncio.create_task(self._get_objectivity_context(user_input))
+                    # Ждем результат синхронно (не блокируя основной поток)
+                    context, objectivity_seeds = "", []
+                    try:
+                        # Простое решение - делаем синхронную версию
+                        context, objectivity_seeds = self._get_objectivity_context_sync(user_input)
+                    except:
+                        context, objectivity_seeds = "", []
+                else:
+                    context, objectivity_seeds = asyncio.run(self._get_objectivity_context(user_input))
             except Exception as e:
                 print(f"[Nicole:Objectivity:ERROR] Ошибка получения контекста: {e}")
                 context, objectivity_seeds = "", []
