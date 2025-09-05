@@ -853,17 +853,20 @@ class NicoleCore:
     
     def activate_high_system(self):
         """Активация High математической системы"""
-        if HIGH_AVAILABLE and self.high_core and activate_high_system():
-            self.high_enabled = True
-            print("[Nicole] High система (Julia) активирована ✅")
-            return True
+        if HIGH_AVAILABLE and self.high_core:
+            # Вызываем глобальную функцию активации из high.py
+            from high import activate_high_system as high_activate_func
+            if high_activate_func():
+                self.high_enabled = True
+                print("[Nicole] High система (Julia) активирована ✅")
+                return True
+        
+        self.high_enabled = False
+        if not HIGH_AVAILABLE:
+            print("[Nicole] High система недоступна - импорт не удался ❌")
         else:
-            self.high_enabled = False
-            if not HIGH_AVAILABLE:
-                print("[Nicole] High система недоступна - импорт не удался ❌")
-            else:
-                print("[Nicole] High система недоступна - активация не удалась ❌")
-            return False
+            print("[Nicole] High система недоступна - активация не удалась ❌")
+        return False
     
     def optimize_with_julia(self, text: str, current_metrics: dict) -> dict:
         """Оптимизация через Julia математику"""
@@ -1046,7 +1049,7 @@ class NicoleCore:
             # КРИТИЧНО: Автоматически завершаем шаблонную фазу после 2-3 сообщений!
             if self.conversation_count >= 3:
                 self._mark_template_phase_completed()
-                print(f"[Nicole:Template] Шаблонная фаза ЗАВЕРШЕНА после {self.conversation_count} сообщений - переходим на objectivity!")
+                print(f"[Nicole:Objectivity] Activating dynamic context after {self.conversation_count} messages")
             
             return response
     
@@ -1105,7 +1108,7 @@ class NicoleCore:
             # Combine ME candidates with Objectivity seeds
             all_candidates = list(set(candidates_50 + candidates_70 + objectivity_seeds))
             
-            # АНТИ-ШАБЛОННАЯ ЛОГИКА: только из памяти или пользователя!
+            # ANTI-TEMPLATE LOGIC: only from memory or user input!
             if not all_candidates:
                 # Берем слова из памяти или создаем мутацию из входа пользователя
                 user_words = user_input.lower().split()
@@ -1214,7 +1217,7 @@ class NicoleCore:
             return False
     
     def _mark_template_phase_completed(self, user_id: str = None):
-        """Отмечает что шаблонная фаза завершена для юзера"""
+        """Marks template phase as completed for user"""
         if not user_id:
             user_id = self.session_id.replace("tg_", "") if self.session_id else "unknown"
             
@@ -1224,9 +1227,9 @@ class NicoleCore:
             cursor.execute("UPDATE user_first_contact SET template_phase_completed = 1 WHERE user_id = ?", (user_id,))
             conn.commit()
             conn.close()
-            print(f"[Nicole] Шаблонная фаза завершена для {user_id}")
+            print(f"[Nicole] Template phase completed for {user_id}")
         except Exception as e:
-            print(f"[Nicole] Ошибка завершения шаблонной фазы: {e}")
+            print(f"[Nicole] Template phase completion error: {e}")
     
     def _update_user_message_count(self, user_id: str = None):
         """Обновляет счетчик сообщений пользователя в SQLite"""
@@ -1248,7 +1251,7 @@ class NicoleCore:
     
     def _generate_simple_response(self, user_input: str) -> str:
         """
-        АНТИ-ШАБЛОННАЯ генерация: только живая мутация из памяти и слов пользователя!
+        ANTI-TEMPLATE generation: only living mutation from memory and user words!
         NO TEMPLATES! ONLY EVOLUTION!
         """
         # Берем слова пользователя для мутации
