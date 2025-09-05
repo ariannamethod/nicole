@@ -773,6 +773,10 @@ class NicoleCore:
         self.high_core = get_high_core()
         self.high_enabled = False
         
+        # КРИТИЧНО: активируем системы сразу при создании экземпляра!
+        self.activate_high_system()
+        self.activate_blood_system()
+        
     def start_conversation(self, session_id: str = None):
         """Начинает новый разговор"""
         if not session_id:
@@ -784,11 +788,8 @@ class NicoleCore:
         # Запускаем H2O сессию
         self.h2o_engine.start_session(session_id)
         
-        # ИСПРАВЛЕНО: Активируем High систему для нормальной генерации
-        self.activate_high_system()
-        
-        # Активируем Blood систему для контроля железа
-        self.activate_blood_system()
+        # Системы уже активированы при создании экземпляра
+        print(f"[Nicole] Системы: High={self.high_enabled}, Blood={self.blood_enabled}")
         
         # Создаем первый трансформер
         self._spawn_new_transformer()
