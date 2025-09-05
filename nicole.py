@@ -138,11 +138,13 @@ except ImportError:
 # Импорт High системы - математический мозг Nicole
 try:
     from high import get_high_core, activate_high_system, deactivate_high_system
+    HIGH_AVAILABLE = True
 except ImportError:
     # Заглушка если High недоступен
+    HIGH_AVAILABLE = False
     def get_high_core(): return None
-    def activate_high_system(): return False
-    def deactivate_high_system(): pass
+    def activate_high_system_fallback(): return False
+    def deactivate_high_system_fallback(): pass
 
 @dataclass
 class ConversationMetrics:
@@ -796,10 +798,17 @@ class NicoleCore:
     
     def activate_high_system(self):
         """Активация High математической системы"""
-        if self.high_core and activate_high_system():
+        if HIGH_AVAILABLE and self.high_core and activate_high_system():
             self.high_enabled = True
+            print("[Nicole] High система (Julia) активирована ✅")
             return True
-        return False
+        else:
+            self.high_enabled = False
+            if not HIGH_AVAILABLE:
+                print("[Nicole] High система недоступна - импорт не удался ❌")
+            else:
+                print("[Nicole] High система недоступна - активация не удалась ❌")
+            return False
     
     def optimize_with_julia(self, text: str, current_metrics: dict) -> dict:
         """Оптимизация через Julia математику"""
@@ -817,9 +826,10 @@ class NicoleCore:
     
     def shutdown_high_system(self):
         """Завершение High системы"""
-        if self.high_core:
+        if HIGH_AVAILABLE and self.high_core:
             deactivate_high_system()
             self.high_enabled = False
+            print("[Nicole] High система деактивирована")
         
     def _spawn_new_transformer(self):
         """Создает новый флюидный трансформер"""
@@ -1038,8 +1048,20 @@ class NicoleCore:
                     user_words, semantic_candidates, objectivity_seeds, entropy, perplexity, user_input
                 )
             else:
-                # Emergency fallback
-                response_words = ["understanding", "your", "message"]
+                # Emergency fallback - РАЗНООБРАЗНЫЕ ответы вместо петли!
+                emergency_responses = [
+                    ["I", "hear", "you"],
+                    ["tell", "me", "more"],
+                    ["interesting", "perspective"],
+                    ["what", "do", "you", "think"],
+                    ["I", "understand"],
+                    ["that", "resonates", "with", "me"],
+                    ["continue", "please"],
+                    ["I", "see", "your", "point"]
+                ]
+                import hashlib
+                response_hash = int(hashlib.md5(user_input.encode()).hexdigest(), 16) % len(emergency_responses)
+                response_words = emergency_responses[response_hash]
             
             # Assemble response
             response = " ".join(response_words)
