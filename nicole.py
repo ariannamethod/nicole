@@ -910,32 +910,32 @@ class NicoleCore:
             self.memory.update_word_frequencies(user_input)
             self.memory.update_bigrams(user_input)
             
-            # УЛУЧШЕННОЕ: добавляем контекст + историю разговора в дообучение!
+            # УЛУЧШЕННОЕ: добавляем контекст в дообучение если есть
             if hasattr(self, '_last_objectivity_context') and self._last_objectivity_context:
                 # Сохраняем контекст
                 self.memory.update_word_frequencies(self._last_objectivity_context)
                 self.memory.update_bigrams(self._last_objectivity_context)
-                
-                # НОВОЕ: расширенная контекстная память
-                if not hasattr(self, '_conversation_history'):
-                    self._conversation_history = []
-                
-                # Добавляем текущее взаимодействие в историю
-                current_interaction = {
-                    'user_input': user_input,
-                    'timestamp': time.time(),
-                    'context_size': len(self._last_objectivity_context),
-                    'resonant_words': []  # Заполним позже
-                }
-                
-                # Ограничиваем историю последними 7 сообщениями для лучшей памяти
-                if len(self._conversation_history) >= 7:
-                    self._conversation_history.pop(0)
-                
-                self._conversation_history.append(current_interaction)
-                
                 print(f"[Nicole:Training] Objectivity контекст {len(self._last_objectivity_context)} символов → дообучение")
-                print(f"[Nicole:Context] История разговора: {len(self._conversation_history)} сообщений")
+                
+            # ВСЕГДА создаем историю разговора для контекста
+            if not hasattr(self, '_conversation_history'):
+                self._conversation_history = []
+            
+            # Добавляем текущее взаимодействие в историю
+            context_size = len(self._last_objectivity_context) if hasattr(self, '_last_objectivity_context') else 0
+            current_interaction = {
+                'user_input': user_input,
+                'timestamp': time.time(),
+                'context_size': context_size,
+                'resonant_words': []  # Заполним позже
+            }
+            
+            # Ограничиваем историю последними 7 сообщениями для лучшей памяти
+            if len(self._conversation_history) >= 7:
+                self._conversation_history.pop(0)
+            
+            self._conversation_history.append(current_interaction)
+            print(f"[Nicole:Context] История разговора: {len(self._conversation_history)} сообщений")
             
             # ME принципы: находим резонантное слово
             resonant_word, resonance_score = ResonanceAnalyzer.find_resonant_word(
@@ -983,15 +983,20 @@ class NicoleCore:
     async def _get_objectivity_context(self, user_input: str) -> Tuple[str, List[str]]:
         """Получает объективный контекст через динамические веса"""
         try:
-            # Получаем текущие метрики
-            metrics = {}
+            # Получаем текущие метрики (с базовыми значениями если метрики еще не рассчитаны)
+            metrics = {
+                'perplexity': 2.0,
+                'entropy': 1.5, 
+                'resonance': 0.5
+            }
             if self.current_transformer and self.current_transformer.current_metrics:
                 m = self.current_transformer.current_metrics
-                metrics = {
-                    'perplexity': m.perplexity,
-                    'entropy': m.entropy, 
-                    'resonance': m.resonance
-                }
+                if m.perplexity > 0:  # Если метрики уже рассчитаны
+                    metrics = {
+                        'perplexity': m.perplexity,
+                        'entropy': m.entropy, 
+                        'resonance': m.resonance
+                    }
             
             # Создаем динамический контекст
             context_windows = await nicole_objectivity.create_dynamic_context(user_input, metrics)
