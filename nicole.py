@@ -1159,85 +1159,50 @@ class NicoleCore:
             print(f"[Nicole] Ошибка обновления счетчика: {e}")
     
     def _generate_simple_response(self, user_input: str) -> str:
-        """Генерирует простой ответ для начального обучения"""
-        # Проверяем первый ли раз видим этого юзера
-        is_first_time = self._is_first_time_user()
-        user_id = self.session_id.replace("tg_", "") if self.session_id else "unknown"
+        """
+        АНТИ-ШАБЛОННАЯ генерация: только живая мутация из памяти и слов пользователя!
+        NO TEMPLATES! ONLY EVOLUTION!
+        """
+        # Берем слова пользователя для мутации
+        user_words = user_input.lower().split()
         
-        if not is_first_time:
-            # Не первый раз - сразу ME смешивание с анти-повтор логикой
-            responses = [
-                "I understand your perspective",
-                "This resonates with me", 
-                "What do you think about this?",
-                "Tell me more about that",
-                "I'm learning from your words",
-                "Your message creates new patterns",
-                "This is interesting territory",
-                "I feel the connection",
-                "That's an intriguing point",
-                "I see the deeper meaning",
-                "Your words spark evolution",
-                "This creates new connections",
-                "I'm processing this insight",
-                "The patterns are shifting",
-                "This resonance is unique",
-                "I'm adapting to your energy"
-            ]
-            
-            # Пытаемся найти неповторяющийся ответ
-            attempts = 0
-            while attempts < 10:
-                input_hash = hash(user_input.lower() + str(attempts))
-                response_idx = input_hash % len(responses)
-                candidate_response = responses[response_idx]
-                
-                # Проверяем на повторы
-                if not self.memory.is_response_repetitive(candidate_response, user_id):
-                    return candidate_response
-                    
-                attempts += 1
-            
-            # Если все повторяются, генерируем уникальный
-            return f"Each moment brings new understanding {random.randint(1,999)}"
+        # Инвертируем местоимения как основа
+        if self.high_enabled and self.high_core:
+            inverted = self.high_core.math_engine.invert_pronouns_me_style(user_words)
+        else:
+            # Простая инверсия без High
+            simple_map = {'you': 'i', 'your': 'my', 'i': 'you', 'my': 'your'}
+            inverted = [simple_map.get(w, w) for w in user_words]
         
-        # REMOVED: template garbage deleted forever
-        # Always use full ME mixing
-            # Dynamic ME responses with anti-repetition
-            responses = [
-                "understanding your perspective completely",
-                "this resonates with my core", 
-                "what do you think about this",
-                "tell me more about that",
-                "learning from your words directly",
-                "your message creates new patterns",
-                "this is interesting territory",
-                "feeling the connection now",
-                "intriguing point you make",
-                "seeing the deeper meaning",
-                "Your words spark evolution",
-                "This creates new connections",
-                "I'm processing this insight",
-                "The patterns are shifting",
-                "This resonance is unique",
-                "I'm adapting to your energy"
-            ]
+        # Добавляем случайные слова из памяти для мутации
+        memory_words = []
+        try:
+            # Берем случайные слова из нашей памяти
+            import random
+            all_memory_words = list(self.memory.word_frequencies.keys())
+            if all_memory_words:
+                memory_words = random.sample(all_memory_words, min(3, len(all_memory_words)))
+        except:
+            memory_words = ['understand', 'think', 'feel']
+        
+        # ЖИВАЯ МУТАЦИЯ: смешиваем инвертированные слова пользователя + память
+        response_words = inverted[:2] + memory_words + inverted[2:]
+        
+        # Убираем дубли сохраняя порядок  
+        seen = set()
+        unique_words = []
+        for w in response_words:
+            if w not in seen and len(w) > 1:
+                seen.add(w)
+                unique_words.append(w)
+        
+        # Ограничиваем длину для естественности
+        if len(unique_words) > 8:
+            unique_words = unique_words[:8]
+        elif len(unique_words) < 3:
+            unique_words.extend(['understand', 'you'])
             
-            # Пытаемся найти неповторяющийся ответ
-            attempts = 0
-            while attempts < 10:
-                input_hash = hash(user_input.lower() + str(attempts))
-                response_idx = input_hash % len(responses)
-                candidate_response = responses[response_idx]
-                
-                # Проверяем на повторы
-                if not self.memory.is_response_repetitive(candidate_response, user_id):
-                    return candidate_response
-                    
-                attempts += 1
-            
-            # Если все повторяются, генерируем уникальный
-            return f"Each moment brings new understanding {random.randint(1,999)}"
+        return ' '.join(unique_words) + '.'
         
     def _update_metrics(self, user_input: str, response: str):
         """Обновляет метрики разговора"""
