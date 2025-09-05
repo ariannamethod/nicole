@@ -271,7 +271,7 @@ class NicoleTelegramInterface:
             return response
             
         except Exception as e:
-            error_msg = f"Processing error: {e}"
+                            error_msg = f"Error: {e}"
             print(f"[NicoleTelegram:ERROR] {error_msg}")
             return "Sorry, an error occurred. Please try again."
             
