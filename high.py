@@ -21,7 +21,7 @@ import threading
 import time
 import math
 import random
-import numpy as np
+# import numpy as np  # УБРАНО: заменено на стандартную библиотеку
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Union, Tuple
 import json
@@ -190,16 +190,16 @@ class HighMathEngine:
             
         return False
     
-    def calculate_resonance_matrix(self, words: List[str]) -> np.ndarray:
+    def calculate_resonance_matrix(self, words: List[str]) -> List[List[float]]:
         """
         Вычисление матрицы резонанса между словами
         Для оптимизации трансформеров
         """
         if not words:
-            return np.array([])
+            return []
             
         n = len(words)
-        resonance_matrix = np.zeros((n, n))
+        resonance_matrix = [[0.0 for _ in range(n)] for _ in range(n)]
         
         # Быстрое вычисление семантических дистанций
         for i, word1 in enumerate(words):
