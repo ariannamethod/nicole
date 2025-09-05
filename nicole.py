@@ -1030,14 +1030,14 @@ class NicoleCore:
             # Combine ME candidates with Objectivity seeds
             all_candidates = list(set(candidates_50 + candidates_70 + objectivity_seeds))
             
-            # Enhanced candidate logic: smart language mixing
+            # АНТИ-ШАБЛОННАЯ ЛОГИКА: только из памяти или пользователя!
             if not all_candidates:
-                # Base candidates for initial learning
-                all_candidates = [
-                    "understand", "interesting", "think", "know", "feel",
-                    "good", "clear", "agree", "see", "listen",
-                    "understand", "resonate", "learn", "feel", "think"
-                ]
+                # Берем слова из памяти или создаем мутацию из входа пользователя
+                user_words = user_input.lower().split()
+                if user_words:
+                    all_candidates = user_words[:5]  # Первые 5 слов пользователя
+                else:
+                    all_candidates = ["processing", "input"]  # Минимальный fallback
             
             if not all_candidates:
                 # Simple fallback responses
@@ -1069,7 +1069,7 @@ class NicoleCore:
                     # Берем слова пользователя + простая инверсия местоимений
                     simple_map = {'you': 'i', 'your': 'my', 'i': 'you', 'my': 'your'}
                     inverted = [simple_map.get(w, w) for w in user_words[:4]]  # Только первые 4 слова
-                    response_words = inverted + ["understand"]
+                    response_words = inverted + ["processing"]
                 else:
                     # Совсем крайний случай
                     response_words = ["processing", "input"]
@@ -1196,7 +1196,9 @@ class NicoleCore:
             if all_memory_words:
                 memory_words = random.sample(all_memory_words, min(3, len(all_memory_words)))
         except:
-            memory_words = ['understand', 'think', 'feel']
+            # АНТИ-ШАБЛОННЫЙ FALLBACK: только из слов пользователя
+            user_words = user_input.lower().split()
+            memory_words = user_words[:3] if user_words else ["input", "processing"]
         
         # ЖИВАЯ МУТАЦИЯ: смешиваем инвертированные слова пользователя + память
         response_words = inverted[:2] + memory_words + inverted[2:]
@@ -1213,7 +1215,12 @@ class NicoleCore:
         if len(unique_words) > 8:
             unique_words = unique_words[:8]
         elif len(unique_words) < 3:
-            unique_words.extend(['understand', 'you'])
+            # АНТИ-ШАБЛОННЫЙ FALLBACK: добавляем слова из входа пользователя
+            user_words = user_input.lower().split()
+            if user_words:
+                unique_words.extend(user_words[:2])
+            else:
+                unique_words.extend(['processing', 'input'])
             
         return ' '.join(unique_words) + '.'
         
