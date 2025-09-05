@@ -44,21 +44,41 @@ class HighMathEngine:
         
     def vectorized_entropy(self, text_data: List[str]) -> float:
         """
-        Векторизованное вычисление энтропии текста
-        В 100x быстрее чем Python циклы
+        Векторизованное вычисление энтропии текста + эмоциональные веса
+        В 100x быстрее чем Python циклы + эмоциональный анализ
         """
         if not text_data:
             return 0.0
             
-        # Быстрый подсчет частот через numpy
+        # НОВОЕ: эмоциональные веса слов для Julia математики
+        emotional_weights = {
+            # Позитивные эмоции
+            'great': 0.8, 'love': 0.9, 'amazing': 0.7, 'wonderful': 0.8, 'excellent': 0.7,
+            'beautiful': 0.8, 'fantastic': 0.7, 'awesome': 0.8, 'perfect': 0.7, 'brilliant': 0.8,
+            'happy': 0.7, 'joy': 0.8, 'excited': 0.7, 'delighted': 0.8, 'pleased': 0.6,
+            # Негативные эмоции  
+            'terrible': -0.8, 'hate': -0.9, 'awful': -0.7, 'horrible': -0.8, 'disgusting': -0.9,
+            'sad': -0.6, 'angry': -0.7, 'frustrated': -0.6, 'disappointed': -0.6, 'upset': -0.6,
+            # Нейтральные важные
+            'important': 0.5, 'interesting': 0.5, 'significant': 0.5, 'special': 0.6, 'unique': 0.6,
+            # Русские эмоциональные
+            'отлично': 0.8, 'классно': 0.7, 'супер': 0.8, 'круто': 0.7, 'прекрасно': 0.8, 'здорово': 0.7,
+            'ужасно': -0.8, 'плохо': -0.6, 'грустно': -0.6, 'злой': -0.7, 'расстроен': -0.6
+        }
+        
+        # Быстрый подсчет частот + эмоциональный анализ
         word_counts = {}
         total_words = 0
+        emotional_score = 0.0
         
         for text in text_data:
             words = text.lower().split()
             total_words += len(words)
             for word in words:
                 word_counts[word] = word_counts.get(word, 0) + 1
+                # Накапливаем эмоциональный вес
+                if word in emotional_weights:
+                    emotional_score += emotional_weights[word]
         
         if total_words == 0:
             return 0.0
@@ -69,8 +89,106 @@ class HighMathEngine:
             probability = count / total_words
             if probability > 0:
                 entropy -= probability * math.log2(probability)
+        
+        # НОВОЕ: модифицируем энтропию эмоциональным весом
+        emotional_modifier = 1.0 + (emotional_score / max(total_words, 1)) * 0.2
+        enhanced_entropy = entropy * emotional_modifier
+        
+        if emotional_score != 0:
+            print(f"[High:Emotion] Эмоциональный скор: {emotional_score:.2f}, модификатор: {emotional_modifier:.2f}")
+        
+        return enhanced_entropy
+    
+    def _apply_final_grammar_rules(self, words: List[str]) -> List[str]:
+        """
+        ФИНАЛЬНЫЕ грамматические правила для готового ответа
+        I + глагол (am/have/can/will), your + существительное/весовое слово
+        """
+        if not words:
+            return words
+            
+        result = words.copy()
+        
+        # Глаголы для вставки после I
+        verbs_for_i = ['am', 'have', 'can', 'will', 'think', 'know', 'feel', 'want', 'see']
+        
+        # Существительные и весовые слова для вставки после your
+        nouns_and_weights = [
+            'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
+            'knowledge', 'experience', 'understanding', 'perspective', 'approach', 'style',
+            'amazing', 'great', 'wonderful', 'interesting', 'important', 'special'
+        ]
+        
+        i = 0
+        while i < len(result):
+            current_word = result[i] if i < len(result) else ""
+            next_word = result[i + 1] if i + 1 < len(result) else ""
+            
+            # Правило: I + НЕ_глагол → вставляем глагол
+            if current_word.lower() == 'i' and i + 1 < len(result):
+                next_lower = next_word.lower()
+                if next_lower not in ['am', 'have', 'can', 'will', 'think', 'know', 'feel', 'want', 'see', 'love', 'like', 'need', 'do']:
+                    verb = random.choice(verbs_for_i)
+                    result.insert(i + 1, verb)
+                    print(f"[High:Grammar] Вставлен глагол после I: '{verb}'")
+                    i += 1  # Пропускаем вставленный глагол
+                    
+            # Правило: your + НЕ_существительное → вставляем существительное
+            elif current_word.lower() == 'your' and i + 1 < len(result):
+                next_lower = next_word.lower()
+                # Проверяем, что следующее слово не является уже хорошим существительным
+                if not self._is_good_noun_after_your(next_lower):
+                    noun = random.choice(nouns_and_weights)
+                    result.insert(i + 1, noun)
+                    print(f"[High:Grammar] Вставлено существительное после your: '{noun}'")
+                    i += 1  # Пропускаем вставленное существительное
+                    
+            # ДОПОЛНИТЕЛЬНО: правило для одиночных I и your в конце
+            elif current_word.lower() == 'i' and i + 1 >= len(result):
+                verb = random.choice(verbs_for_i)
+                result.append(verb)
+                print(f"[High:Grammar] Добавлен глагол после I в конце: '{verb}'")
                 
-        return entropy
+            elif current_word.lower() == 'your' and i + 1 >= len(result):
+                noun = random.choice(nouns_and_weights)
+                result.append(noun)
+                print(f"[High:Grammar] Добавлено существительное после your в конце: '{noun}'")
+                    
+            i += 1
+            
+        return result
+    
+    def _is_good_noun_after_your(self, word: str) -> bool:
+        """
+        Проверяет, подходит ли слово после 'your'
+        """
+        if not word:
+            return False
+            
+        # Хорошие существительные после your
+        good_nouns = {
+            'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
+            'knowledge', 'experience', 'understanding', 'perspective', 'approach', 'style',
+            'system', 'process', 'method', 'way', 'time', 'place', 'world', 'life', 'work',
+            'family', 'friend', 'love', 'heart', 'mind', 'body', 'soul', 'voice', 'face',
+            # Русские
+            'память', 'способности', 'возможности', 'мысли', 'идеи', 'слова', 'опыт', 'знания'
+        }
+        
+        # Если в списке хороших существительных
+        if word in good_nouns:
+            return True
+            
+        # Если заглавное (имя собственное)
+        if word and word[0].isupper():
+            return True
+            
+        # Если с суффиксами существительных
+        noun_suffixes = ['ness', 'tion', 'sion', 'ment', 'ity', 'er', 'or']
+        if any(word.endswith(suffix) for suffix in noun_suffixes):
+            return True
+            
+        return False
     
     def calculate_resonance_matrix(self, words: List[str]) -> np.ndarray:
         """
@@ -175,6 +293,33 @@ class HighMathEngine:
             
         return result
     
+    def _improve_sentence_flow(self, words: List[str]) -> List[str]:
+        """
+        Улучшает связность предложений - убирает "===" и добавляет естественные переходы
+        """
+        if not words:
+            return words
+            
+        result = []
+        for i, word in enumerate(words):
+            # Убираем "===" и заменяем на связующие слова
+            if word == "===":
+                if i > 0 and i < len(words) - 1:  # Не в начале/конце
+                    # Заменяем на случайное связующее слово
+                    connectors = ["and", "with", "through", "about", "like"]
+                    result.append(random.choice(connectors))
+                # Если в начале/конце - просто пропускаем
+            else:
+                result.append(word)
+        
+        # Улучшаем капитализацию первого слова после точки/запятой
+        for i in range(len(result)):
+            if i == 0 or (i > 0 and result[i-1] in [".", "!", "?"]):
+                if result[i] and result[i][0].islower():
+                    result[i] = result[i].capitalize()
+        
+        return result
+    
     def remove_word_repetitions(self, words: List[str]) -> List[str]:
         """
         АНТИ-ПОВТОР ЛОГИКА: убирает повторяющиеся слова из ответа
@@ -228,8 +373,94 @@ class HighMathEngine:
                 result[i + 1] = 'are'
             elif current == 'i' and next_word in ['is', 'are']:
                 result[i + 1] = 'am'
+        
+        # НОВОЕ: Продвинутые грамматические правила
+        result = self._apply_advanced_grammar_rules(result)
                 
         return result
+    
+    
+    def _apply_advanced_grammar_rules(self, words: List[str]) -> List[str]:
+        """
+        Продвинутые грамматические правила для естественности
+        I + глагол (am/are/have/do), your + существительное/весовое слово
+        """
+        if not words:
+            return words
+            
+        result = words.copy()
+        
+        # Глаголы для вставки после I
+        verbs_for_i = ['am', 'have', 'can', 'will', 'do', 'think', 'know', 'see', 'feel', 'want']
+        
+        # Существительные и весовые слова для вставки после your
+        nouns_and_weights = [
+            'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
+            'knowledge', 'experience', 'understanding', 'perspective', 'approach', 'style',
+            'amazing', 'great', 'wonderful', 'interesting', 'important', 'special', 'unique'
+        ]
+        
+        i = 0
+        while i < len(result) - 1:
+            current = result[i].lower()
+            next_word = result[i + 1].lower() if i + 1 < len(result) else ""
+            
+            # Правило: I + НЕ_глагол → вставляем глагол
+            if current == 'i' and next_word not in ['am', 'are', 'have', 'can', 'will', 'do', 'think', 'know', 'see', 'feel', 'want', 'love', 'like', 'need']:
+                # Выбираем подходящий глагол
+                verb = random.choice(verbs_for_i)
+                result.insert(i + 1, verb)
+                print(f"[High:Grammar] Вставлен глагол после I: '{verb}'")
+                i += 1  # Пропускаем вставленный глагол
+                
+            # Правило: your + НЕ_существительное → вставляем существительное
+            elif current == 'your' and next_word not in nouns_and_weights:
+                # Проверяем, что следующее слово не является уже существительным
+                if not self._is_likely_noun(next_word):
+                    noun = random.choice(nouns_and_weights)
+                    result.insert(i + 1, noun)
+                    print(f"[High:Grammar] Вставлено существительное после your: '{noun}'")
+                    i += 1  # Пропускаем вставленное существительное
+                    
+            i += 1
+            
+        return result
+    
+    def _is_likely_noun(self, word: str) -> bool:
+        """
+        Проверяет, является ли слово вероятным существительным
+        """
+        if not word:
+            return False
+            
+        # Список распространенных существительных
+        common_nouns = {
+            'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
+            'knowledge', 'experience', 'understanding', 'perspective', 'approach', 'style',
+            'system', 'process', 'method', 'way', 'time', 'place', 'thing', 'person',
+            'world', 'life', 'work', 'home', 'family', 'friend', 'love', 'heart', 'mind',
+            # Русские существительные
+            'память', 'способности', 'возможности', 'мысли', 'идеи', 'слова', 'вопросы',
+            'знания', 'опыт', 'понимание', 'подход', 'стиль', 'система', 'процесс'
+        }
+        
+        # Эвристики для определения существительных
+        word_lower = word.lower()
+        
+        # Если в списке известных существительных
+        if word_lower in common_nouns:
+            return True
+            
+        # Если заканчивается на типичные суффиксы существительных
+        noun_suffixes = ['ness', 'tion', 'sion', 'ment', 'ity', 'ism', 'er', 'or', 'ing']
+        if any(word_lower.endswith(suffix) for suffix in noun_suffixes):
+            return True
+            
+        # Если начинается с заглавной буквы (имя собственное)
+        if word[0].isupper() and len(word) > 1:
+            return True
+            
+        return False
     
     def generate_linguistically_agnostic_response(self, user_words: List[str], semantic_candidates: List[str], 
                                                  objectivity_seeds: List[str], entropy: float, perplexity: float, 
@@ -258,8 +489,12 @@ class HighMathEngine:
         if not all_candidates:
             all_candidates = ["understand", "know", "think", "feel", "see", "work", "create", "learn"]
         
+        # НОВОЕ: применяем грамматические правила ДО инверсии местоимений
+        print(f"[High:Debug] user_words type: {type(user_words)}, content: {user_words}")
+        grammar_corrected = self._apply_final_grammar_rules(user_words)
+        
         # Инвертированные местоимения как приоритет (принцип ME)
-        inverted_pronouns = self.invert_pronouns_me_style(user_words)
+        inverted_pronouns = self.invert_pronouns_me_style(grammar_corrected)
         pronoun_preferences = [w for w in inverted_pronouns if w in ['i', 'you', 'я', 'ты', 'my', 'мой', 'меня', 'мне']]
         
         # Добавляем базовые местоимения если нет инверсии
@@ -281,11 +516,24 @@ class HighMathEngine:
             all_candidates, base2, used_between_sentences, pronoun_preferences
         )
         
-        # ME ПРИНЦИП: два предложения с точкой между ними
-        result = first_sentence + ["."] + second_sentence
+        # ME ПРИНЦИП: два предложения с улучшенной связностью
+        # Добавляем связующие слова между предложениями
+        connectors = ["and", "but", "also", "then", "while", "because", "so", "yet"]
+        connector = random.choice(connectors) if len(first_sentence) > 2 and len(second_sentence) > 2 else ""
+        
+        if connector:
+            result = first_sentence + [",", connector] + second_sentence
+        else:
+            result = first_sentence + ["."] + second_sentence
         
         # Убираем повторы внутри итогового ответа
-        return self.remove_word_repetitions(result)
+        cleaned = self.remove_word_repetitions(result)
+        
+        # НОВОЕ: улучшаем sentence flow
+        flow_improved = self._improve_sentence_flow(cleaned)
+        
+        # УБИРАЕМ: грамматические правила применяются раньше в процессе
+        return flow_improved
     
     def _generate_sentence_me_style(self, candidates: List[str], length: int, 
                                    used_global: set, pronouns: List[str]) -> List[str]:
