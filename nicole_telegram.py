@@ -21,8 +21,20 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import h2o
-import high  # КРИТИЧНО: импортируем high ДО nicole!
-import blood  # КРИТИЧНО: импортируем blood ДО nicole!
+
+# КРИТИЧНО: импортируем high и blood с обработкой ошибок
+try:
+    import high
+    print("[TELEGRAM] High импортирован успешно")
+except ImportError as e:
+    print(f"[TELEGRAM] High НЕ импортирован: {e}")
+
+try:
+    import blood
+    print("[TELEGRAM] Blood импортирован успешно") 
+except ImportError as e:
+    print(f"[TELEGRAM] Blood НЕ импортирован: {e}")
+
 import nicole
 import nicole2nicole  
 import nicole_memory
