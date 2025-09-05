@@ -347,14 +347,14 @@ async def run_python(code: str) -> Tuple[str, str | None]:
 
 async def run_shell(command: str) -> Tuple[str, str | None]:
     """Execute a shell ``command`` and return its output."""
-    print("выполняется...")
+    # Executing command silently
     output, rc, duration = await run_command(command)
     if output:
         if rc != 0:
             print(color(output, SETTINGS.red))
         else:
             print(output)
-    status = f"код возврата: {rc}, длительность: {duration:.2f}s"
+    status = f"exit code: {rc}, duration: {duration:.2f}s"
     if rc != 0:
         print(color(status, SETTINGS.red))
         log_error(f"{command} | {status} | {output}")
