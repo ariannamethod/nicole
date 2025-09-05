@@ -221,6 +221,12 @@ class NicoleMemoryCore:
         conn.close()
         print(f"[NicoleMemory] Загружено {len(self.memory_cache)} воспоминаний")
         
+        # Добавляем совместимость с основной Nicole
+        self.word_frequencies = defaultdict(int)
+        self.bigram_transitions = defaultdict(lambda: defaultdict(int))
+        from nicole_metrics import VerbGraph
+        self.verb_graph = VerbGraph()
+        
     def store_memory(self, content: str, context: str = "", importance: float = 1.0, 
                     associations: List[str] = None) -> str:
         """Сохраняет новое воспоминание"""
@@ -597,6 +603,58 @@ def test_memory_system():
         print(f"- {key}: {value}")
         
     print("\\n=== MEMORY TEST COMPLETED ===")
+
+# === МЕТОДЫ СОВМЕСТИМОСТИ С ОСНОВНОЙ NICOLE ===
+
+def add_compatibility_methods():
+    """Добавляет методы совместимости к NicoleMemoryCore"""
+    
+    def update_word_frequencies(self, text: str):
+        words = text.lower().split()
+        for word in words:
+            self.word_frequencies[word] += 1
+    
+    def update_bigrams(self, text: str):
+        words = text.lower().split()
+        for i in range(len(words) - 1):
+            w1, w2 = words[i], words[i + 1]
+            self.bigram_transitions[w1][w2] += 1
+    
+    def log_conversation(self, session_id: str, user_input: str, nicole_output: str, 
+                        metrics: dict, transformer_config: dict):
+        conversation_content = f"User: {user_input} | Nicole: {nicole_output}"
+        self.store_memory(content=conversation_content, context=f"Session: {session_id}", importance=1.0)
+        self.update_word_frequencies(user_input)
+        self.update_word_frequencies(nicole_output)
+        self.update_bigrams(user_input)
+        self.update_bigrams(nicole_output)
+    
+    def log_transformer_lifecycle(self, transformer_id: str, session_id: str, architecture: dict, creation_time: float, death_time: float = None):
+        action = "died" if death_time else "created"
+        lifecycle_content = f"Transformer {transformer_id} {action}"
+        self.store_memory(content=lifecycle_content, context=f"Session: {session_id}", importance=0.8)
+    
+    def is_response_repetitive(self, response: str, threshold: float = 0.8) -> bool:
+        return False
+    
+    def get_semantic_candidates(self, word: str, limit: int = 10) -> List[str]:
+        """Получает семантические кандидаты (совместимость)"""
+        # Простая заглушка на основе ассоциаций
+        candidates = []
+        if word in self.associative_network.associations:
+            candidates = list(self.associative_network.associations[word].keys())[:limit]
+        return candidates if candidates else [word]
+    
+    # Добавляем методы к классу
+    NicoleMemoryCore.update_word_frequencies = update_word_frequencies
+    NicoleMemoryCore.update_bigrams = update_bigrams
+    NicoleMemoryCore.log_conversation = log_conversation
+    NicoleMemoryCore.log_transformer_lifecycle = log_transformer_lifecycle
+    NicoleMemoryCore.is_response_repetitive = is_response_repetitive
+    NicoleMemoryCore.get_semantic_candidates = get_semantic_candidates
+
+# Автоматически добавляем совместимость
+add_compatibility_methods()
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "test":
