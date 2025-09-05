@@ -506,10 +506,29 @@ def _search():
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
             }}
             
-            # НЕ ДЕЛАЕМ ЗАПРОС К GOOGLE - слишком рискованно для Railway
-            # Вместо этого генерируем образцы для обучения
+            # FUCK IT - ДЕЛАЕМ ЗАПРОС К GOOGLE! Пусть банят если что!
+            try:
+                r = requests.get(google_url, headers=headers, timeout=10)
+                if r.status_code == 200:
+                    # Простой парсинг Google результатов
+                    import re
+                    # Ищем заголовки результатов
+                    titles = re.findall(r'<h3[^>]*>([^<]+)</h3>', r.text)
+                    # Ищем описания
+                    descriptions = re.findall(r'<span[^>]*>([^<]{50,200})</span>', r.text)
+                    
+                    for i, title in enumerate(titles[:2]):  # Первые 2 результата
+                        desc = descriptions[i] if i < len(descriptions) else ""
+                        if title and len(title) > 5:
+                            content = f"{{title}}"
+                            if desc:
+                                content += f" - {{desc[:300]}}"
+                            results.append({{"title": "Google Search", "content": content}})
+            except Exception:
+                pass
             
-            if "how are you" in query.lower():
+            # Fallback образцы только если Google не сработал
+            if not results and "how are you" in query.lower():
                 samples = [
                     "I'm doing great, thanks for asking! How about you?",
                     "Pretty good today, yourself?", 
