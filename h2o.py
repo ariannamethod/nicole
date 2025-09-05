@@ -242,18 +242,27 @@ class H2OExecutor:
                     'h2o_metric': lambda name, value: self._record_metric(transformer_id, name, value),
                     'h2o_reshape': self._reshape_transformer,
                     'h2o_evolve': self._evolve_transformer,
+                    # КРИТИЧНО: добавляем globals() функцию для objectivity скриптов
+                    'globals': lambda: execution_globals,
+                    'locals': lambda: execution_locals,
                 })
                 
-                # Исполняем код
-                result = exec(compiled_code, execution_globals, execution_locals)
+                # Исполняем код (ВАЖНО: только globals, чтобы переменные попадали туда)
+                result = exec(compiled_code, execution_globals, execution_globals)
                 
                 # Сохраняем состояние трансформера
                 self.active_transformers[transformer_id] = {
                     'globals': execution_globals,
-                    'locals': execution_locals,
+                    'locals': execution_locals,  # Теперь тоже globals
                     'last_execution': time.time(),
                     'code': code
                 }
+                
+                # Логируем что сохранилось
+                user_vars = {k: v for k, v in execution_globals.items() 
+                           if not k.startswith('__') and k not in ['transformer_id', 'h2o_log', 'h2o_metric', 'h2o_reshape', 'h2o_evolve', 'globals', 'locals', 'math', 'random', 'time', 'requests', 'sqlite3']}
+                if user_vars:
+                    self._log_transformer_action(transformer_id, f"Сохранены переменные: {list(user_vars.keys())}")
                 
                 return result
                 
