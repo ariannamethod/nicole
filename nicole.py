@@ -150,9 +150,11 @@ from blood import get_blood_core, activate_blood_system as blood_activate, deact
 try:
     from high import get_high_core, activate_high_system, deactivate_high_system
     HIGH_AVAILABLE = True
-except ImportError:
+    print("[ДИАГНОСТИКА:IMPORT] High система импортирована успешно ✅")
+except ImportError as e:
     # Заглушка если High недоступен
     HIGH_AVAILABLE = False
+    print(f"[ДИАГНОСТИКА:IMPORT] High система НЕ ИМПОРТИРОВАНА: {e} ❌")
     def get_high_core(): return None
     def activate_high_system_fallback(): return False
     def deactivate_high_system_fallback(): pass
@@ -774,8 +776,24 @@ class NicoleCore:
         self.high_enabled = False
         
         # КРИТИЧНО: активируем системы сразу при создании экземпляра!
-        self.activate_high_system()
-        self.activate_blood_system()
+        print(f"[ДИАГНОСТИКА:INIT] HIGH_AVAILABLE: {HIGH_AVAILABLE}")
+        print(f"[ДИАГНОСТИКА:INIT] high_core before activation: {self.high_core is not None}")
+        
+        try:
+            result = self.activate_high_system()
+            print(f"[ДИАГНОСТИКА:INIT] activate_high_system result: {result}")
+        except Exception as e:
+            print(f"[ДИАГНОСТИКА:INIT] HIGH ACTIVATION ERROR: {e}")
+            import traceback
+            traceback.print_exc()
+            
+        try:
+            result = self.activate_blood_system()  
+            print(f"[ДИАГНОСТИКА:INIT] activate_blood_system result: {result}")
+        except Exception as e:
+            print(f"[ДИАГНОСТИКА:INIT] BLOOD ACTIVATION ERROR: {e}")
+            import traceback
+            traceback.print_exc()
         
     def start_conversation(self, session_id: str = None):
         """Начинает новый разговор"""
