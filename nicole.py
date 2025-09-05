@@ -606,10 +606,19 @@ class H2OTransformer:
                     selected_idx = i
                     break
                     
-            # Генерируем слово (упрощенно)
-            word_candidates = ["да", "нет", "может", "интересно", "понятно", "хорошо", "плохо", "как", "что", "зачем"]
-            if selected_idx < len(word_candidates):
-                response_words.append(word_candidates[selected_idx])
+            # ЖИВАЯ ГЕНЕРАЦИЯ: берем случайные слова из памяти или создаем мутацию
+            if hasattr(self, 'memory') and self.memory.word_frequencies:
+                memory_words = list(self.memory.word_frequencies.keys())
+                if memory_words and selected_idx < len(memory_words):
+                    response_words.append(memory_words[selected_idx])
+                else:
+                    # Создаем мутацию из входного текста
+                    input_words = input_text.lower().split()
+                    if input_words:
+                        mutated_word = input_words[selected_idx % len(input_words)]
+                        response_words.append(mutated_word)
+                    else:
+                        response_words.append("...")
             else:
                 response_words.append("...")
                 
@@ -963,6 +972,12 @@ class NicoleCore:
             # Обновляем счетчик сообщений в SQLite (чтобы шаблоны не повторялись)
             self._update_user_message_count()
             self.conversation_count += 1
+            
+            # КРИТИЧНО: Автоматически завершаем шаблонную фазу после 2-3 сообщений!
+            if self.conversation_count >= 3:
+                self._mark_template_phase_completed()
+                print(f"[Nicole:Template] Шаблонная фаза ЗАВЕРШЕНА после {self.conversation_count} сообщений - переходим на objectivity!")
+            
             return response
     
     async def _get_objectivity_context(self, user_input: str) -> Tuple[str, List[str]]:
