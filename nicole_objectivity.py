@@ -123,6 +123,11 @@ class NicoleObjectivity:
             if wiki_text:
                 sections.append(wiki_text)
 
+        if 'internet' in strategies:
+            internet_text = self._provider_internet_h2o(user_message)
+            if internet_text:
+                sections.append(internet_text)
+
         if 'reddit' in strategies:
             reddit_text = self._provider_reddit_h2o(user_message)
             if reddit_text:
@@ -180,15 +185,26 @@ class NicoleObjectivity:
     # ---------- Internals ----------
 
     def _pick_strategies(self, message: str) -> List[str]:
-        # Без языковых эвристик. Минималистичные признаки.
+        # ИСПРАВЛЕНО: убираем Wikipedia для служебных слов, добавляем интернет-поиск
         strategies: List[str] = []
-        if re.search(r'\b([A-ZА-Я][a-zа-я]+|[A-ZА-Я]{2,})\b', message):
+        
+        # Wikipedia только для явных имен собственных (заглавные слова > 3 символов)
+        proper_nouns = re.findall(r'\b[A-Z][a-z]{3,}\b', message)
+        if proper_nouns and any(len(noun) > 4 for noun in proper_nouns):
             strategies.append('wikipedia')
-        if re.search(r'\b(python|javascript|neural|ai|quantum|blockchain|programming|algorithm|database)\b', message, re.I):
+        
+        # Интернет-поиск для вопросов и обычных фраз
+        if re.search(r'\b(how|what|why|when|where|who|can|should|will|would|could)\b', message, re.I):
+            strategies.append('internet')
+        elif not proper_nouns:  # Если нет имен собственных - ищем в интернете
+            strategies.append('internet')
+            
+        # Reddit для технических тем
+        if re.search(r'\b(python|javascript|neural|ai|quantum|blockchain|programming|algorithm|database|code|tech)\b', message, re.I):
             strategies.append('reddit')
+            
         # Память всегда полезна
-        if 'memory' not in strategies:
-            strategies.append('memory')
+        strategies.append('memory')
 
         # Дедуп и ограничение
         seen = set()
@@ -425,6 +441,105 @@ h2o_metric("reddit_results_count", len(objectivity_results_reddit))
                 lines.append(f"{header}\n{content}")
 
         return "\n\n".join(lines) if lines else ""
+
+    def _provider_internet_h2o(self, message: str) -> str:
+        """
+        Internet search: контекстный поиск для вопросов типа "how are you"
+        Формирует умные запросы и ищет ответы в интернете
+        """
+        # Формируем контекстный запрос
+        if re.search(r'\b(how|what|why|when|where|who)\b', message, re.I):
+            # Для вопросов делаем "how to answer" или "what does X mean"
+            if 'how are you' in message.lower():
+                query = "how to respond to how are you conversation"
+            elif 'what' in message.lower():
+                query = f"what does mean {message.strip()}"
+            elif 'how' in message.lower():
+                query = f"how to answer {message.strip()}"
+            else:
+                query = f"answer to {message.strip()}"
+        else:
+            # Для обычных сообщений ищем по ключевым словам
+            words = re.findall(r'\b[a-zA-Z]{3,}\b', message)
+            query = ' '.join(words[:4]) if words else message.strip()
+        
+        query = query[:100]  # Ограничиваем длину
+        script_id = f"internet_{int(time.time()*1000)}"
+        
+        code = f"""
+import requests, json, re
+from urllib.parse import quote
+
+UA = {json.dumps(USER_AGENT)}
+
+def _search():
+    query = {json.dumps(query)}
+    results = []
+    
+    try:
+        # Поиск через DuckDuckGo API (без API ключей)
+        url = f"https://api.duckduckgo.com/?q={{quote(query)}}&format=json&no_redirect=1&no_html=1&skip_disambig=1"
+        r = requests.get(url, headers={{"User-Agent": UA}}, timeout=8)
+        
+        if r.status_code == 200:
+            data = r.json()
+            
+            # Берем основной ответ если есть
+            abstract = data.get("Abstract", "").strip()
+            if abstract and len(abstract) > 20:
+                results.append({{"title": data.get("AbstractText", "Answer"), "content": abstract[:800]}})
+            
+            # Берем связанные темы
+            related = data.get("RelatedTopics", [])[:3]
+            for item in related:
+                if isinstance(item, dict):
+                    text = item.get("Text", "").strip()
+                    if text and len(text) > 20:
+                        results.append({{"title": "Related", "content": text[:600]}})
+                        
+    except Exception:
+        pass
+    
+    # Fallback: простой поиск фраз для обучения
+    if not results:
+        try:
+            # Генерируем несколько вариантов ответов для обучения
+            if "how are you" in query.lower():
+                samples = [
+                    "I'm doing well, thanks for asking",
+                    "Pretty good, how about you", 
+                    "Not bad, yourself",
+                    "I'm fine, thank you"
+                ]
+                for sample in samples:
+                    results.append({{"title": "Response pattern", "content": sample}})
+        except Exception:
+            pass
+    
+    return results
+
+objectivity_results_internet = _search()
+h2o_metric("internet_results_count", len(objectivity_results_internet))
+"""
+        
+        try:
+            self.h2o_engine.run_transformer_script(code, script_id)
+            g = self.h2o_engine.executor.active_transformers.get(script_id, {}).get("globals", {})
+            raw = g.get("objectivity_results_internet") or []
+            print(f"[Objectivity:Internet] H2O результат: {len(raw)} записей")
+        except Exception as e:
+            print(f"[Objectivity:Internet:ERROR] H2O script failed: {e}")
+            raw = []
+
+        lines: List[str] = []
+        for item in raw:
+            title = (item.get("title") or "").strip()
+            content = (item.get("content") or "").strip()
+            if content:
+                header = f"Internet: {title}" if title else "Internet"
+                lines.append(f"{header}\\n{content}")
+
+        return "\\n\\n".join(lines) if lines else ""
 
     def _provider_memory_h2o(self, message: str) -> str:
         """
