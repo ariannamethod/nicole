@@ -253,7 +253,16 @@ class NicoleObjectivity:
         - Тянем REST /page/summary на выбранном языке
         - Возвращаем только текст (title + extract), без ссылок
         """
-        terms = self._extract_terms(message)[:3] or [message.strip()[:64]]
+        # НОВОЕ: приоритет заглавным словам (имена собственные)
+        capitalized_terms = re.findall(r'\b[A-Z][a-z]+\b', message)
+        regular_terms = self._extract_terms(message)[:3] or [message.strip()[:64]]
+        
+        if capitalized_terms:
+            # Заглавные слова идут первыми!
+            terms = capitalized_terms[:2] + [t for t in regular_terms if t not in capitalized_terms][:2]
+            print(f"[Objectivity:Wikipedia] Приоритет заглавным: {capitalized_terms}")
+        else:
+            terms = regular_terms
         script_id = f"wiki_{int(time.time()*1000)}"
         code = f"""
 import requests, json, re
