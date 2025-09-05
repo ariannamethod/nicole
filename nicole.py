@@ -1063,20 +1063,18 @@ class NicoleCore:
                     user_words, semantic_candidates, objectivity_seeds, entropy, perplexity, user_input
                 )
             else:
-                # Emergency fallback - РАЗНООБРАЗНЫЕ ответы вместо петли!
-                emergency_responses = [
-                    ["I", "hear", "you"],
-                    ["tell", "me", "more"],
-                    ["interesting", "perspective"],
-                    ["what", "do", "you", "think"],
-                    ["I", "understand"],
-                    ["that", "resonates", "with", "me"],
-                    ["continue", "please"],
-                    ["I", "see", "your", "point"]
-                ]
-                import hashlib
-                response_hash = int(hashlib.md5(user_input.encode()).hexdigest(), 16) % len(emergency_responses)
-                response_words = emergency_responses[response_hash]
+                # АНТИ-ШАБЛОННЫЙ EMERGENCY: только мутация из входящих слов!
+                user_words = user_input.lower().split()
+                if user_words:
+                    # Берем слова пользователя + простая инверсия местоимений
+                    simple_map = {'you': 'i', 'your': 'my', 'i': 'you', 'my': 'your'}
+                    inverted = [simple_map.get(w, w) for w in user_words[:4]]  # Только первые 4 слова
+                    response_words = inverted + ["understand"]
+                else:
+                    # Совсем крайний случай
+                    response_words = ["processing", "input"]
+                
+                print(f"[Nicole:Emergency] NO TEMPLATES! Мутация из слов пользователя: {response_words}")
             
             # Assemble response
             response = " ".join(response_words)
