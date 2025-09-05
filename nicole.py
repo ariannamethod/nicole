@@ -118,6 +118,32 @@ except ImportError:
         def format_context_for_nicole(self, windows): return ""
     nicole_objectivity = MockObjectivity()
 
+# Импорт AMLK интеграции
+try:
+    from nicole_amlk import get_amlk_bridge, start_nicole_in_amlk
+except ImportError:
+    # Заглушка если AMLK недоступен
+    def get_amlk_bridge(): return None
+    def start_nicole_in_amlk(): return None
+
+# Импорт Blood системы - кровь Nicole
+try:
+    from blood import get_blood_core, activate_blood_system, deactivate_blood_system
+except ImportError:
+    # Заглушка если Blood недоступен
+    def get_blood_core(): return None
+    def activate_blood_system(): return False
+    def deactivate_blood_system(): pass
+
+# Импорт High системы - математический мозг Nicole
+try:
+    from high import get_high_core, activate_high_system, deactivate_high_system
+except ImportError:
+    # Заглушка если High недоступен
+    def get_high_core(): return None
+    def activate_high_system(): return False
+    def deactivate_high_system(): pass
+
 @dataclass
 class ConversationMetrics:
     """Метрики текущего разговора"""
@@ -687,6 +713,18 @@ class NicoleCore:
         self.conversation_count = 0
         self.lock = threading.Lock()
         
+        # AMLK операционная система интеграция
+        self.amlk_bridge = get_amlk_bridge()
+        self.amlk_enabled = False
+        
+        # Blood система - контроль железа
+        self.blood_core = get_blood_core()
+        self.blood_enabled = False
+        
+        # High система - математический мозг
+        self.high_core = get_high_core()
+        self.high_enabled = False
+        
     def start_conversation(self, session_id: str = None):
         """Начинает новый разговор"""
         if not session_id:
@@ -703,6 +741,85 @@ class NicoleCore:
         
         print(f"[Nicole] Начинаем разговор в сессии {session_id}")
         return session_id
+    
+    def start_amlk_os(self):
+        """Запуск AMLK операционной системы для Nicole"""
+        if self.amlk_bridge and self.amlk_bridge.start_amlk_os():
+            self.amlk_enabled = True
+            return True
+        return False
+    
+    def amlk_system_call(self, operation: str, **kwargs):
+        """Системные вызовы Nicole через AMLK OS"""
+        if not self.amlk_enabled or not self.amlk_bridge:
+            return None
+        return self.amlk_bridge.nicole_system_call(operation, **kwargs)
+    
+    def shutdown_amlk(self):
+        """Завершение AMLK операционной системы"""
+        if self.amlk_bridge:
+            self.amlk_bridge.shutdown_amlk()
+            self.amlk_enabled = False
+    
+    def activate_blood_system(self):
+        """Активация Blood системы - кровь Nicole"""
+        if self.blood_core and activate_blood_system():
+            self.blood_enabled = True
+            return True
+        return False
+    
+    def execute_c_in_transformer(self, c_code: str) -> dict:
+        """Выполнение C кода в текущем трансформере"""
+        if not self.blood_enabled or not self.blood_core:
+            return {'success': False, 'error': 'Blood system not active'}
+        
+        transformer_id = self.current_transformer.transformer_id if self.current_transformer else 'no_transformer'
+        return self.blood_core.execute_transformer_c_script(transformer_id, c_code)
+    
+    def get_system_control_status(self) -> dict:
+        """Статус контроля системы Nicole"""
+        status = {
+            'amlk_enabled': self.amlk_enabled,
+            'blood_enabled': self.blood_enabled
+        }
+        
+        if self.blood_enabled and self.blood_core:
+            status['blood_status'] = self.blood_core.get_full_system_status()
+            
+        return status
+    
+    def shutdown_blood_system(self):
+        """Завершение Blood системы"""
+        if self.blood_core:
+            deactivate_blood_system()
+            self.blood_enabled = False
+    
+    def activate_high_system(self):
+        """Активация High математической системы"""
+        if self.high_core and activate_high_system():
+            self.high_enabled = True
+            return True
+        return False
+    
+    def optimize_with_julia(self, text: str, current_metrics: dict) -> dict:
+        """Оптимизация через Julia математику"""
+        if not self.high_enabled or not self.high_core:
+            return current_metrics
+        
+        return self.high_core.enhance_learning_process(text, current_metrics)
+    
+    def optimize_punctuation(self, text: str) -> str:
+        """Оптимизация пунктуации через Julia"""
+        if not self.high_enabled or not self.high_core:
+            return text
+        
+        return self.high_core.optimize_punctuation(text)
+    
+    def shutdown_high_system(self):
+        """Завершение High системы"""
+        if self.high_core:
+            deactivate_high_system()
+            self.high_enabled = False
         
     def _spawn_new_transformer(self):
         """Создает новый флюидный трансформер"""
@@ -712,10 +829,16 @@ class NicoleCore:
         if self.current_transformer:
             self._kill_current_transformer()
             
-        # Создаем новый
-        self.current_transformer = FluidTransformer(transformer_id, {'session_id': self.session_id})
+        # JULIA ОПТИМИЗАЦИЯ: математический анализ для нового трансформера
+        session_context = {'session_id': self.session_id, 'messages': []}
+        if self.high_enabled and self.high_core:
+            optimization = self.high_core.optimize_transformer_for_nicole(session_context)
+            session_context.update(optimization)
         
-        # Генерируем и запускаем скрипт трансформера
+        # Создаем новый трансформер с Julia оптимизацией
+        self.current_transformer = FluidTransformer(transformer_id, session_context)
+        
+        # Генерируем скрипт трансформера (теперь с Julia оптимизацией)
         transformer_script = self.current_transformer.generate_transformer_script()
         
         try:
@@ -767,6 +890,33 @@ class NicoleCore:
             # ME принципы: обновляем частоты слов и биграммы
             self.memory.update_word_frequencies(user_input)
             self.memory.update_bigrams(user_input)
+            
+            # УЛУЧШЕННОЕ: добавляем контекст + историю разговора в дообучение!
+            if hasattr(self, '_last_objectivity_context') and self._last_objectivity_context:
+                # Сохраняем контекст
+                self.memory.update_word_frequencies(self._last_objectivity_context)
+                self.memory.update_bigrams(self._last_objectivity_context)
+                
+                # НОВОЕ: расширенная контекстная память
+                if not hasattr(self, '_conversation_history'):
+                    self._conversation_history = []
+                
+                # Добавляем текущее взаимодействие в историю
+                current_interaction = {
+                    'user_input': user_input,
+                    'timestamp': time.time(),
+                    'context_size': len(self._last_objectivity_context),
+                    'resonant_words': []  # Заполним позже
+                }
+                
+                # Ограничиваем историю последними 7 сообщениями для лучшей памяти
+                if len(self._conversation_history) >= 7:
+                    self._conversation_history.pop(0)
+                
+                self._conversation_history.append(current_interaction)
+                
+                print(f"[Nicole:Training] Objectivity контекст {len(self._last_objectivity_context)} символов → дообучение")
+                print(f"[Nicole:Context] История разговора: {len(self._conversation_history)} сообщений")
             
             # ME принципы: находим резонантное слово
             resonant_word, resonance_score = ResonanceAnalyzer.find_resonant_word(
@@ -824,6 +974,9 @@ class NicoleCore:
             # Форматируем для Nicole
             context = nicole_objectivity.format_context_for_nicole(context_windows)
             
+            # СОХРАНЯЕМ контекст для дообучения!
+            self._last_objectivity_context = context
+            
             # Извлекаем семена для ответа (50% из контекста)
             response_seeds = nicole_objectivity.extract_response_seeds(context, 0.5)
             
@@ -832,6 +985,7 @@ class NicoleCore:
             
         except Exception as e:
             print(f"[Nicole:Objectivity:ERROR] {e}")
+            self._last_objectivity_context = ""
             return "", []
     
     def _generate_me_enhanced_response(self, user_input: str, resonant_word: str) -> str:
@@ -851,58 +1005,50 @@ class NicoleCore:
             # Комбинируем ME кандидатов с Objectivity семенами
             all_candidates = list(set(candidates_50 + candidates_70 + objectivity_seeds))
             
-            # Фильтруем только английские слова (анти-микс логика)
-            english_candidates = []
-            for word in all_candidates:
-                # Простая проверка - если слово содержит только латинские буквы
-                if word and all(ord(c) < 128 for c in word.lower()):
-                    english_candidates.append(word)
-            
-            all_candidates = english_candidates if english_candidates else ["understand", "resonate", "learn"]
+            # Улучшенная логика кандидатов: смешиваем языки разумно
+            if not all_candidates:
+                # Базовые кандидаты для начального обучения
+                all_candidates = [
+                    "понимаю", "интересно", "думаю", "знаю", "чувствую",
+                    "хорошо", "ясно", "согласен", "вижу", "слушаю",
+                    "understand", "resonate", "learn", "feel", "think"
+                ]
             
             if not all_candidates:
                 # Фоллбек на простые ответы
                 return self._generate_simple_response(user_input)
             
-            # Строим ответ на основе биграмм (марковские цепи из ME)
-            response_words = []
+            # JULIA + ME ГЕНЕРАЦИЯ: используем принципы ME через математику
+            user_words = user_input.lower().split()
             
-            # Начинаем с резонантного слова или близкого к нему
-            if resonant_word and resonant_word in self.memory.bigram_transitions:
-                current_word = resonant_word
-            elif all_candidates:
-                current_word = random.choice(all_candidates)
+            # Вычисляем метрики для ME генерации через High
+            if self.high_enabled and self.high_core:
+                entropy = self.high_core.math_engine.vectorized_entropy([user_input])
+                perplexity = 2 ** entropy if entropy > 0 else 2.0
             else:
-                current_word = "понимаю"
-                
-            response_words.append(current_word)
+                entropy = 2.0
+                perplexity = 4.0
             
-            # Генерируем следующие слова через биграммы (как в ME)
-            for _ in range(random.randint(3, 8)):  # Длина ответа 4-9 слов
-                if current_word in self.memory.bigram_transitions:
-                    next_words = self.memory.bigram_transitions[current_word]
-                    if next_words:
-                        # Выбираем следующее слово по весам
-                        total_count = sum(next_words.values())
-                        r = random.randint(1, total_count)
-                        cumsum = 0
-                        for word, count in next_words.items():
-                            cumsum += count
-                            if cumsum >= r:
-                                current_word = word
-                                break
-                    else:
-                        # Если нет биграммы, берем случайный кандидат
-                        current_word = random.choice(all_candidates) if all_candidates else "да"
-                else:
-                    current_word = random.choice(all_candidates) if all_candidates else "хорошо"
-                    
-                response_words.append(current_word)
+            # Семантические кандидаты (50% и 70% дистанция)
+            semantic_candidates = candidates_50 + candidates_70
+            
+            if self.high_enabled and self.high_core:
+                # JULIA + ЯЗЫКОВОЙ АГНОСТИЦИЗМ: движок без языковых предрассудков
+                response_words = self.high_core.math_engine.generate_linguistically_agnostic_response(
+                    user_words, semantic_candidates, objectivity_seeds, entropy, perplexity, user_input
+                )
+            else:
+                # Фоллбек на старую логику
+                response_words = ["понимаю", "ваше", "сообщение"]
             
             # Собираем ответ
             response = " ".join(response_words)
             
-            # Добавляем пунктуацию на основе verb graph
+            # JULIA ПУНКТУАЦИЯ: оптимизируем через математику
+            if self.high_enabled and self.high_core:
+                response = self.high_core.optimize_punctuation(response)
+            
+            # Добавляем пунктуацию на основе verb graph (если Julia не сработала)
             if response_words:
                 last_word = response_words[-1]
                 if last_word in self.memory.verb_graph.common_verbs:
