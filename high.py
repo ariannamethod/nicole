@@ -547,9 +547,8 @@ class HighMathEngine:
         for pronoun in pronouns:
             if len(sentence) >= length:
                 break
-            # ME ФИЛЬТР: не в глобальном used, не в локальном, не односимвольное
-            if (pronoun not in used_global and pronoun not in used_local and 
-                len(pronoun) > 1):
+            # ME ФИЛЬТР: не в глобальном used, не в локальном (разрешаем "i"!)
+            if (pronoun not in used_global and pronoun not in used_local):
                 sentence.append(pronoun)
                 used_local.add(pronoun)
                 used_global.add(pronoun)  # Обновляем глобальный
