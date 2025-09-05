@@ -1102,7 +1102,10 @@ class NicoleCore:
             # Извлекаем семена для ответа (50% из контекста)
             response_seeds = nicole_objectivity.extract_response_seeds(context, 0.5)
             
-            print(f"[Nicole:Objectivity] Контекст: {len(context)} символов, семена: {response_seeds}")
+            if context:
+                print(f"[Nicole:Objectivity] ✅ Контекст: {len(context)} символов, семена: {len(response_seeds)}")
+            else:
+                print(f"[Nicole:Objectivity] ❌ Контекст пустой! Семена: {len(response_seeds)}")
             return context, response_seeds
             
         except Exception as e:
