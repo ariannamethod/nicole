@@ -1137,11 +1137,22 @@ class NicoleCore:
             semantic_candidates = candidates_50 + candidates_70
             
             if self.high_enabled and self.high_core:
-                # JULIA + ЯЗЫКОВОЙ АГНОСТИЦИЗМ: движок без языковых предрассудков
-                response_words = self.high_core.math_engine.generate_linguistically_agnostic_response(
-                    user_words, semantic_candidates, objectivity_seeds, entropy, perplexity, user_input
-                )
+                try:
+                    print(f"[ДИАГНОСТИКА] Используем HIGH генерацию, кандидатов: {len(semantic_candidates)}, семян: {len(objectivity_seeds)}")
+                    # JULIA + ЯЗЫКОВОЙ АГНОСТИЦИЗМ: движок без языковых предрассудков
+                    response_words = self.high_core.math_engine.generate_linguistically_agnostic_response(
+                        user_words, semantic_candidates, objectivity_seeds, entropy, perplexity, user_input
+                    )
+                    print(f"[ДИАГНОСТИКА] HIGH генерация успешна: {len(response_words)} слов")
+                except Exception as e:
+                    print(f"[ДИАГНОСТИКА] HIGH генерация ОШИБКА: {e}")
+                    # Fallback to emergency mode
+                    user_words = user_input.lower().split()
+                    simple_map = {'you': 'i', 'your': 'my', 'i': 'you', 'my': 'your'}
+                    response_words = [simple_map.get(w, w) for w in user_words[:4]]
+                    print(f"[ДИАГНОСТИКА] Fallback к emergency: {response_words}")
             else:
+                print(f"[ДИАГНОСТИКА] HIGH ОТКЛЮЧЕН! high_enabled={self.high_enabled}, high_core={self.high_core is not None}")
                 # АНТИ-ШАБЛОННЫЙ EMERGENCY: только мутация из входящих слов!
                 user_words = user_input.lower().split()
                 if user_words:
