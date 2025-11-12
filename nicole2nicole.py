@@ -12,6 +12,7 @@ import threading
 import math
 import random
 import sys
+import os
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
 import h2o
@@ -30,13 +31,20 @@ class LearningPattern:
 class Nicole2NicoleCore:
     """Ядро системы дообучения"""
     
-    def __init__(self, memory_db: str = "nicole_memory.db"):
+    def __init__(self, memory_db: str = "nicole_memory.db", knowledge_file: str = "nicole_learned_knowledge.json"):
         self.memory_db = memory_db
+        self.knowledge_file = knowledge_file  # ОПТИМИЗАЦИЯ: Auto-save файл
         self.learning_patterns = {}
         self.evolution_patterns = {}
         self.architecture_preferences = {}
         self.learning_lock = threading.Lock()
         self.is_learning = False
+        self.learning_cycles = 0  # ОПТИМИЗАЦИЯ: Счетчик циклов для auto-save
+
+        # ОПТИМИЗАЦИЯ: Auto-load знаний при старте
+        if os.path.exists(self.knowledge_file):
+            print(f"[Nicole2Nicole] Loading previous knowledge from {self.knowledge_file}...")
+            self.import_learned_knowledge(self.knowledge_file)
         
     def analyze_conversation_logs(self, limit: int = 1000) -> List[LearningPattern]:
         """Анализирует логи разговоров для извлечения паттернов"""
@@ -281,7 +289,10 @@ class Nicole2NicoleCore:
         return output_pattern
         
     def continuous_learning_loop(self):
-        """Непрерывное обучение в фоновом режиме"""
+        """
+        Непрерывное обучение в фоновом режиме
+        ОПТИМИЗАЦИЯ: Auto-save каждые 10 циклов (~5 минут)
+        """
         while True:
             try:
                 if not self.is_learning:
@@ -289,9 +300,15 @@ class Nicole2NicoleCore:
                     patterns = self.analyze_conversation_logs(100)
                     if patterns:
                         self.learn_from_patterns(patterns)
-                        
+                        self.learning_cycles += 1
+
+                        # ОПТИМИЗАЦИЯ: Auto-save каждые 10 циклов
+                        if self.learning_cycles % 10 == 0:
+                            print(f"[Nicole2Nicole] Auto-saving knowledge (cycle {self.learning_cycles})...")
+                            self.export_learned_knowledge(self.knowledge_file)
+
                 time.sleep(30)
-                
+
             except Exception as e:
                 print(f"[Nicole2Nicole:ERROR] Ошибка непрерывного обучения: {e}")
                 time.sleep(60)  # Увеличиваем интервал при ошибке

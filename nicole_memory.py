@@ -16,6 +16,14 @@ from dataclasses import dataclass
 from collections import defaultdict, deque
 import h2o
 
+# ОПТИМИЗАЦИЯ: Импортируем утилиты БД для WAL mode и индексов
+try:
+    from db_utils import get_optimized_connection, create_memory_indexes
+    DB_UTILS_AVAILABLE = True
+except ImportError:
+    print("[nicole_memory] WARNING: db_utils not available, using default SQLite")
+    DB_UTILS_AVAILABLE = False
+
 @dataclass
 class MemoryEntry:
     """Запись в памяти"""
@@ -157,8 +165,12 @@ class NicoleMemoryCore:
         self.load_memories_to_cache()
         
     def init_database(self):
-        """Инициализация базы памяти"""
-        conn = sqlite3.connect(self.db_path)
+        """Инициализация базы памяти с оптимизациями (WAL mode)"""
+        # ОПТИМИЗАЦИЯ: Используем оптимизированное подключение с WAL mode
+        if DB_UTILS_AVAILABLE:
+            conn = get_optimized_connection(self.db_path)
+        else:
+            conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
         # Новые таблицы для продвинутой памяти
@@ -224,13 +236,19 @@ class NicoleMemoryCore:
             message_count INTEGER DEFAULT 0
         )
         """)
-        
+
         conn.commit()
+
+        # ОПТИМИЗАЦИЯ: Создаем индексы для быстрых запросов
+        if DB_UTILS_AVAILABLE:
+            create_memory_indexes(conn)
+            print("[nicole_memory] Database optimized with WAL mode + indexes")
+
         conn.close()
         
     def load_memories_to_cache(self):
         """Загружает воспоминания в кеш и индексы"""
-        conn = sqlite3.connect(self.db_path)
+        conn = get_optimized_connection(self.db_path) if DB_UTILS_AVAILABLE else sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
         cursor.execute("SELECT * FROM memory_entries ORDER BY importance DESC LIMIT 1000")
