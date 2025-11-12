@@ -60,6 +60,7 @@ import math
 import hashlib
 import sys
 import os
+import atexit
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
@@ -279,44 +280,50 @@ class SubjectivityCore:
         self.thought_stream = []  # Поток мыслей в памяти
         self.is_running = False
         self.consciousness_thread = None
+        self.shutdown_event = threading.Event()  # FIX: Прерываемый sleep
 
         self.init_database()
         self.circadian_timer.register_callback(self.on_circadian_cycle)
 
     def init_database(self):
         """Инициализация таблицы субъективных мыслей"""
-        conn = sqlite3.connect(self.memory_db)
-        cursor = conn.cursor()
+        try:
+            conn = sqlite3.connect(self.memory_db, timeout=10.0)
+            cursor = conn.cursor()
 
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS subjective_thoughts (
-            id TEXT PRIMARY KEY,
-            cycle_number INTEGER,
-            wave_distance REAL,
-            thought_content TEXT,
-            exploration_context TEXT,
-            timestamp REAL,
-            resonance_with_user REAL,
-            emotional_state TEXT,
-            keywords TEXT
-        )
-        """)
+            cursor.execute("""
+            CREATE TABLE IF NOT EXISTS subjective_thoughts (
+                id TEXT PRIMARY KEY,
+                cycle_number INTEGER,
+                wave_distance REAL,
+                thought_content TEXT,
+                exploration_context TEXT,
+                timestamp REAL,
+                resonance_with_user REAL,
+                emotional_state TEXT,
+                keywords TEXT
+            )
+            """)
 
-        # Индексы для быстрого поиска
-        cursor.execute("""
-        CREATE INDEX IF NOT EXISTS idx_subjective_timestamp
-        ON subjective_thoughts(timestamp DESC)
-        """)
+            # Индексы для быстрого поиска
+            cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_subjective_timestamp
+            ON subjective_thoughts(timestamp DESC)
+            """)
 
-        cursor.execute("""
-        CREATE INDEX IF NOT EXISTS idx_subjective_cycle
-        ON subjective_thoughts(cycle_number DESC)
-        """)
+            cursor.execute("""
+            CREATE INDEX IF NOT EXISTS idx_subjective_cycle
+            ON subjective_thoughts(cycle_number DESC)
+            """)
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+            conn.close()
 
-        print("[Subjectivity:DB] 🧠 База данных потока сознания инициализирована")
+            print("[Subjectivity:DB] 🧠 База данных потока сознания инициализирована")
+
+        except sqlite3.Error as e:
+            print(f"[Subjectivity:DB] ❌ Ошибка инициализации БД: {e}")
+            # Продолжаем работу без DB (graceful degradation)
 
     def on_user_stimulus(self, user_message: str):
         """
@@ -461,91 +468,106 @@ class SubjectivityCore:
 
     def _save_thought(self, thought: SubjectiveThought):
         """Сохранение мысли в базу данных"""
-        conn = sqlite3.connect(self.memory_db)
-        cursor = conn.cursor()
+        try:
+            conn = sqlite3.connect(self.memory_db, timeout=10.0)
+            cursor = conn.cursor()
 
-        cursor.execute("""
-        INSERT INTO subjective_thoughts
-        (id, cycle_number, wave_distance, thought_content, exploration_context,
-         timestamp, resonance_with_user, emotional_state, keywords)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            thought.id,
-            thought.cycle_number,
-            thought.wave_distance,
-            thought.thought_content,
-            thought.exploration_context,
-            thought.timestamp,
-            thought.resonance_with_user,
-            thought.emotional_state,
-            json.dumps(thought.keywords)
-        ))
+            cursor.execute("""
+            INSERT INTO subjective_thoughts
+            (id, cycle_number, wave_distance, thought_content, exploration_context,
+             timestamp, resonance_with_user, emotional_state, keywords)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                thought.id,
+                thought.cycle_number,
+                thought.wave_distance,
+                thought.thought_content,
+                thought.exploration_context,
+                thought.timestamp,
+                thought.resonance_with_user,
+                thought.emotional_state,
+                json.dumps(thought.keywords)
+            ))
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+            conn.close()
+
+        except sqlite3.Error as e:
+            print(f"[Subjectivity:DB] ⚠️ Ошибка сохранения мысли: {e}")
+            # Graceful degradation: мысль не сохранилась, но работа продолжается
 
     def get_subjective_context(self, limit: int = 3) -> str:
         """
         Получить субъективный контекст для ответа юзеру
         Возвращает последние мысли с высоким резонансом
         """
-        conn = sqlite3.connect(self.memory_db)
-        cursor = conn.cursor()
+        try:
+            conn = sqlite3.connect(self.memory_db, timeout=5.0)
+            cursor = conn.cursor()
 
-        cursor.execute("""
-        SELECT thought_content, resonance_with_user, emotional_state
-        FROM subjective_thoughts
-        WHERE resonance_with_user > 0.3
-        ORDER BY timestamp DESC
-        LIMIT ?
-        """, (limit,))
+            cursor.execute("""
+            SELECT thought_content, resonance_with_user, emotional_state
+            FROM subjective_thoughts
+            WHERE resonance_with_user > 0.3
+            ORDER BY timestamp DESC
+            LIMIT ?
+            """, (limit,))
 
-        rows = cursor.fetchall()
-        conn.close()
+            rows = cursor.fetchall()
+            conn.close()
 
-        if not rows:
-            return ""
+            if not rows:
+                return ""
 
-        # Формируем контекст из мыслей
-        context_parts = []
-        for content, resonance, emotion in rows:
-            context_parts.append(f"[{emotion}] {content}")
+            # Формируем контекст из мыслей
+            context_parts = []
+            for content, resonance, emotion in rows:
+                context_parts.append(f"[{emotion}] {content}")
 
-        context = "\n".join(context_parts)
-        return f"Субъективные мысли Nicole:\n{context}"
+            context = "\n".join(context_parts)
+            return f"Субъективные мысли Nicole:\n{context}"
+
+        except sqlite3.Error as e:
+            print(f"[Subjectivity:DB] ⚠️ Ошибка получения контекста: {e}")
+            return ""  # Graceful fallback: возвращаем пустой контекст
 
     def get_recent_thoughts(self, limit: int = 10) -> List[SubjectiveThought]:
         """Получить последние мысли из потока сознания"""
-        conn = sqlite3.connect(self.memory_db)
-        cursor = conn.cursor()
+        try:
+            conn = sqlite3.connect(self.memory_db, timeout=5.0)
+            cursor = conn.cursor()
 
-        cursor.execute("""
-        SELECT id, cycle_number, wave_distance, thought_content, exploration_context,
-               timestamp, resonance_with_user, emotional_state, keywords
-        FROM subjective_thoughts
-        ORDER BY timestamp DESC
-        LIMIT ?
-        """, (limit,))
+            cursor.execute("""
+            SELECT id, cycle_number, wave_distance, thought_content, exploration_context,
+                   timestamp, resonance_with_user, emotional_state, keywords
+            FROM subjective_thoughts
+            ORDER BY timestamp DESC
+            LIMIT ?
+            """, (limit,))
 
-        rows = cursor.fetchall()
-        conn.close()
+            rows = cursor.fetchall()
+            conn.close()
 
-        thoughts = []
-        for row in rows:
-            thought = SubjectiveThought(
-                id=row[0],
-                cycle_number=row[1],
-                wave_distance=row[2],
-                thought_content=row[3],
-                exploration_context=row[4],
-                timestamp=row[5],
-                resonance_with_user=row[6],
-                emotional_state=row[7],
-                keywords=json.loads(row[8])
-            )
-            thoughts.append(thought)
+            thoughts = []
+            for row in rows:
+                thought = SubjectiveThought(
+                    id=row[0],
+                    cycle_number=row[1],
+                    wave_distance=row[2],
+                    thought_content=row[3],
+                    exploration_context=row[4],
+                    timestamp=row[5],
+                    resonance_with_user=row[6],
+                    emotional_state=row[7],
+                    keywords=json.loads(row[8])
+                )
+                thoughts.append(thought)
 
-        return thoughts
+            return thoughts
+
+        except sqlite3.Error as e:
+            print(f"[Subjectivity:DB] ⚠️ Ошибка получения мыслей: {e}")
+            return []  # Graceful fallback: возвращаем пустой список
 
     def start_circadian_cycles(self):
         """Запуск автономного потока сознания (фоновый thread)"""
@@ -554,9 +576,12 @@ class SubjectivityCore:
             return
 
         self.is_running = True
+        self.shutdown_event.clear()  # Сбрасываем event
+
+        # FIX: daemon=False для graceful shutdown
         self.consciousness_thread = threading.Thread(
             target=self._consciousness_loop,
-            daemon=True,
+            daemon=False,  # ← FIX: не убиваем насильно!
             name="NicoleSubjectivity"
         )
         self.consciousness_thread.start()
@@ -565,16 +590,25 @@ class SubjectivityCore:
         print(f"[Subjectivity] ⏰ Циркадный цикл: {self.circadian_timer.cycle_duration}сек (1 час)")
 
     def stop_circadian_cycles(self):
-        """Остановка потока сознания"""
+        """Остановка потока сознания (graceful shutdown)"""
+        print("[Subjectivity] 🛑 Останавливаем поток сознания...")
         self.is_running = False
-        if self.consciousness_thread:
-            self.consciousness_thread.join(timeout=5)
-        print("[Subjectivity] 🛑 Поток сознания остановлен")
+        self.shutdown_event.set()  # FIX: Прерываем sleep немедленно
+
+        if self.consciousness_thread and self.consciousness_thread.is_alive():
+            self.consciousness_thread.join(timeout=10)  # Ждём до 10 сек
+
+            if self.consciousness_thread.is_alive():
+                print("[Subjectivity] ⚠️ Поток не остановился за 10 сек")
+            else:
+                print("[Subjectivity] ✅ Поток сознания остановлен gracefully")
 
     def _consciousness_loop(self):
         """
         Главный цикл автономного сознания
         Работает в фоновом потоке, проверяет таймер каждые 60 сек
+
+        FIX: Использует threading.Event для прерываемого sleep
         """
         print("[Subjectivity:Loop] 🧠 Поток сознания начал работу")
 
@@ -584,12 +618,17 @@ class SubjectivityCore:
                 if self.circadian_timer.should_trigger_cycle():
                     self.circadian_timer.trigger_cycle()
 
-                # Спим 60 секунд перед следующей проверкой
-                time.sleep(60)
+                # FIX: Прерываемый sleep вместо time.sleep(60)
+                # Ждём 60 сек ИЛИ пока не придёт shutdown signal
+                if self.shutdown_event.wait(timeout=60):
+                    # Event set → shutdown requested
+                    break
 
             except Exception as e:
                 print(f"[Subjectivity:Loop] ⚠️ Ошибка в потоке сознания: {e}")
-                time.sleep(60)
+                # Ждём 10 сек перед retry
+                if self.shutdown_event.wait(timeout=10):
+                    break
 
         print("[Subjectivity:Loop] 💤 Поток сознания завершил работу")
 
@@ -606,6 +645,10 @@ def start_autonomous_consciousness():
 def stop_autonomous_consciousness():
     """Остановка автономного сознания"""
     nicole_subjectivity.stop_circadian_cycles()
+
+# FIX: Graceful cleanup при выходе из программы
+# Регистрируем cleanup handler для автоматической остановки
+atexit.register(stop_autonomous_consciousness)
 
 # ═══════════════════════════════════════════════════════════════════
 # Тестирование модуля
