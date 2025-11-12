@@ -20,8 +20,10 @@ import sys
 import json
 import time
 import sqlite3
+import hashlib
 from dataclasses import dataclass
 from typing import Dict, List, Optional
+from datetime import datetime, timedelta
 import random
 
 # Локальные модули
@@ -34,6 +36,109 @@ TRAIN_BUFFER_PATH = "training_buffer.jsonl"
 MEMORY_DB = "nicole_memory.db"
 
 DEFAULT_INFLUENCE_COEFF = 0.5  # доля влияния контента на ответ
+
+
+# ============== ОПТИМИЗАЦИЯ: Кеширование ==============
+
+class ObjectivityCache:
+    """
+    Простой in-memory кеш для Objectivity контекста
+    TTL = 5 минут (контекст из интернета не меняется так быстро)
+    """
+
+    def __init__(self, ttl_seconds: int = 300):
+        self.cache = {}  # {query_hash: (content, timestamp)}
+        self.ttl = timedelta(seconds=ttl_seconds)
+        self.hits = 0
+        self.misses = 0
+
+    def _hash_query(self, query: str) -> str:
+        """Хешируем query для cache key"""
+        return hashlib.md5(query.lower().strip().encode()).hexdigest()
+
+    def get(self, query: str) -> Optional[str]:
+        """Получаем контекст из кеша если не истек TTL"""
+        query_hash = self._hash_query(query)
+
+        if query_hash in self.cache:
+            content, timestamp = self.cache[query_hash]
+            age = datetime.now() - timestamp
+
+            if age < self.ttl:
+                self.hits += 1
+                print(f"[Objectivity:Cache] HIT for '{query[:50]}...' (age: {age.seconds}s)")
+                return content
+            else:
+                # Expired, remove
+                del self.cache[query_hash]
+
+        self.misses += 1
+        return None
+
+    def set(self, query: str, content: str):
+        """Сохраняем контекст в кеш"""
+        query_hash = self._hash_query(query)
+        self.cache[query_hash] = (content, datetime.now())
+
+        # Простая очистка: если > 100 записей, удаляем 20 старейших
+        if len(self.cache) > 100:
+            sorted_items = sorted(
+                self.cache.items(),
+                key=lambda x: x[1][1]  # Sort by timestamp
+            )
+            for old_key, _ in sorted_items[:20]:
+                del self.cache[old_key]
+
+    def stats(self) -> Dict:
+        """Статистика кеша"""
+        total = self.hits + self.misses
+        hit_rate = (self.hits / total * 100) if total > 0 else 0
+
+        return {
+            "hits": self.hits,
+            "misses": self.misses,
+            "hit_rate": f"{hit_rate:.1f}%",
+            "entries": len(self.cache),
+        }
+
+# ============== БЕЗОПАСНОСТЬ: Sanitization ==============
+
+def sanitize_external_content(content: str, max_length: int = 4096) -> str:
+    """
+    Очищает контент от провайдеров от потенциально опасного содержимого
+
+    Защита от:
+    - HTML/JS инъекций
+    - Чрезмерно длинного контента
+    - Управляющих символов
+    """
+    if not content:
+        return ""
+
+    # 1. Убираем HTML теги (простая защита)
+    content = re.sub(r'<script.*?</script>', '', content, flags=re.DOTALL | re.IGNORECASE)
+    content = re.sub(r'<style.*?</style>', '', content, flags=re.DOTALL | re.IGNORECASE)
+    content = re.sub(r'<[^>]+>', '', content)  # Все остальные теги
+
+    # 2. Убираем опасные паттерны
+    content = re.sub(r'javascript:', '', content, flags=re.IGNORECASE)
+    content = re.sub(r'eval\s*\(', '', content, flags=re.IGNORECASE)
+    content = re.sub(r'on\w+\s*=', '', content, flags=re.IGNORECASE)  # onclick=, onerror=, etc
+
+    # 3. Убираем лишние пробелы и управляющие символы
+    content = re.sub(r'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]', '', content)  # Control chars
+    content = re.sub(r'\s+', ' ', content)  # Multiple spaces -> single space
+    content = content.strip()
+
+    # 4. Ограничиваем длину (4KB по умолчанию)
+    if len(content) > max_length:
+        content = content[:max_length] + "..."
+        print(f"[Objectivity:Sanitize] Content truncated to {max_length} bytes")
+
+    return content
+
+
+# ============== Data Classes ==============
 
 @dataclass
 class FluidContextWindow:
@@ -50,10 +155,15 @@ class FluidContextWindow:
 class NicoleObjectivity:
     def __init__(self,
                  max_context_kb: int = 4,
-                 influence_coeff: float = DEFAULT_INFLUENCE_COEFF):
+                 influence_coeff: float = DEFAULT_INFLUENCE_COEFF,
+                 cache_ttl_seconds: int = 300):
         self.max_context_kb = max_context_kb * 1024
         self.influence_coeff = float(influence_coeff)
         self.h2o_engine = h2o.h2o_engine
+
+        # ОПТИМИЗАЦИЯ: Кеш для контекста (5 минут TTL)
+        self.cache = ObjectivityCache(ttl_seconds=cache_ttl_seconds)
+
         self._ensure_memory_schema()
 
     # ---------- Schema / persistence ----------
@@ -113,7 +223,26 @@ class NicoleObjectivity:
     async def create_dynamic_context(self, user_message: str, metrics: Dict) -> List[FluidContextWindow]:
         """
         Формируем единое текстовое окно (или ничего, если контента нет).
+        ОПТИМИЗАЦИЯ: Проверяем кеш перед вызовом провайдеров
         """
+        # Проверяем кеш (5-минутный TTL)
+        cached_content = self.cache.get(user_message)
+        if cached_content:
+            # Возвращаем из кеша
+            window = FluidContextWindow(
+                content=cached_content,
+                source_type="objectivity_cached",
+                resonance_score=0.85,
+                entropy_boost=0.25,
+                tokens_count=len(cached_content.split()),
+                creation_time=time.time(),
+                script_id=f"objectivity_cached_{int(time.time()*1000)}",
+                title=f"OBJECTIVITY [CACHED] (influence={self.influence_coeff:.2f})",
+                meta={"influence_coeff": self.influence_coeff, "from_cache": True}
+            )
+            return self._trim_to_limit([window])
+
+        # Cache miss - fetching from providers
         strategies = self._pick_strategies(user_message)
 
         sections: List[str] = []
@@ -123,19 +252,29 @@ class NicoleObjectivity:
         if 'internet' in strategies:
             internet_text = self._provider_internet_h2o(user_message)
             if internet_text:
+                # БЕЗОПАСНОСТЬ: Sanitize контент от провайдера
+                internet_text = sanitize_external_content(internet_text, self.max_context_kb)
                 sections.append(internet_text)
 
         if 'reddit' in strategies:
             reddit_text = self._provider_reddit_h2o(user_message)
             if reddit_text:
+                # БЕЗОПАСНОСТЬ: Sanitize контент от провайдера
+                reddit_text = sanitize_external_content(reddit_text, self.max_context_kb)
                 sections.append(reddit_text)
 
         if 'memory' in strategies:
             mem_text = self._provider_memory_h2o(user_message)
             if mem_text:
+                # Memory уже безопасен (наши данные), но все равно sanitize
+                mem_text = sanitize_external_content(mem_text, self.max_context_kb)
                 sections.append(mem_text)
 
         aggregated = self._aggregate_text_window(sections)
+
+        # Сохраняем в кеш для будущих запросов
+        if aggregated:
+            self.cache.set(user_message, aggregated)
 
         windows: List[FluidContextWindow] = []
         if aggregated:
