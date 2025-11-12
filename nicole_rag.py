@@ -15,11 +15,12 @@ import h2o
 
 class ChaoticRetriever:
     """Хаотичный поисковик контекста"""
-    
+
     def __init__(self, memory_db: str = "nicole_memory.db"):
         self.memory_db = memory_db
-        self.chaos_factor = 0.1  # Элемент хаоса в поиске
+        self.chaos_factor = 0.1  # Базовый элемент хаоса в поиске
         self.retrieval_patterns = {}
+        self.user_chaos_preferences = {}  # ADAPTIVE: персональный chaos per user
         
     def retrieve_context(self, query: str, chaos_level: float = None, limit: int = 8) -> List[Dict]:
         """Извлекает контекст с элементом хаоса"""
@@ -66,9 +67,10 @@ class ChaoticRetriever:
         results = []
         for row in cursor.fetchall():
             user_input, nicole_output, timestamp, metrics = row
-            
-            relevance = self._calculate_relevance(query, user_input + " " + nicole_output)
-            
+
+            # TEMPORAL: передаём timestamp для temporal weighting
+            relevance = self._calculate_relevance(query, user_input + " " + nicole_output, timestamp=timestamp)
+
             results.append({
                 'id': f"conv_{timestamp}",
                 'content': f"User: {user_input} | Nicole: {nicole_output}",
@@ -99,9 +101,9 @@ class ChaoticRetriever:
         chaotic_results = []
         for row in cursor.fetchall():
             user_input, nicole_output, timestamp = row
-            
-            # Случайная релевантность с элементом хаоса
-            base_relevance = self._calculate_relevance(query, user_input + " " + nicole_output)
+
+            # Случайная релевантность с элементом хаоса + temporal
+            base_relevance = self._calculate_relevance(query, user_input + " " + nicole_output, timestamp=timestamp)
             chaos_boost = chaos_level * (0.5 + 0.5 * hash(user_input) % 100 / 100)
             
             chaotic_results.append({
@@ -115,24 +117,82 @@ class ChaoticRetriever:
         conn.close()
         return chaotic_results
         
-    def _calculate_relevance(self, query: str, content: str) -> float:
-        """Рассчитывает релевантность контента к запросу"""
+    def _calculate_relevance(self, query: str, content: str, timestamp: float = None) -> float:
+        """
+        Рассчитывает релевантность контента к запросу + temporal weighting
+
+        Добавлен временной вес: свежие мемори важнее старых
+        Затухание: e^(-age_days / 30) - полураспад 30 дней
+        """
         query_words = set(query.lower().split())
         content_words = set(content.lower().split())
-        
+
         if not query_words or not content_words:
             return 0.0
-            
+
         intersection = len(query_words & content_words)
         union = len(query_words | content_words)
-        
+
         jaccard = intersection / union if union > 0 else 0.0
-        
+
         # Бонус за точные совпадения фраз
         exact_matches = sum(1 for word in query_words if word in content.lower())
         exact_bonus = exact_matches / len(query_words)
-        
-        return jaccard * 0.7 + exact_bonus * 0.3
+
+        base_relevance = jaccard * 0.7 + exact_bonus * 0.3
+
+        # TEMPORAL WEIGHTING: свежие воспоминания важнее
+        if timestamp:
+            age_seconds = time.time() - timestamp
+            age_days = age_seconds / 86400  # Секунды в дни
+
+            # Экспоненциальное затухание: e^(-age / 30)
+            # age=0 дней: weight=1.0
+            # age=30 дней: weight=0.37
+            # age=60 дней: weight=0.14
+            temporal_weight = math.exp(-age_days / 30)
+
+            # Комбинируем: 70% content relevance + 30% temporal weight
+            final_relevance = base_relevance * 0.7 + temporal_weight * 0.3
+
+            return final_relevance
+        else:
+            return base_relevance
+
+    def adapt_chaos_from_feedback(self, user_id: str, feedback_score: float):
+        """
+        ADAPTIVE CHAOS: Адаптирует chaos_factor под юзера на основе фидбека
+
+        Логика:
+        - feedback > 0.7: юзер любит неожиданности → увеличиваем chaos
+        - feedback < 0.3: юзер любит точность → уменьшаем chaos
+
+        Args:
+            user_id: ID юзера
+            feedback_score: оценка успешности [0.0 - 1.0]
+        """
+        if user_id not in self.user_chaos_preferences:
+            self.user_chaos_preferences[user_id] = self.chaos_factor
+
+        current_chaos = self.user_chaos_preferences[user_id]
+
+        if feedback_score > 0.7:
+            # Юзер доволен → увеличиваем chaos (больше креатива)
+            new_chaos = min(0.3, current_chaos * 1.1)
+            print(f"[RAG:AdaptiveChaos] User {user_id}: feedback={feedback_score:.2f} → chaos {current_chaos:.2f} → {new_chaos:.2f} ↑")
+        elif feedback_score < 0.3:
+            # Юзер недоволен → уменьшаем chaos (больше точности)
+            new_chaos = max(0.05, current_chaos * 0.9)
+            print(f"[RAG:AdaptiveChaos] User {user_id}: feedback={feedback_score:.2f} → chaos {current_chaos:.2f} → {new_chaos:.2f} ↓")
+        else:
+            # Нормально → оставляем как есть
+            new_chaos = current_chaos
+
+        self.user_chaos_preferences[user_id] = new_chaos
+
+    def get_user_chaos_level(self, user_id: str) -> float:
+        """Получить персональный chaos_factor юзера"""
+        return self.user_chaos_preferences.get(user_id, self.chaos_factor)
 
 class ContextAugmenter:
     """Дополнитель контекста для генерации"""

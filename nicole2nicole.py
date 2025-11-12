@@ -242,12 +242,36 @@ class Nicole2NicoleCore:
         print(f"[Nicole2Nicole] Проанализированы предпочтения архитектуры для {len(self.architecture_preferences)} параметров")
         
     def suggest_architecture_improvements(self, current_arch: Dict, conversation_context: str) -> Dict:
-        """Предлагает улучшения архитектуры на основе обучения"""
+        """
+        Предлагает улучшения архитектуры на основе обучения + exploration noise
+
+        ANTI-OVERFITTING: добавляет 10% шанс случайного исследования
+        """
         if not self.learning_patterns or not self.architecture_preferences:
             return current_arch
-            
+
         improved_arch = current_arch.copy()
-        
+
+        # EXPLORATION NOISE: 10% шанс случайного исследования
+        # Предотвращает застревание в локальном оптимуме
+        exploration_probability = 0.1
+
+        if random.random() < exploration_probability:
+            # Случайно выбираем параметр для исследования
+            explorable_params = [p for p in improved_arch.keys()
+                               if isinstance(improved_arch[p], (int, float))]
+
+            if explorable_params:
+                param_to_explore = random.choice(explorable_params)
+                current_value = improved_arch[param_to_explore]
+
+                # Случайное возмущение ±20%
+                noise_factor = random.uniform(0.8, 1.2)
+                improved_arch[param_to_explore] = current_value * noise_factor
+
+                print(f"[Nicole2Nicole:Exploration] 🎲 Исследование параметра '{param_to_explore}': "
+                      f"{current_value:.3f} → {improved_arch[param_to_explore]:.3f}")
+
         # Применяем изученные предпочтения
         for param, preferences in self.architecture_preferences.items():
             if param in improved_arch:

@@ -135,6 +135,19 @@ try:
 except ImportError:
     NICOLE2NICOLE_AVAILABLE = False
 
+# Импорт Subjectivity - автономное сознание Nicole
+try:
+    from nicole_subjectivity import nicole_subjectivity, start_autonomous_consciousness, stop_autonomous_consciousness
+    SUBJECTIVITY_AVAILABLE = True
+except ImportError:
+    SUBJECTIVITY_AVAILABLE = False
+    class MockSubjectivity:
+        def on_user_stimulus(self, msg): pass
+        def get_subjective_context(self, limit=3): return ""
+    nicole_subjectivity = MockSubjectivity()
+    def start_autonomous_consciousness(): pass
+    def stop_autonomous_consciousness(): pass
+
 # Импорт AMLK интеграции
 try:
     from nicole_amlk import get_amlk_bridge, start_nicole_in_amlk
@@ -750,7 +763,17 @@ class NicoleCore:
         else:
             self.learning_core = None
             print("[Nicole] Nicole2Nicole недоступно")
-        
+
+        # Добавляем Subjectivity - автономное сознание
+        if SUBJECTIVITY_AVAILABLE:
+            self.subjectivity = nicole_subjectivity
+            start_autonomous_consciousness()
+            print("[Nicole] 🌊 Subjectivity - автономное сознание запущено ✅")
+            print("[Nicole] 💭 Поток сознания Nicole работает независимо (циклы каждый час)")
+        else:
+            self.subjectivity = MockSubjectivity()
+            print("[Nicole] Subjectivity недоступно")
+
         # Добавляем продвинутые метрики
         if ADVANCED_METRICS_AVAILABLE:
             self.metrics_core = NicoleMetricsCore()
@@ -984,9 +1007,14 @@ class NicoleCore:
     def process_message(self, user_input: str) -> str:
         """Обрабатывает сообщение пользователя с ME принципами"""
         with self.lock:
+            # SUBJECTIVITY: отправляем стимул автономному сознанию
+            if hasattr(self, 'subjectivity'):
+                self.subjectivity.on_user_stimulus(user_input)
+                print(f"[Nicole:Subjectivity] 🌊 Стимул отправлен в поток сознания")
+
             if not self.current_transformer:
                 self._spawn_new_transformer()
-                
+
             # ME принципы: обновляем частоты слов и биграммы
             self.memory.update_word_frequencies(user_input)
             self.memory.update_bigrams(user_input)
@@ -1027,7 +1055,16 @@ class NicoleCore:
             
             # ME принципы: генерируем ответ на основе резонантного слова
             base_response = self._generate_me_enhanced_response(user_input, resonant_word)
-            
+
+            # SUBJECTIVITY: добавляем субъективный контекст (внутренние мысли Nicole)
+            subjective_context = ""
+            if hasattr(self, 'subjectivity'):
+                subjective_context = self.subjectivity.get_subjective_context(limit=3)
+                if subjective_context:
+                    print(f"[Nicole:Subjectivity] 💭 Добавлен субъективный контекст ({len(subjective_context)} символов)")
+                    # Влияние субъективных мыслей на ответ (subtle)
+                    base_response = f"{base_response}\n[Внутренние размышления: {subjective_context}]"
+
             # RAG дополнение если доступно
             if self.rag_system:
                 try:
