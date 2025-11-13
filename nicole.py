@@ -1137,7 +1137,7 @@ class NicoleCore:
             # Получаем текущие метрики
             metrics = {
                 'perplexity': 2.0,
-                'entropy': 1.5, 
+                'entropy': 1.5,
                 'resonance': 0.5
             }
             if self.current_transformer and self.current_transformer.current_metrics:
@@ -1145,30 +1145,37 @@ class NicoleCore:
                 if m.perplexity > 0:
                     metrics = {
                         'perplexity': m.perplexity,
-                        'entropy': m.entropy, 
+                        'entropy': m.entropy,
                         'resonance': m.resonance
                     }
-            
+
             # СИНХРОННЫЙ вызов objectivity без async
             import nicole_objectivity
             obj = nicole_objectivity.NicoleObjectivity()
-            
+
             # Создаем контекст синхронно (убираем await)
             strategies = obj._pick_strategies(user_input)
+            print(f"[Nicole:Objectivity:DEBUG] Strategies: {strategies}")
             sections = []
-            
+
             if 'internet' in strategies:
+                print(f"[Nicole:Objectivity:DEBUG] Вызываю internet provider...")
                 internet_text = obj._provider_internet_h2o(user_input)
+                print(f"[Nicole:Objectivity:DEBUG] Internet result: {len(internet_text)} chars")
                 if internet_text:
                     sections.append(internet_text)
-            
+
             if 'memory' in strategies:
+                print(f"[Nicole:Objectivity:DEBUG] Вызываю memory provider...")
                 mem_text = obj._provider_memory_h2o(user_input)
+                print(f"[Nicole:Objectivity:DEBUG] Memory result: {len(mem_text)} chars")
                 if mem_text:
                     sections.append(mem_text)
-            
+
+            print(f"[Nicole:Objectivity:DEBUG] Sections collected: {len(sections)}")
             aggregated = obj._aggregate_text_window(sections)
-            
+            print(f"[Nicole:Objectivity:DEBUG] Aggregated: {len(aggregated) if aggregated else 0} chars")
+
             if aggregated:
                 # Создаем window
                 from nicole_objectivity import FluidContextWindow
@@ -1184,17 +1191,15 @@ class NicoleCore:
                 )
                 context = obj.format_context_for_nicole([window])
                 response_seeds = obj.extract_response_seeds(context, 0.5)
-                
-                if context:
-                    print(f"[Nicole:Objectivity] ✅ SYNC Контекст: {len(context)} символов, семена: {len(response_seeds)}")
-                else:
-                    print(f"[Nicole:Objectivity] ❌ SYNC Контекст пустой! Семена: {len(response_seeds)}")
-                
+
+                print(f"[Nicole:Objectivity] ✅ SYNC Контекст: {len(context)} символов, семена: {len(response_seeds)}")
+                print(f"[Nicole:Objectivity:DEBUG] Seeds: {response_seeds[:10]}")
+
                 return context, response_seeds
             else:
                 print(f"[Nicole:Objectivity] ❌ SYNC Нет данных от провайдеров")
                 return "", []
-                
+
         except Exception as e:
             print(f"[Nicole:Objectivity:SYNC:ERROR] {e}")
             import traceback

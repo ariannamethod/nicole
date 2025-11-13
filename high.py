@@ -415,30 +415,34 @@ class HighMathEngine:
             
         return cleaned
     
-    def invert_pronouns_me_style(self, words: List[str]) -> List[str]:
+    def invert_pronouns_me_style(self, words: List[str], candidates: List[str] = None) -> List[str]:
         """
         Инверсия местоимений по принципу ME + грамматические правила
         you↔i, your↔my, me↔you для правильной перспективы
+
+        Args:
+            words: Слова для инверсии
+            candidates: Кандидаты для грамматических правил (от резонанса/objectivity)
         """
         pronoun_mapping = {
             'you': 'i', 'u': 'i', 'your': 'my', 'yours': 'mine', 'yourself': 'myself',
             'i': 'you', 'me': 'you', 'my': 'your', 'mine': 'yours', 'myself': 'yourself',
             'we': 'you'
         }
-        
+
         result = [pronoun_mapping.get(w.lower(), w) for w in words]
-        
+
         # КРИТИЧНО: Грамматические правила после инверсии
         # Исправляем "you am" → "you are", "i is" → "i am"
         for i in range(len(result) - 1):
             current = result[i].lower()
             next_word = result[i + 1].lower()
-            
+
             if current == 'you' and next_word == 'am':
                 result[i + 1] = 'are'
             elif current == 'i' and next_word in ['is', 'are']:
                 result[i + 1] = 'am'
-        
+
         # НОВОЕ: Продвинутые грамматические правила
         # Передаём candidates для выбора глаголов из резонанса!
         result = self._apply_advanced_grammar_rules(result, candidates)
@@ -570,8 +574,8 @@ class HighMathEngine:
                 all_candidates = ["input"]  # Минимальный fallback без "processing"
         
         # Инвертированные местоимения как приоритет (принцип ME)
-        # ИСПРАВЛЕНО: НЕ применяем грамматические правила к словам пользователя!
-        inverted_pronouns = self.invert_pronouns_me_style(user_words)
+        # Передаём candidates для грамматических правил!
+        inverted_pronouns = self.invert_pronouns_me_style(user_words, all_candidates)
         pronoun_preferences = [w for w in inverted_pronouns if w in ['i', 'you', 'я', 'ты', 'my', 'мой', 'меня', 'мне']]
         
         # Добавляем базовые местоимения если нет инверсии
