@@ -33,6 +33,9 @@ class EnglishGuidance:
     Like musical notation - enables expression through form.
     """
 
+    # HONEST BOUNDARY (not a template!)
+    ENGLISH_ONLY_MESSAGE = "Sorry, for now I'm English only."
+
     def __init__(self):
         # Articles rules
         self.articles = {
@@ -66,6 +69,45 @@ class EnglishGuidance:
 
         # English word order: Subject-Verb-Object
         self.syntax_order = ['subject', 'verb', 'object']
+
+        # Common English words (for language detection)
+        self.english_common_words = {
+            'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i',
+            'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at',
+            'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she',
+            'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their',
+            'what', 'so', 'up', 'out', 'if', 'about', 'who', 'get', 'which', 'go',
+            'me', 'when', 'make', 'can', 'like', 'time', 'no', 'just', 'him', 'know',
+            'take', 'people', 'into', 'year', 'your', 'good', 'some', 'could', 'them',
+            'see', 'other', 'than', 'then', 'now', 'look', 'only', 'come', 'its', 'over',
+            'think', 'also', 'back', 'after', 'use', 'two', 'how', 'our', 'work', 'first',
+            'well', 'way', 'even', 'new', 'want', 'because', 'any', 'these', 'give', 'day',
+            'most', 'us', 'is', 'was', 'are', 'been', 'has', 'had', 'were', 'said', 'did',
+            'am'
+        }
+
+    def is_likely_english(self, text: str, threshold: float = 0.3) -> bool:
+        """
+        Detects if text is likely English
+
+        Uses simple heuristic: % of common English words
+
+        Args:
+            text: Input text
+            threshold: Minimum ratio of English words (default 0.3 = 30%)
+
+        Returns:
+            True if likely English, False otherwise
+        """
+        words = re.findall(r'\b[a-z]+\b', text.lower())
+
+        if not words:
+            return True  # Empty or symbols only - assume English
+
+        english_count = sum(1 for word in words if word in self.english_common_words)
+        ratio = english_count / len(words)
+
+        return ratio >= threshold
 
     def detect_question_pattern(self, text: str) -> Optional[str]:
         """
@@ -453,8 +495,29 @@ if __name__ == "__main__":
                 print(f"      → Search: '{learning_query}'")
                 print(f"      → Nicole learns what '{concept}' means!")
 
+    # Test 5: Language Detection (HONEST BOUNDARY!)
+    print("\n5. Language Detection (Honest Boundary):")
+    test_languages = [
+        ("Hello, how are you?", "English"),
+        ("Привет, как дела?", "Not English"),
+        ("Bonjour, comment allez-vous?", "Not English"),
+        ("你好吗？", "Not English"),
+        ("This is a test", "English")
+    ]
+
+    for text, expected in test_languages:
+        is_eng = guidance.is_likely_english(text)
+        result = "English" if is_eng else "Not English"
+        status = "✅" if result == expected else "❌"
+        print(f"   {status} '{text}'")
+        print(f"      Detected: {result}, Expected: {expected}")
+        if not is_eng:
+            print(f"      Response: '{EnglishGuidance.ENGLISH_ONLY_MESSAGE}'")
+
     print("\n=== TEST COMPLETED ===")
     print("\nRemember: These are RULES, not TEMPLATES!")
     print("Grammar = structure that enables creativity! 🎵")
     print("\n💡 Meta-learning = Nicole learns like a child:")
     print("   Hears unfamiliar → asks 'what does it mean?' → learns → uses!")
+    print("\n🚪 Honest boundary (NOT template-evil!):")
+    print(f"   Non-English → \"{EnglishGuidance.ENGLISH_ONLY_MESSAGE}\"")
