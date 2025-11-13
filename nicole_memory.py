@@ -770,13 +770,22 @@ def add_compatibility_methods():
         return False
     
     def get_semantic_candidates(self, word: str, distance_percent: float = 0.5) -> List[str]:
-        """Получает семантические кандидаты (совместимость с nicole.py)"""
+        """
+        Получает семантические кандидаты (совместимость с nicole.py)
+
+        FIXED: When DB is empty, return [] instead of [word] to avoid duplicates
+        - Empty DB → candidates_50 = [], candidates_70 = []
+        - Let objectivity seeds be the primary source when learning hasn't started
+        """
         # Конвертируем distance_percent в limit для совместимости
         limit = max(5, int(distance_percent * 20))  # 0.5 -> 10, 0.7 -> 14
         candidates = []
         if word in self.associative_network.associations:
             candidates = list(self.associative_network.associations[word].keys())[:limit]
-        return candidates if candidates else [word]
+
+        # FIX: Don't return [word] as fallback - causes duplicates
+        # Instead return empty list and let caller handle it
+        return candidates
     
     # Добавляем методы к классу
     NicoleMemoryCore.update_word_frequencies = update_word_frequencies
