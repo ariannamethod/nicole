@@ -240,17 +240,18 @@ class EnglishGuidance:
 
         return (False, [], '')
 
-    def is_likely_english(self, text: str, threshold: float = 0.3) -> bool:
+    def is_likely_english(self, text: str, threshold: float = 0.15) -> bool:
         """
         Detects if text is likely English
 
         Uses heuristics:
         1. Check for non-Latin scripts (Cyrillic, Chinese, etc.) → NOT English
         2. Check % of common English words
+        3. For short phrases (1-3 words), use relaxed threshold
 
         Args:
             text: Input text
-            threshold: Minimum ratio of English words (default 0.3 = 30%)
+            threshold: Minimum ratio of English words (default 0.15 = 15%)
 
         Returns:
             True if likely English, False otherwise
@@ -278,7 +279,13 @@ class EnglishGuidance:
             else:
                 return True  # Only symbols/numbers - assume English for now
 
-        # 5. Check ratio of common English words
+        # 5. SPECIAL CASE: Short phrases (1-3 words)
+        # If all Latin alphabet and no non-English scripts → assume English!
+        if len(words) <= 3:
+            # Already passed non-Latin script checks above, so if we got here it's likely English
+            return True
+
+        # 6. Check ratio of common English words for longer phrases
         english_count = sum(1 for word in words if word in self.english_common_words)
         ratio = english_count / len(words)
 

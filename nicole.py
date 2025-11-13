@@ -994,8 +994,10 @@ class NicoleCore:
 
             # FIX: TOXICITY DETECTION - Self-respect boundaries!
             # Проверяем токсичность направленную на Nicole
-            if guidance.is_toxic_toward_nicole(user_input):
+            is_toxic, reasons, tox_type = guidance.is_toxic(user_input)
+            if is_toxic:
                 print(f"[Nicole:Toxicity] ❌ Токсичное сообщение: '{user_input[:50]}...'")
+                print(f"[Nicole:Toxicity] Причины: {reasons}, Тип: {tox_type}")
                 return guidance.TOXICITY_BOUNDARY_MESSAGE
 
             if not self.current_transformer:
