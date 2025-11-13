@@ -433,14 +433,16 @@ class HighMathEngine:
         result = [pronoun_mapping.get(w.lower(), w) for w in words]
 
         # КРИТИЧНО: Грамматические правила после инверсии
-        # Исправляем "you am" → "you are", "i is" → "i am"
+        # Исправляем "you am" → "you are", "i is/are" → "i am"
         for i in range(len(result) - 1):
             current = result[i].lower()
             next_word = result[i + 1].lower()
 
             if current == 'you' and next_word == 'am':
                 result[i + 1] = 'are'
-            elif current == 'i' and next_word in ['is', 'are']:
+            elif current == 'i' and next_word in ['is', 'are', 'was', 'were']:
+                result[i + 1] = 'am'
+            elif current == 'i' and i + 1 < len(result) and result[i+1].lower() in ['is', 'are']:
                 result[i + 1] = 'am'
 
         # НОВОЕ: Продвинутые грамматические правила
@@ -616,42 +618,150 @@ class HighMathEngine:
         # Передаём candidates чтобы выбирать глаголы из резонанса, не из шаблона!
         grammar_final = self._apply_final_grammar_rules(flow_improved, all_candidates)
 
+        # ФИНАЛЬНАЯ грамматическая коррекция
+        grammar_final = self._fix_grammar_errors(grammar_final)
+
         return grammar_final
     
-    def _generate_sentence_me_style(self, candidates: List[str], length: int, 
+    def _fix_grammar_errors(self, words: List[str]) -> List[str]:
+        """
+        Финальная грамматическая коррекция
+
+        Исправляет распространенные ошибки:
+        - "I are" → "I am"
+        - "you am" → "you are"
+        - "I is/was/were" → "I am"
+        """
+        if not words or len(words) < 2:
+            return words
+
+        result = words.copy()
+
+        # Проходим по всем словам и исправляем грамматику
+        for i in range(len(result) - 1):
+            current = result[i].lower()
+            next_word = result[i + 1].lower()
+
+            # I + неправильный глагол → I am
+            if current == 'i' and next_word in ['are', 'is', 'was', 'were']:
+                result[i + 1] = 'am'
+            # you + am → you are
+            elif current == 'you' and next_word == 'am':
+                result[i + 1] = 'are'
+
+        return result
+
+    def _score_candidates(self, candidates: List[str], user_input: str) -> List[Tuple[str, float]]:
+        """
+        Score candidates using smart heuristics (inspired by tree.py)
+
+        Scoring factors:
+        - Length: longer words are more content-rich
+        - Rarity: avoid repetitive words
+        - Quality: filter stopwords and noise
+
+        Returns:
+            List of (word, score) tuples sorted by score descending
+        """
+        if not candidates:
+            return []
+
+        # Stopwords to filter out (basic English + technical noise)
+        stopwords = {
+            'the', 'and', 'to', 'a', 'in', 'it', 'of', 'for', 'on', 'with',
+            'as', 'is', 'at', 'by', 'from', 'or', 'an', 'be', 'this', 'that',
+            'are', 'was', 'but', 'not', 'had', 'have', 'has', 'were', 'been',
+            '===', 'objectivity', 'end', 'internet', 'response', 'pattern',
+            # Technical noise from RAG/context
+            'session', 'session:', 'nicole', 'nicole:', 'user', 'user:',
+            'rag', 'context', 'message', 'input', 'output', 'text', 'data'
+        }
+
+        # Filter stopwords, technical noise, and words with colons
+        filtered = []
+        for w in candidates:
+            w_lower = w.lower().strip(':')  # Remove trailing colons
+            # Skip if stopword, too short, or contains colon
+            if w_lower in stopwords or len(w) < 3 or ':' in w:
+                continue
+            filtered.append(w)
+
+        if not filtered:
+            # Fallback to all candidates if filtering removed everything
+            filtered = [w for w in candidates if len(w) > 1 and ':' not in w]
+
+        # Count frequencies
+        freq_count = {}
+        for w in filtered:
+            freq_count[w] = filtered.count(w)
+
+        # Score each word
+        scored = []
+        for w in set(filtered):  # Use set to avoid duplicates
+            # Length bonus: longer words are more meaningful (cap at 12 chars)
+            length_bonus = min(len(w) / 12.0, 1.0)
+
+            # Rarity bonus: prefer words that appear less frequently
+            freq = freq_count.get(w, 1)
+            rarity_bonus = 1.0 / freq if freq > 0 else 1.0
+
+            # Quality bonus: capitalized words (proper nouns) get boost
+            quality_bonus = 1.2 if w and w[0].isupper() else 1.0
+
+            # Final score
+            score = length_bonus * rarity_bonus * quality_bonus
+            scored.append((w, score))
+
+        # Sort by score descending
+        scored.sort(key=lambda x: x[1], reverse=True)
+        return scored
+
+    def _generate_sentence_me_style(self, candidates: List[str], length: int,
                                    used_global: set, pronouns: List[str]) -> List[str]:
-        """Генерация одного предложения по принципам ME с строгими фильтрами"""
+        """
+        Генерация одного предложения с УМНЫМ выбором слов
+
+        УЛУЧШЕНО: вместо random.shuffle используем smart scoring!
+        """
         sentence = []
         used_local = set()  # Локальный used для этого предложения
-        
+
         # ME ПРИНЦИП: сначала местоимения (приоритет)
         for pronoun in pronouns:
             if len(sentence) >= length:
                 break
-            # ME ФИЛЬТР: не в глобальном used, не в локальном (местоимения ВСЕГДА разрешены)
+            # ME ФИЛЬТР: не в глобальном used, не в локальном
             if (pronoun not in used_global and pronoun not in used_local):
                 sentence.append(pronoun)
                 used_local.add(pronoun)
-                used_global.add(pronoun)  # Обновляем глобальный
-        
-        # ME ПРИНЦИП: затем кандидаты с строгими фильтрами
-        random.shuffle(candidates)
-        for word in candidates:
+                used_global.add(pronoun)
+
+        # НОВОЕ: Smart scoring вместо random.shuffle!
+        # Приоритизируем слова по length, rarity, quality
+        scored_candidates = self._score_candidates(candidates, "")
+
+        # Берем топ кандидатов
+        for word, score in scored_candidates:
             if len(sentence) >= length:
                 break
-            # ME ФИЛЬТР: строгая проверка повторов + длина > 1
-            if (word not in used_global and word not in used_local and 
-                len(word) > 1 and word not in sentence):
+            # ME ФИЛЬТР: строгая проверка повторов
+            if (word not in used_global and word not in used_local and
+                word not in sentence and len(word) > 1):
                 sentence.append(word)
                 used_local.add(word)
                 used_global.add(word)
-        
-        # ME ПРИНЦИП: дополняем с защитой от циклов
+
+        # ME ПРИНЦИП: дополняем если нужно (но не random!)
+        # Используем remaining candidates с более низким score
+        remaining_idx = len([w for w, s in scored_candidates if w in sentence])
         attempts = 0
-        while len(sentence) < length and candidates and attempts < 20:
-            word = random.choice(candidates)
-            # ME ФИЛЬТР: строгая проверка
-            if (word not in used_global and word not in used_local and 
+        while len(sentence) < length and remaining_idx < len(scored_candidates) and attempts < 10:
+            if remaining_idx >= len(scored_candidates):
+                break
+            word, score = scored_candidates[remaining_idx]
+            remaining_idx += 1
+
+            if (word not in used_global and word not in used_local and
                 word not in sentence and len(word) > 1):
                 sentence.append(word)
                 used_local.add(word)
@@ -661,7 +771,7 @@ class HighMathEngine:
         # ME ПРИНЦИП: капитализация первого слова
         if sentence:
             sentence[0] = sentence[0].capitalize()
-            
+
         return sentence
     
     def _extract_charged_tokens(self, text: str) -> List[str]:
