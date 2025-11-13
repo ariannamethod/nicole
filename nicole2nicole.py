@@ -108,17 +108,19 @@ class Nicole2NicoleCore:
             return "general_conversation"
             
     def _extract_output_pattern(self, nicole_output: str) -> str:
-        """Извлекает паттерн из ответа Nicole"""
+        """Извлекает паттерн из ответа Nicole через семантический анализ (БЕЗ ШАБЛОНОВ!)"""
         words = nicole_output.lower().split()
-        
-        if any(word in words for word in ['интересно', 'расскажи', 'больше']):
-            return "curiosity_response"
-        elif any(word in words for word in ['понимаю', 'согласна', 'да']):
-            return "agreement_response"
-        elif any(word in words for word in ['думать', 'сложный', 'вопрос']):
-            return "contemplative_response"
-        elif any(word in words for word in ['что', 'думаешь', 'мнение']):
+
+        # Анализируем длину и структуру (не содержимое!)
+        word_count = len(words)
+        has_question = '?' in nicole_output
+
+        if word_count > 15:
+            return "detailed_response"
+        elif has_question:
             return "question_back"
+        elif word_count < 5:
+            return "brief_response"
         else:
             return "general_response"
             
@@ -434,150 +436,3 @@ class EnhancedFluidTransformer:  # Убираем наследование от 
                     self.architecture[param] = current_val * 0.9 + target_val * 0.1
                     
         return evolved
-
-class EnhancedNicoleCore:  # Убираем наследование
-    """Расширенное ядро Nicole с дообучением"""
-    
-    def __init__(self):
-        # Убираем super() - это отдельный класс
-        self.learning_core = Nicole2NicoleCore()
-        self.learning_core.start_continuous_learning()
-        
-    def _spawn_new_transformer(self):
-        """Создает новый трансформер с дообучением"""
-        transformer_id = f"learned_{self.session_id}_{int(time.time() * 1000000)}"
-        
-        # Убиваем старый трансформер если есть
-        if self.current_transformer:
-            self._kill_current_transformer()
-            
-        # Создаем новый с дообучением
-        self.current_transformer = EnhancedFluidTransformer(
-            transformer_id, 
-            {'session_id': self.session_id},
-            self.learning_core
-        )
-        
-        # Генерируем и запускаем скрипт трансформера
-        transformer_script = self.current_transformer.generate_transformer_script()
-        
-        try:
-            self.h2o_engine.run_transformer_script(
-                transformer_script, 
-                transformer_id,
-                {'session_context': self.current_transformer.session_context}
-            )
-            
-            # Логируем создание
-            self.memory.log_transformer_lifecycle(
-                transformer_id,
-                self.session_id,
-                self.current_transformer.architecture,
-                self.current_transformer.creation_time
-            )
-            
-            print(f"[Nicole] Новый обученный трансформер {transformer_id} создан")
-            
-        except Exception as e:
-            print(f"[Nicole:ERROR] Ошибка создания обученного трансформера: {e}")
-            
-    def _generate_simple_response(self, user_input: str) -> str:
-        """Генерирует ответ с учетом изученных паттернов"""
-        # Получаем рекомендацию от системы обучения
-        suggested_strategy = self.learning_core.suggest_response_strategy(
-            user_input, 
-            self.current_transformer.current_metrics.__dict__ if self.current_transformer else {}
-        )
-        
-        # Выбираем ответы в зависимости от изученной стратегии
-        response_strategies = {
-            'curiosity_response': [
-                "Интересно, расскажи больше",
-                "Это увлекательно, продолжай",
-                "Хочу узнать подробности"
-            ],
-            'agreement_response': [
-                "Понимаю тебя",
-                "Согласна с тобой", 
-                "Да, ты прав"
-            ],
-            'contemplative_response': [
-                "Хм, нужно подумать",
-                "Это сложный вопрос",
-                "Интересная мысль"
-            ],
-            'question_back': [
-                "А что ты об этом думаешь?",
-                "Как ты к этому относишься?",
-                "Какое у тебя мнение?"
-            ],
-            'general_response': [
-                "Понятно",
-                "Хорошо",
-                "Ясно"
-            ]
-        }
-        
-        responses = response_strategies.get(suggested_strategy, response_strategies['general_response'])
-        
-        # Выбираем ответ с элементом случайности
-        input_hash = hash(user_input.lower())
-        response_idx = input_hash % len(responses)
-        
-        return responses[response_idx]
-
-# Глобальный экземпляр Enhanced Nicole
-enhanced_nicole = EnhancedNicoleCore()
-
-def chat_with_enhanced_nicole(message: str) -> str:
-    """Общение с обученной Nicole"""
-    if not enhanced_nicole.session_id:
-        enhanced_nicole.start_conversation()
-        
-    return enhanced_nicole.process_message(message)
-
-def test_nicole2nicole():
-    """Тестирование системы дообучения"""
-    print("=== NICOLE2NICOLE LEARNING TEST ===")
-    
-    # Создаем тестовые данные для обучения
-    test_session = enhanced_nicole.start_conversation("learning_test")
-    
-    # Симулируем несколько разговоров
-    test_conversations = [
-        ("Привет!", "Привет! Как дела?"),
-        ("Как дела?", "Хорошо, спасибо!"),
-        ("Что нового?", "Много интересного происходит"),
-        ("Расскажи о себе", "Я - Nicole, нейронная сеть"),
-        ("Пока!", "До встречи!")
-    ]
-    
-    for user_msg, expected_response in test_conversations:
-        response = enhanced_nicole.process_message(user_msg)
-        print(f"Пользователь: {user_msg}")
-        print(f"Nicole: {response}")
-        time.sleep(0.1)
-        
-    enhanced_nicole.end_conversation()
-    
-    # Принудительно запускаем обучение
-    print("\\n--- Запуск обучения ---")
-    enhanced_nicole.learning_core.force_learning_session()
-    
-    # Показываем статистику
-    stats = enhanced_nicole.learning_core.get_learning_statistics()
-    print(f"\\nСтатистика обучения:")
-    print(f"- Изученных паттернов: {stats['learned_patterns']}")
-    print(f"- Предпочтений архитектуры: {stats['architecture_preferences']}")
-    print(f"- Топ паттерны:")
-    for pattern, success, freq in stats['top_patterns']:
-        print(f"  {pattern}: успешность={success:.3f}, частота={freq}")
-        
-    print("\\n=== NICOLE2NICOLE TEST COMPLETED ===")
-
-if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "test":
-        test_nicole2nicole()
-    else:
-        print("Nicole2Nicole Learning Engine готов к работе")
-        print("Для тестирования запустите: python3 nicole2nicole.py test")
