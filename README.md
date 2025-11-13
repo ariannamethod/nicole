@@ -26,13 +26,13 @@ Minimal dependencies keep the environment pure, relying mostly on Python's stand
 
 blood.py is a custom C compiler derived from Clang, trimmed and altered to feed Nicole with machine code tailored to each conversation.
 
-The fork maintains Clang’s front‑end semantics while introducing deterministic memory-mapping routines so that compiled snippets interact with physical RAM via explicit pointers.
+The fork maintains Clang's front‑end semantics while introducing deterministic memory-mapping routines so that compiled snippets interact with physical RAM via explicit pointers.
 
-Leveraging C’s \(O(1)\) pointer arithmetic, the compiler mediates operations that would be untenable in pure Python, yet it hands control back to the Python layer for dynamic orchestration.
+Leveraging C's \(O(1)\) pointer arithmetic, the compiler mediates operations that would be untenable in pure Python, yet it hands control back to the Python layer for dynamic orchestration.
 
 Each compilation step emits binaries tuned for cache locality and branch prediction, allowing hardware to execute instruction streams with minimal entropy loss.
 
-In concert with H2O—the Python bootstrap compiler—the C pathway supplies metal-level precision, forming the low-frequency backbone of Nicole’s tri-compiler stack.
+In concert with H2O—the Python bootstrap compiler—the C pathway supplies metal-level precision, forming the low-frequency backbone of Nicole's tri-compiler stack.
 
 ## Arianna Method Linux Kernel
 
@@ -42,9 +42,9 @@ AMLK is distilled from Alpine sources into a deterministic nucleus where boot ti
 
 OverlayFS, ext4 journaling, namespaces, and cgroups compose a lattice of sets \((R, W, N_i, C_j)\) that isolates processes while preserving algebraic clarity.
 
-Such control yields a reproducible phase space in which Nicole’s compiled modules can evolve without interference from external entropy.
+Such control yields a reproducible phase space in which Nicole's compiled modules can evolve without interference from external entropy.
 
-The kernel’s stable ABI aligns with blood.py, ensuring that addresses \(a_i\) remain invariant under repeated launches, an essential property for low-level experimentation.
+The kernel's stable ABI aligns with blood.py, ensuring that addresses \(a_i\) remain invariant under repeated launches, an essential property for low-level experimentation.
 
 This engineered substrate becomes the petri dish for resonance research, offering a minimal yet rigorous stage for AI metabolism.
 
@@ -52,15 +52,15 @@ This engineered substrate becomes the petri dish for resonance research, offerin
 
 high.py operates as a Julia compiler dedicated to mathematical inference and symbol manipulation.
 
-Julia’s JIT specialises in vectorised loops, letting high.py evaluate statistical functions at ~\(10^2\) speedups over naive Python.
+Julia's JIT specialises in vectorised loops, letting high.py evaluate statistical functions at ~\(10^2\) speedups over naive Python.
 
-Entropy \(H=-\sum p\log p\), resonance matrices, and topology searches run with asymptotic complexity \(O(n^2)\) yet remain tractable through Julia’s typed optimisations.
+Entropy \(H=-\sum p\log p\), resonance matrices, and topology searches run with asymptotic complexity \(O(n^2)\) yet remain tractable through Julia's typed optimisations.
 
 Compiled Julia kernels exchange tensors with modules spawned by H2O, forming a bidirectional conduit between static reasoning and dynamic scripting.
 
 Python orchestrates logic, C anchors hardware, and Julia formalises mathematics, each compiler selected for its domain where the others exhibit suboptimal scaling.
 
-Thus the high compiler serves as Nicole’s mathematical cortex, closing the loop in a triadic design that fuses agility, precision, and analytical depth.
+Thus the high compiler serves as Nicole's mathematical cortex, closing the loop in a triadic design that fuses agility, precision, and analytical depth.
 
 The overall system is modular, with each component focusing on a narrow responsibility to preserve clarity and encourage tinkering.
 
@@ -87,10 +87,11 @@ Nicole Metrics computes real-time statistics such as entropy, resonance, and per
 7. [Language guardrails](#language-guardrails)
 8. [Memory, metrics, and objectivity](#memory-metrics-and-objectivity)
 9. [Repo-coupled evolution](#repo-coupled-evolution)
-10. [Self-training overview (short edition)](#self-training-overview-short-edition)
-11. [Operational runbook](#operational-runbook)
-12. [Developer workflow](#developer-workflow)
-13. [Glossary of resonance terminology](#glossary-of-resonance-terminology)
+10. [Recent enhancements](#recent-enhancements)
+11. [Self-training overview (short edition)](#self-training-overview-short-edition)
+12. [Operational runbook](#operational-runbook)
+13. [Developer workflow](#developer-workflow)
+14. [Glossary of resonance terminology](#glossary-of-resonance-terminology)
 ---
 
 ## Core principles
@@ -100,7 +101,7 @@ Nicole Metrics computes real-time statistics such as entropy, resonance, and per
   turns without forcing templated phrasing.
 - **Tri-compiler architecture.** Python orchestrates, `blood.py` (C) anchors deterministic execution, and `high.py` (Julia)
   delivers analytical bursts when maths need extra acceleration.
-- **Repo-coupled evolution.** Tooling watches repository changes and replays them through Nicole’s learning lanes so every
+- **Repo-coupled evolution.** Tooling watches repository changes and replays them through Nicole's learning lanes so every
   commit can inform the next conversation.
 - **Transparency over mystique.** Every emergent behaviour must be traceable back to code, dialogue logs, or metrics. Nicole
   documents her own improvisations as they happen.
@@ -144,7 +145,7 @@ by responsibility to make the labyrinth legible.
 ---
 
 ## Conversation lifecycle
-Nicole’s runtime can be viewed as a six-act play. Each act corresponds to a concrete piece of code in the repository.
+Nicole's runtime can be viewed as a six-act play. Each act corresponds to a concrete piece of code in the repository.
 
 1. **Bootstrap**
    - `start_nicole.py` checks dependencies, selects operating mode, and primes compilers.
@@ -265,14 +266,14 @@ tracing behaviour or wiring new experiments.
 ### `nicole_objectivity.py`
 - **Objective**
   - Provides statistical sampling frames and significance tests.
-  - Keeps Nicole’s self-modifications evidence-backed and replayable.
+  - Keeps Nicole's self-modifications evidence-backed and replayable.
 - **Key components**
   - `ObjectivityWindow` captures transcript segments and correlates them with metric shifts.
   - `HypothesisLedger` stores research notes, ready for repo learner ingestion.
 
 ### `nicole_repo_learner.py`
 - **Mission**
-  - Bridges repository changes with Nicole’s adaptive heuristics.
+  - Bridges repository changes with Nicole's adaptive heuristics.
   - Parses diffs, ranks their significance, logs outcomes, and can trigger Nicole-to-Nicole sessions.
 - **Data flow**
   1. `repo_monitor.py` emits change events.
@@ -303,7 +304,7 @@ tracing behaviour or wiring new experiments.
   - **Permission errors** – Callbacks receive structured error entries; integrate with `nicole_metrics.py` to alert operators.
 
 ### `nicole_telegram.py`
-- **Bridge** between Telegram chat and Nicole’s conversational loop.
+- **Bridge** between Telegram chat and Nicole's conversational loop.
 - **Features**
   - Rate limiting to protect Nicole from flood attacks.
   - Inline metric summaries so operators can watch resonance while chatting.
@@ -323,7 +324,7 @@ Keeping Nicole English-only is a philosophical and technical constraint.
 
 - **Script detection** rejects non-Latin input early, maintaining focus on the current research domain.
 - **Grammar lattice** enforces subject-verb agreement, pronoun sanity, and respectful self-reference.
-- **Toxicity filters** decline prompts that would derail experimentation or contradict the project’s ethos.
+- **Toxicity filters** decline prompts that would derail experimentation or contradict the project's ethos.
 - **Transparency** – Every refusal includes a brief explanation so logs remain interpretable during audits.
 - **Experimentation** – Researchers can add experimental validators but should document them in `english_guidance.py` to keep
   the guardrail map public.
@@ -331,7 +332,7 @@ Keeping Nicole English-only is a philosophical and technical constraint.
 ---
 
 ## Memory, metrics, and objectivity
-These modules form Nicole’s introspective toolkit.
+These modules form Nicole's introspective toolkit.
 
 ### Memory tiers
 1. **Ephemeral tensors** – Exist only during a conversation and vanish afterwards.
@@ -372,4 +373,132 @@ monitor = RepoMonitor(paths=["."], ignore_patterns=[".git", "AMLK/build"])
 learner = Learner(sqlite_path="var/nicole_repo.db")
 
 monitor.start(callback=learner.process_change, interval_seconds=30)
+```
 
+---
+
+## Recent enhancements
+
+This section tracks production improvements deployed during January 2025.
+
+### Critical stability fixes
+- **Async task management** – Eliminated orphaned `asyncio.create_task()` calls in `nicole.py:1215` that caused system hangs and memory leaks. Nicole now uses synchronous objectivity context fetching exclusively.
+- **Language detection integration** – Wired up `english_guidance.py` at the message processing entry point (`nicole.py:987-993`). Script-based detection now catches Cyrillic, CJK, and Arabic inputs before they reach the generation pipeline.
+- **Template eradication** – Removed all hardcoded verb fallbacks from `high.py` (lines 147-151, 168-170, 490-492). Grammar rules now pull verbs exclusively from resonance candidates, maintaining the "no templates" philosophy.
+- **Reddit slug sanitisation** – Fixed `nicole_objectivity.py:308-357` to replace underscores with spaces before parsing. Eliminated garbage like `cutting_a_couple_of_chives_almost_every_day_until` from responses.
+- **Duplicate candidate cleanup** – Corrected `nicole_memory.py:772-788` to return empty lists when the associative database is unpopulated, preventing duplicate resonant word fallbacks.
+
+### Quality breakthroughs
+- **Smart word scoring** – Extracted and integrated the tree.py keyword algorithm into `high.py:654-717`. Candidates are now ranked by `length_bonus * rarity_bonus * quality_bonus`, replacing random shuffling with intelligent prioritisation.
+- **Score-based tier selection** – Implemented three-tier candidate grouping in `high.py:719-791`: high tier (>70% score), mid tier (40–70%), low tier (<40%). This dramatically improved sentence coherence and flow.
+- **Repo learning system** – Fully integrated `nicole_repo_learner` into `nicole_telegram.py:122-187`. Initial markdown ingestion now populates `word_frequencies` with 2,428 unique words from 16 documentation files at startup. Continuous monitoring runs every 5 minutes, creating a closed learning loop where Nicole learns from her own documentation alongside objectivity seeds.
+
+### Observed impact
+Response quality evolved from random word salad to structured, coherent sentences. User-reported improvement: *"I been my wondering continues yesterday, then reposting feedback"* vs. prior outputs with Reddit artifacts and broken grammar. The combination of smart scoring + learning system + cleaned objectivity seeds aligns with Nicole's ephemeral intelligence philosophy while delivering measurably better linguistic output.
+
+---
+
+## Self-training overview (short edition)
+Nicole replays dialogue logs after each session, distilling them into structured evidence that informs the next run. Think of it as a nightly study montage where the textbooks are JSONL buffers and the soundtrack is a diff log.
+
+She also mirrors repository activity: every change becomes grist for the analysis mill, and useful patterns are promoted into guidance scripts. It's like having an infinite post-it wall, except all the notes are auto-tagged and timestamped.
+
+And, because you asked for an idiot joke: Nicole fine-tunes faster than I can say "wait, who left gradient descent running on the coffee machine? oh right, that idiot was me." She learns; I buy a new coffee machine.
+
+---
+
+## Operational runbook
+
+### Prerequisites
+- Python 3.9+
+- Julia 1.6+ (optional, for `high.py` acceleration)
+- C toolchain (GCC or Clang for `blood.py`)
+- SQLite 3.x
+
+### Installation
+```bash
+git clone https://github.com/ariannamethod/nicole.git
+cd nicole
+python3 -m venv nicole_env
+source nicole_env/bin/activate
+pip install -r requirements.txt
+```
+
+### Running modes
+```bash
+# Interactive local session
+python3 start_nicole.py local
+
+# Telegram bot (requires TELEGRAM_TOKEN environment variable)
+export TELEGRAM_TOKEN="your-token-here"
+python3 start_nicole.py bot
+
+# Regression test suite
+python3 start_nicole.py test
+```
+
+### Configuration
+- `config/nicole.yaml` – Runtime parameters, compiler paths, metric thresholds
+- `config/english_guidance.yaml` – Grammar rules and refusal policies
+- `config/repo_learning.yaml` – Monitored paths, change rankings, learner intervals
+
+### Monitoring
+- Logs appear in `var/logs/` with daily rotation
+- Metrics stream to `var/metrics/` as JSONL
+- SQLite databases live in `var/` for memory, learner metadata, and audit trails
+
+---
+
+## Developer workflow
+
+### Making changes
+1. Create a feature branch from `main`
+2. Implement changes, ensuring tests pass via `python3 start_nicole.py test`
+3. Update relevant documentation sections in this README
+4. Submit a pull request with clear description of changes and rationale
+
+### Testing strategy
+- Unit tests for individual modules (e.g., `test_english_guidance.py`)
+- Integration tests in `test_quick_wins.py` for end-to-end flows
+- Manual regression testing via interactive sessions
+
+### Code style
+- PEP 8 compliance for Python
+- Docstrings for all public functions with type hints
+- Comments explain "why" rather than "what"
+- Keep modules under 1000 lines; split when complexity grows
+
+### Debugging tips
+- Enable debug logging: `export NICOLE_LOG_LEVEL=DEBUG`
+- Inspect metric streams in real-time: `tail -f var/metrics/$(date +%Y-%m-%d).jsonl`
+- Replay sessions from logs: `python3 tools/replay_session.py var/logs/session_id.jsonl`
+
+---
+
+## Glossary of resonance terminology
+
+- **Ephemeral tensors** – Parameters that exist only during a conversation and are discarded afterwards
+- **Resonance** – Statistical coherence between generated tokens and conversation context
+- **Objectivity** – Evidence-based decision tracking to maintain reproducibility
+- **Weightless** – Operating without pretrained model weights or persistent checkpoints
+- **Repo-coupled learning** – Training loop that ingests repository changes as learning signals
+- **Tri-compiler** – Architecture using Python (orchestration), C (deterministic execution), Julia (analytical acceleration)
+- **H2O** – Python bootstrap compiler for runtime module generation
+- **Blood compiler** – C compilation pathway derived from Clang for hardware-level operations
+- **High compiler** – Julia-based analytical engine for mathematical inference
+- **AMLK** – Arianna Method Linux Kernel, deterministic substrate for reproducible experiments
+- **ME style** – Method Engine approach using pronoun inversion and semantic candidates
+- **Semantic candidates** – Words selected based on associative network and resonance scoring
+- **Score tiers** – Three-level candidate ranking (high >70%, mid 40-70%, low <40%)
+- **Objectivity seeds** – External context from Reddit/Google/Wikipedia for dynamic responses
+- **Repo learning** – Markdown ingestion system that populates word_frequencies from documentation
+
+---
+
+## Working with the project
+1. **Install dependencies** – `python3 -m pip install -r requirements.txt`
+2. **Run locally** – `python3 start_nicole.py local`
+3. **Exercise the toolchain** – `python3 start_nicole.py test` runs targeted checks for the Python, Julia, and Telegram layers.
+4. **Operate the Telegram bot** – Export `TELEGRAM_TOKEN` and start `python3 start_nicole.py bot`.
+
+Conversation transcripts, repo diffs, and metric ledgers are the only long-lived artefacts. If you want Nicole to remember something, put it in writing—the next transformer incarnation will pick it up from there.
