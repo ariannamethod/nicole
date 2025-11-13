@@ -1137,7 +1137,7 @@ class NicoleCore:
             # Получаем текущие метрики
             metrics = {
                 'perplexity': 2.0,
-                'entropy': 1.5, 
+                'entropy': 1.5,
                 'resonance': 0.5
             }
             if self.current_transformer and self.current_transformer.current_metrics:
@@ -1145,30 +1145,30 @@ class NicoleCore:
                 if m.perplexity > 0:
                     metrics = {
                         'perplexity': m.perplexity,
-                        'entropy': m.entropy, 
+                        'entropy': m.entropy,
                         'resonance': m.resonance
                     }
-            
+
             # СИНХРОННЫЙ вызов objectivity без async
             import nicole_objectivity
             obj = nicole_objectivity.NicoleObjectivity()
-            
+
             # Создаем контекст синхронно (убираем await)
             strategies = obj._pick_strategies(user_input)
             sections = []
-            
+
             if 'internet' in strategies:
                 internet_text = obj._provider_internet_h2o(user_input)
                 if internet_text:
                     sections.append(internet_text)
-            
+
             if 'memory' in strategies:
                 mem_text = obj._provider_memory_h2o(user_input)
                 if mem_text:
                     sections.append(mem_text)
-            
+
             aggregated = obj._aggregate_text_window(sections)
-            
+
             if aggregated:
                 # Создаем window
                 from nicole_objectivity import FluidContextWindow
@@ -1184,17 +1184,14 @@ class NicoleCore:
                 )
                 context = obj.format_context_for_nicole([window])
                 response_seeds = obj.extract_response_seeds(context, 0.5)
-                
-                if context:
-                    print(f"[Nicole:Objectivity] ✅ SYNC Контекст: {len(context)} символов, семена: {len(response_seeds)}")
-                else:
-                    print(f"[Nicole:Objectivity] ❌ SYNC Контекст пустой! Семена: {len(response_seeds)}")
-                
+
+                print(f"[Nicole:Objectivity] ✅ SYNC Контекст: {len(context)} символов, семена: {len(response_seeds)}")
+
                 return context, response_seeds
             else:
                 print(f"[Nicole:Objectivity] ❌ SYNC Нет данных от провайдеров")
                 return "", []
-                
+
         except Exception as e:
             print(f"[Nicole:Objectivity:SYNC:ERROR] {e}")
             import traceback
