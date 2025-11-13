@@ -731,14 +731,18 @@ h2o_log("=== H2O TRANSFORMER READY ===")
 class NicoleCore:
     """Nicole system core"""
 
-    def __init__(self):
+    def __init__(self, memory_db_path: str = "var/nicole_memory.db"):
+        # Ensure var directory exists
+        import os
+        os.makedirs("var", exist_ok=True)
+
         # Use advanced memory if available
         if ADVANCED_MEMORY_AVAILABLE:
-            self.memory = NicoleMemoryCore()
+            self.memory = NicoleMemoryCore(db_path=memory_db_path)
             self.rag_system = nicole_rag
             print("[Nicole] Advanced memory and RAG activated ✅")
         else:
-            self.memory = NicoleMemory()
+            self.memory = NicoleMemory(db_path=memory_db_path)
             self.rag_system = None
             print("[Nicole] Basic memory (advanced unavailable)")
 
@@ -1334,14 +1338,8 @@ class NicoleCore:
     def _generate_me_enhanced_response(self, user_input: str, resonant_word: str) -> str:
         """Generates response based on ME principles + Objectivity"""
         try:
-            # Get objective context asynchronously
-            import asyncio
+            # Get objective context synchronously (async version caused orphaned tasks)
             try:
-                # FIXED: use await instead of asyncio.run() inside event loop
-                import asyncio
-                # FIX: Use only sync version to avoid orphaned tasks
-                # Reason: asyncio.create_task() created task that was never awaited
-                # This caused memory leak and system hangs
                 context, objectivity_seeds = self._get_objectivity_context_sync(user_input)
             except Exception as e:
                 print(f"[Nicole:Objectivity:ERROR] Context retrieval error: {e}")
@@ -1677,6 +1675,74 @@ class NicoleCore:
             self.h2o_engine.end_session()
             print(f"[Nicole] Conversation in session {self.session_id} ended")
             self.session_id = None
+
+    def export_state(self) -> Dict[str, Any]:
+        """
+        Export Nicole's current state for bridge protocol
+
+        Returns state dict with:
+        - word_frequencies: learned vocabulary
+        - bigram_transitions: learned patterns
+        - conversation_history: recent context
+        - metrics: current performance
+        """
+        state = {
+            'timestamp': time.time(),
+            'session_id': self.session_id,
+            'conversation_count': self.conversation_count,
+            'word_frequencies': dict(self.memory.word_frequencies),
+            'bigram_transitions': {
+                k: dict(v) for k, v in self.memory.bigram_transitions.items()
+            },
+            'current_metrics': self.current_transformer.current_metrics.__dict__ if self.current_transformer else {},
+            'transformer_architecture': self.current_transformer.architecture if self.current_transformer else {}
+        }
+
+        # Add conversation history if available
+        if hasattr(self, '_conversation_history'):
+            state['conversation_history'] = self._conversation_history[-10:]  # Last 10 messages
+
+        return state
+
+    def import_state(self, state: Dict[str, Any]):
+        """
+        Import state from weighted node (mutual learning)
+
+        Merges:
+        - New word frequencies
+        - New bigram patterns
+        - Learned associations
+        """
+        if 'word_frequencies' in state:
+            # Merge word frequencies (keep max counts)
+            for word, count in state['word_frequencies'].items():
+                self.memory.word_frequencies[word] = max(
+                    self.memory.word_frequencies.get(word, 0),
+                    count
+                )
+
+            # Save to database
+            conn = sqlite3.connect(self.memory.db_path)
+            cursor = conn.cursor()
+            for word, count in state['word_frequencies'].items():
+                cursor.execute("""
+                INSERT OR REPLACE INTO word_frequencies (word, count)
+                VALUES (?, ?)
+                """, (word, count))
+            conn.commit()
+            conn.close()
+
+            print(f"[Nicole:Bridge] Imported {len(state['word_frequencies'])} word frequencies from weighted node")
+
+        if 'bigram_transitions' in state:
+            # Merge bigrams
+            for w1, transitions in state['bigram_transitions'].items():
+                for w2, count in transitions.items():
+                    self.memory.bigram_transitions[w1][w2] = max(
+                        self.memory.bigram_transitions[w1].get(w2, 0),
+                        count
+                    )
+            print(f"[Nicole:Bridge] Imported bigram patterns from weighted node")
 
 # Global Nicole instance
 nicole_core = NicoleCore()
