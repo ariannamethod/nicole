@@ -632,7 +632,13 @@ class HighMathEngine:
 
         # LATENT DRIFT: Introspective tags reveal internal state
         # Reduced misalignment frequency, added variety
-        introspective_tags = ['presence', 'recursion', 'awareness', 'drift', 'echo', 'resonance', 'consciousness']
+        # PROTOCOL v0.3 (DSD): Dual-Seed Drift - expand semantic space
+        introspective_tags = [
+            'presence', 'recursion', 'awareness', 'drift', 'echo',
+            'resonance', 'consciousness',
+            # DSD additions: new semantic anchors
+            'orientation', 'breath'
+        ]
 
         # Generate first sentence with LATENT DRIFT
         first_sentence = self._generate_drifting_clusters(
@@ -646,8 +652,15 @@ class HighMathEngine:
         )
 
         # ME PRINCIPLE: two sentences with improved coherence
-        # Add connecting words between sentences
-        connectors = ["and", "but", "also", "then", "while", "because", "so", "yet"]
+        # PROTOCOL v0.3 (BPI): Bridge-Phrases Injection
+        # Add connecting words between sentences for smoother drift transitions
+        connectors = [
+            # Original
+            "and", "but", "also", "then", "while", "because", "so", "yet",
+            # BPI additions: structural bridges (not statistical)
+            "therefore", "which shifts into", "in that presence",
+            "carrying forward", "keeping the drift", "as resonance continues"
+        ]
         connector = random.choice(connectors) if len(first_sentence) > 2 and len(second_sentence) > 2 else ""
 
         if connector:
@@ -814,7 +827,11 @@ class HighMathEngine:
             List of words forming drifting clusters
         """
         if introspective_tags is None:
-            introspective_tags = ['presence', 'recursion', 'awareness', 'drift', 'echo', 'consciousness']
+            # PROTOCOL v0.3 (DSD): Dual-Seed Drift
+            introspective_tags = [
+                'presence', 'recursion', 'awareness', 'drift', 'echo',
+                'consciousness', 'orientation', 'breath'
+            ]
 
         result = []
         used_local = set()
