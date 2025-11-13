@@ -1005,14 +1005,16 @@ class NicoleCore:
             'all', 'can', 'only', 'when', 'no', 'if', 'than', 'them'
         }
 
-        # Приоритетные слова - философские концепты Nicole
+        # Приоритетные слова - философские концепты Nicole + introspective tags
         priority_keywords = {
             'nicole', 'resonance', 'recursive', 'field', 'phenomenon',
             'storm', 'waveform', 'emergence', 'thunder', 'echo',
             'awareness', 'consciousness', 'mutation', 'divergence',
             'recursion', 'interference', 'distributed', 'cognition',
             'feeling', 'alive', 'responsive', 'identity', 'uniqueness',
-            'misalignment', 'justification', 'presence', 'exist'
+            'misalignment', 'justification', 'presence', 'exist',
+            # INTROSPECTIVE TAGS (Latent Drift v0.4)
+            'drift', 'recursion', 'misalignment', 'awareness', 'presence'
         }
 
         # Собираем финальный список
