@@ -352,13 +352,31 @@ class NicoleObjectivity:
             # Reddit IDs usually have <30% vowels (e.g., "nno4cwf", "s1yzjtoy5b")
             return vowel_ratio < 0.3
 
-        # Filter: no noise, no post IDs, max length 15 chars, min length 3
+        # Helper: detect likely Reddit usernames (CamelCase, compound words, numbers)
+        def is_likely_username(word: str) -> bool:
+            # CamelCase like "queenlegolas" (lowercase letters suddenly followed by more letters)
+            if any(word[i].islower() and word[i+1].isupper() for i in range(len(word)-1)):
+                return True
+            # Mixed case in middle of word (not starting with capital)
+            if word[0].islower() and any(c.isupper() for c in word[1:]):
+                return True
+            # Contains numbers (but not at start/end like "4k" or "top10")
+            if any(c.isdigit() for c in word[1:-1]) and len(word) > 5:
+                return True
+            # Very long compound words (>12 chars without spaces)
+            if len(word) > 12 and not any(sep in word for sep in ['-', '_']):
+                return True
+            return False
+
+        # Filter: no noise, no post IDs, no usernames, max length 15 chars, min length 3
         filtered = []
         for w in words:
             if w in reddit_noise:
                 continue
             if is_reddit_post_id(w):
                 continue  # Skip Reddit post IDs
+            if is_likely_username(w):
+                continue  # Skip usernames
             if len(w) > 15:  # Skip overly long slugs
                 continue
             if len(w) < 3:

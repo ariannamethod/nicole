@@ -136,6 +136,7 @@ class EnglishGuidance:
 
         # Common English words (for language detection)
         self.english_common_words = {
+            # Core function words
             'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i',
             'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at',
             'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she',
@@ -147,7 +148,13 @@ class EnglishGuidance:
             'think', 'also', 'back', 'after', 'use', 'two', 'how', 'our', 'work', 'first',
             'well', 'way', 'even', 'new', 'want', 'because', 'any', 'these', 'give', 'day',
             'most', 'us', 'is', 'was', 'are', 'been', 'has', 'had', 'were', 'said', 'did',
-            'am'
+            'am',
+            # EXPANSION: Common conversational words
+            'nice', 'great', 'ok', 'yes', 'yeah', 'no', 'nope', 'maybe', 'sure',
+            'hi', 'hello', 'hey', 'thanks', 'thank', 'please', 'sorry',
+            'ha', 'haha', 'wow', 'yay', 'cool', 'awesome', 'perfect',
+            # Common verbs/adjectives missed before
+            'tell', 'let', 's', 'really', 'very', 'much', 'more', 'many', 'here', 'where'
         }
 
     def detect_trigger_words(self, text: str) -> List[Tuple[str, List[str]]]:

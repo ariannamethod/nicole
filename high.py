@@ -681,6 +681,7 @@ class HighMathEngine:
         - "I are" → "I am"
         - "you am" → "you are"
         - "I is/was/were" → "I am"
+        - "I has" → "I have"
         """
         if not words or len(words) < 2:
             return words
@@ -692,9 +693,12 @@ class HighMathEngine:
             current = result[i].lower()
             next_word = result[i + 1].lower()
 
-            # I + wrong verb → I am
-            if current == 'i' and next_word in ['are', 'is', 'was', 'were']:
-                result[i + 1] = 'am'
+            # I + wrong verb → I am/have
+            if current == 'i':
+                if next_word in ['are', 'is', 'was', 'were']:
+                    result[i + 1] = 'am'
+                elif next_word == 'has':
+                    result[i + 1] = 'have'
             # you + am → you are
             elif current == 'you' and next_word == 'am':
                 result[i + 1] = 'are'
@@ -716,7 +720,7 @@ class HighMathEngine:
         if not candidates:
             return []
 
-        # Stopwords to filter out (basic English + technical noise)
+        # Stopwords to filter out (basic English + technical noise + commercial terms)
         stopwords = {
             'the', 'and', 'to', 'a', 'in', 'it', 'of', 'for', 'on', 'with',
             'as', 'is', 'at', 'by', 'from', 'or', 'an', 'be', 'this', 'that',
@@ -724,7 +728,14 @@ class HighMathEngine:
             '===', 'objectivity', 'end', 'internet', 'response', 'pattern',
             # Technical noise from RAG/context
             'session', 'session:', 'nicole', 'nicole:', 'user', 'user:',
-            'rag', 'context', 'message', 'input', 'output', 'text', 'data'
+            'rag', 'context', 'message', 'input', 'output', 'text', 'data',
+            # Commercial/technical junk from web scraping
+            'contractors', 'outlets', 'rectangle', 'professionals', 'services',
+            'products', 'customers', 'business', 'company', 'website', 'email',
+            'phone', 'address', 'contact', 'privacy', 'policy', 'terms', 'conditions',
+            # Reddit-specific artifacts that slip through
+            'karma', 'upvote', 'downvote', 'subreddit', 'thread', 'comment',
+            'moderator', 'permalink', 'submission'
         }
 
         # Filter stopwords, technical noise, and words with colons
