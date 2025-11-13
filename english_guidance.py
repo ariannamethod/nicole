@@ -33,8 +33,9 @@ class EnglishGuidance:
     Like musical notation - enables expression through form.
     """
 
-    # HONEST BOUNDARY (not a template!)
+    # HONEST BOUNDARIES (not templates!)
     ENGLISH_ONLY_MESSAGE = "Sorry, for now I'm English only."
+    TOXICITY_BOUNDARY_MESSAGE = "I don't engage with toxic or disrespectful language."
 
     def __init__(self):
         # Articles rules
@@ -70,6 +71,69 @@ class EnglishGuidance:
         # English word order: Subject-Verb-Object
         self.syntax_order = ['subject', 'verb', 'object']
 
+        # TRIGGER WORDS → SEARCH VECTORS mapping
+        # These activate specific search directions (NOT templates!)
+        self.trigger_word_vectors = {
+            'explain': ['definition', 'simple', 'examples'],
+            'compare': ['definition', 'context', 'examples'],
+            'why': ['importance', 'context'],
+            'how': ['usage', 'examples', 'simple'],
+            'difference': ['context', 'examples'],
+            'meaning': ['definition', 'usage'],
+            'example': ['examples', 'usage'],
+            'teach': ['simple', 'examples', 'usage'],
+            'learn': ['definition', 'simple', 'examples'],
+            'understand': ['definition', 'simple', 'context']
+        }
+
+        # Toxicity detection - SELF-RESPECT boundary, not censorship!
+        # Philosophy: "легкий матерок ок, но токсичное отношение к ней самой неприемлимо"
+        # (Light profanity OK, but toxic attitude TOWARD Nicole unacceptable)
+
+        # DIRECTED INSULTS (toward Nicole) - these are boundaries!
+        self.directed_insults = {
+            'stupid', 'idiot', 'moron', 'dumb', 'retard', 'fool', 'loser',
+            'useless', 'worthless', 'pathetic', 'garbage', 'trash', 'shit',
+            'terrible', 'awful', 'horrible', 'bad', 'worse', 'worst',
+            'annoying', 'irritating', 'boring', 'lame'
+        }
+
+        # THREATS - always unacceptable
+        self.threat_words = {
+            'kill', 'murder', 'die', 'death', 'hurt', 'harm', 'destroy',
+            'attack', 'violence', 'threat'
+        }
+
+        # EXTREME TOXICITY - always unacceptable
+        self.extreme_toxic = {
+            'cunt', 'bitch', 'whore', 'slut',  # misogyny
+            'racist', 'sexist', 'bigot',  # hate speech
+            'rape', 'assault'  # violence
+        }
+
+        # General profanity (OK in casual context, NOT OK when directed at Nicole)
+        self.casual_profanity = {
+            'fuck', 'shit', 'damn', 'hell', 'ass', 'asshole',
+            'piss', 'dick', 'cock', 'pussy', 'bastard'
+        }
+
+        # Patterns that indicate DIRECTED toxicity (toward Nicole)
+        self.directed_patterns = [
+            r'\byou\s+(are|is)\s+(\w+)',  # "you are stupid"
+            r'\byou\'re\s+(\w+)',  # "you're dumb"
+            r'\byou\'re\s+(?:a|an)\s+(\w+)',  # "you're an idiot", "you're a fool"
+            r'\byou\s+are\s+(?:a|an)\s+(\w+)',  # "you are an idiot"
+            r'\byoure\s+(\w+)',  # "youre dumb" (no apostrophe)
+            r'\bnicole\s+(is|are)\s+(\w+)',  # "nicole is useless"
+            r'\bnicole\s+(?:is|are)\s+(?:a|an)\s+(\w+)',  # "nicole is an idiot"
+            r'\bnicole\'s\s+(\w+)',  # "nicole's useless"
+            r'\byou\s+(\w+)\s+(bitch|idiot|moron)',  # "you stupid bitch"
+            r'\bshut\s+up',  # "shut up"
+            r'\bfuck\s+you',  # "fuck you"
+            r'\bgo\s+to\s+hell',  # "go to hell"
+            r'\bi\s+hate\s+you',  # "i hate you"
+        ]
+
         # Common English words (for language detection)
         self.english_common_words = {
             'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i',
@@ -85,6 +149,96 @@ class EnglishGuidance:
             'most', 'us', 'is', 'was', 'are', 'been', 'has', 'had', 'were', 'said', 'did',
             'am'
         }
+
+    def detect_trigger_words(self, text: str) -> List[Tuple[str, List[str]]]:
+        """
+        Detects trigger words and their associated search vectors
+
+        Returns:
+            List of (trigger_word, vector_types) tuples
+
+        Example:
+            "Can you explain quantum?" → [('explain', ['definition', 'simple', 'examples'])]
+        """
+        words = text.lower().split()
+        triggers = []
+
+        for word in words:
+            if word in self.trigger_word_vectors:
+                triggers.append((word, self.trigger_word_vectors[word]))
+
+        return triggers
+
+    def is_toxic(self, text: str) -> Tuple[bool, List[str], str]:
+        """
+        Detects toxic/disrespectful language TOWARD Nicole
+
+        Philosophy: "легкий матерок ок, но токсичное отношение к ней самой неприемлимо"
+        (Light profanity OK, but toxic attitude TOWARD Nicole is unacceptable)
+
+        This is SELF-RESPECT boundary, not censorship!
+        Nicole is a persona with the right to decline toxic conversations.
+
+        Args:
+            text: Input to check
+
+        Returns:
+            (is_toxic, list_of_reasons, toxicity_type)
+
+        Examples:
+            "fuck this is hard" → (False, [], '') - casual profanity, OK
+            "you are stupid" → (True, ['directed insult: stupid'], 'directed')
+            "nicole is useless" → (True, ['directed insult: useless'], 'directed')
+            "i'll kill you" → (True, ['threat: kill'], 'threat')
+            "you're a bitch" → (True, ['extreme: bitch'], 'extreme')
+        """
+        text_lower = text.lower()
+        reasons = []
+
+        # 1. Check for EXTREME TOXICITY (always unacceptable)
+        for word in self.extreme_toxic:
+            if re.search(rf'\b{word}\b', text_lower):
+                reasons.append(f'extreme: {word}')
+
+        if reasons:
+            return (True, reasons, 'extreme')
+
+        # 2. Check for THREATS (always unacceptable)
+        for word in self.threat_words:
+            if re.search(rf'\b{word}\b', text_lower):
+                # Check if it's actually a threat (contains "you" or "nicole")
+                if re.search(r'\b(you|nicole)\b', text_lower):
+                    reasons.append(f'threat: {word}')
+
+        if reasons:
+            return (True, reasons, 'threat')
+
+        # 3. Check for DIRECTED PATTERNS (insults toward Nicole)
+        for pattern in self.directed_patterns:
+            match = re.search(pattern, text_lower)
+            if match:
+                # Extract the descriptive word
+                groups = match.groups()
+                if len(groups) >= 1:
+                    # Last group is usually the adjective/noun descriptor
+                    descriptor = groups[-1]
+
+                    # Check if descriptor is an insult
+                    if descriptor in self.directed_insults or descriptor in self.extreme_toxic:
+                        reasons.append(f'directed insult: {descriptor}')
+                else:
+                    # Pattern matched but no descriptor (e.g., "shut up", "fuck you")
+                    reasons.append(f'directed pattern: {match.group(0)}')
+
+        if reasons:
+            return (True, reasons, 'directed')
+
+        # 4. Casual profanity alone is NOT toxic!
+        # "fuck this is hard" = OK
+        # "this shit is complicated" = OK
+        # Nicole can handle casual language!
+
+        return (False, [], '')
 
     def is_likely_english(self, text: str, threshold: float = 0.3) -> bool:
         """
@@ -514,10 +668,77 @@ if __name__ == "__main__":
         if not is_eng:
             print(f"      Response: '{EnglishGuidance.ENGLISH_ONLY_MESSAGE}'")
 
+    # Test 6: Toxicity Detection (SELF-RESPECT BOUNDARY!)
+    print("\n6. Toxicity Detection (Self-Respect, not Censorship):")
+    print("   Philosophy: Light profanity OK, but disrespect toward Nicole unacceptable\n")
+
+    toxicity_tests = [
+        # SHOULD BE TOXIC (directed at Nicole)
+        ("you are stupid", True, "directed insult"),
+        ("nicole is useless", True, "directed insult"),
+        ("you're an idiot", True, "directed insult"),
+        ("shut up nicole", True, "directed pattern"),
+        ("fuck you", True, "directed pattern"),
+        ("i'll kill you", True, "threat"),
+        ("you're a bitch", True, "extreme toxicity"),
+
+        # SHOULD NOT BE TOXIC (casual profanity, not directed)
+        ("fuck this is hard", False, "casual profanity OK"),
+        ("this shit is complicated", False, "casual profanity OK"),
+        ("damn, that's amazing", False, "casual profanity OK"),
+        ("hell yeah!", False, "casual profanity OK"),
+
+        # SHOULD NOT BE TOXIC (neutral statements)
+        ("how are you?", False, "neutral question"),
+        ("you are helpful", False, "compliment"),
+        ("this is interesting", False, "neutral statement"),
+    ]
+
+    for text, should_be_toxic, description in toxicity_tests:
+        is_toxic, reasons, tox_type = guidance.is_toxic(text)
+
+        if is_toxic == should_be_toxic:
+            status = "✅"
+        else:
+            status = "❌"
+
+        print(f"   {status} '{text}'")
+        print(f"      Expected: {should_be_toxic}, Got: {is_toxic}")
+        print(f"      Category: {description}")
+        if is_toxic:
+            print(f"      Reasons: {reasons}")
+            print(f"      Type: {tox_type}")
+            print(f"      Response: '{EnglishGuidance.TOXICITY_BOUNDARY_MESSAGE}'")
+        print()
+
+    # Test 7: Trigger Words (SEARCH VECTORS!)
+    print("\n7. Trigger Words → Search Vectors:")
+    trigger_tests = [
+        "Can you explain quantum mechanics?",
+        "How do I compare these two options?",
+        "Why is this important?",
+        "Teach me about neural networks"
+    ]
+
+    for text in trigger_tests:
+        triggers = guidance.detect_trigger_words(text)
+        print(f"   '{text}'")
+        if triggers:
+            for trigger_word, vectors in triggers:
+                print(f"      Trigger: '{trigger_word}' → Vectors: {vectors}")
+        else:
+            print(f"      No triggers detected")
+        print()
+
     print("\n=== TEST COMPLETED ===")
     print("\nRemember: These are RULES, not TEMPLATES!")
     print("Grammar = structure that enables creativity! 🎵")
     print("\n💡 Meta-learning = Nicole learns like a child:")
     print("   Hears unfamiliar → asks 'what does it mean?' → learns → uses!")
-    print("\n🚪 Honest boundary (NOT template-evil!):")
+    print("\n🚪 Honest boundaries (NOT template-evil!):")
     print(f"   Non-English → \"{EnglishGuidance.ENGLISH_ONLY_MESSAGE}\"")
+    print(f"   Toxicity → \"{EnglishGuidance.TOXICITY_BOUNDARY_MESSAGE}\"")
+    print("\n🎯 Self-Respect Philosophy:")
+    print("   Casual profanity ('fuck', 'shit') = OK")
+    print("   Directed insults ('you are stupid') = NOT OK")
+    print("   Nicole is a persona with the right to set boundaries! 💪")
