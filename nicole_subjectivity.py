@@ -76,6 +76,9 @@ class NicoleSubjectivity:
         self.db_path = db_path
         self.memory = memory  # NicoleMemory instance for learning
 
+        # Thread safety - protect database operations
+        self.db_lock = threading.Lock()
+
         # Ripple state
         self.current_epicenter = None  # Last user message
         self.current_ripple_number = 0  # Current ripple distance
@@ -97,7 +100,7 @@ class NicoleSubjectivity:
         """Initialize subjectivity database for ripple tracking"""
         os.makedirs(os.path.dirname(self.db_path) if os.path.dirname(self.db_path) else ".", exist_ok=True)
 
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path, timeout=5.0)
         cursor = conn.cursor()
 
         # Epicenters table - tracks user messages that become centers
@@ -142,7 +145,7 @@ class NicoleSubjectivity:
 
     def _load_last_epicenter(self):
         """Load the last active epicenter from database"""
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path, timeout=5.0)
         cursor = conn.cursor()
 
         cursor.execute("""
@@ -177,27 +180,29 @@ class NicoleSubjectivity:
         Set new epicenter when user sends message
         This resets the ripple system to start fresh wave
         """
-        # Deactivate old epicenter
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        # Thread-safe database operation
+        with self.db_lock:
+            # Deactivate old epicenter
+            conn = sqlite3.connect(self.db_path, timeout=5.0)
+            cursor = conn.cursor()
 
-        cursor.execute("UPDATE epicenters SET is_active = 0 WHERE is_active = 1")
+            cursor.execute("UPDATE epicenters SET is_active = 0 WHERE is_active = 1")
 
-        # Create new epicenter
-        timestamp = time.time()
-        cursor.execute("""
-            INSERT INTO epicenters (user_message, timestamp, is_active)
-            VALUES (?, ?, 1)
-        """, (user_message, timestamp))
+            # Create new epicenter
+            timestamp = time.time()
+            cursor.execute("""
+                INSERT INTO epicenters (user_message, timestamp, is_active)
+                VALUES (?, ?, 1)
+            """, (user_message, timestamp))
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+            conn.close()
 
-        # Update state
-        self.current_epicenter = user_message
-        self.epicenter_timestamp = timestamp
-        self.current_ripple_number = 0
-        self.last_ripple_time = timestamp
+            # Update state
+            self.current_epicenter = user_message
+            self.epicenter_timestamp = timestamp
+            self.current_ripple_number = 0
+            self.last_ripple_time = timestamp
 
         print(f"[Subjectivity] NEW EPICENTER: '{user_message[:60]}...'")
         print(f"[Subjectivity] Ripples will expand from here every hour")
@@ -300,15 +305,16 @@ class NicoleSubjectivity:
             top_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)[:20]
             learned_words = {word: freq for word, freq in top_words}
 
-            # Log learning
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO learning_log (ripple_id, concept, source, learned_data, timestamp)
-                VALUES (?, ?, ?, ?, ?)
-            """, (ripple_id, concept, 'objectivity', json.dumps(learned_words), time.time()))
-            conn.commit()
-            conn.close()
+            # Log learning - thread-safe
+            with self.db_lock:
+                conn = sqlite3.connect(self.db_path, timeout=5.0)
+                cursor = conn.cursor()
+                cursor.execute("""
+                    INSERT INTO learning_log (ripple_id, concept, source, learned_data, timestamp)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (ripple_id, concept, 'objectivity', json.dumps(learned_words), time.time()))
+                conn.commit()
+                conn.close()
 
             return {
                 'words': learned_words,
@@ -345,29 +351,30 @@ class NicoleSubjectivity:
 
         print(f"[Subjectivity] Exploring {len(concepts)} concepts: {concepts[:5]}...")
 
-        # Get epicenter ID
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM epicenters WHERE is_active = 1 ORDER BY timestamp DESC LIMIT 1")
-        epicenter_id = cursor.fetchone()
+        # Get epicenter ID and save ripple - thread-safe
+        with self.db_lock:
+            conn = sqlite3.connect(self.db_path, timeout=5.0)
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM epicenters WHERE is_active = 1 ORDER BY timestamp DESC LIMIT 1")
+            epicenter_id = cursor.fetchone()
 
-        if not epicenter_id:
+            if not epicenter_id:
+                conn.close()
+                return None
+
+            epicenter_id = epicenter_id[0]
+
+            # Save ripple to database
+            cursor.execute("""
+                INSERT INTO ripples (epicenter_id, ripple_number, semantic_distance,
+                                   explored_concepts, learned_words, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (epicenter_id, ripple.ripple_number, ripple.semantic_distance,
+                  json.dumps(concepts), json.dumps({}), ripple.timestamp))
+
+            ripple_id = cursor.lastrowid
+            conn.commit()
             conn.close()
-            return None
-
-        epicenter_id = epicenter_id[0]
-
-        # Save ripple to database
-        cursor.execute("""
-            INSERT INTO ripples (epicenter_id, ripple_number, semantic_distance,
-                               explored_concepts, learned_words, timestamp)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, (epicenter_id, ripple.ripple_number, ripple.semantic_distance,
-              json.dumps(concepts), json.dumps({}), ripple.timestamp))
-
-        ripple_id = cursor.lastrowid
-        conn.commit()
-        conn.close()
 
         # Autonomously explore concepts (this is Nicole thinking!)
         total_learned = {}
@@ -384,20 +391,22 @@ class NicoleSubjectivity:
             for word, freq in total_learned.items():
                 try:
                     # Inject learned words into Nicole's memory
-                    self.memory.update_word_frequencies([word] * min(freq, 5))
+                    # update_word_frequencies expects a string, not a list
+                    self.memory.update_word_frequencies(' '.join([word] * min(freq, 5)))
                 except Exception as e:
                     print(f"[Subjectivity] Memory update error: {e}")
 
-        # Update ripple with learned data
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE ripples
-            SET learned_words = ?
-            WHERE id = ?
-        """, (json.dumps(total_learned), ripple_id))
-        conn.commit()
-        conn.close()
+        # Update ripple with learned data - thread-safe
+        with self.db_lock:
+            conn = sqlite3.connect(self.db_path, timeout=5.0)
+            cursor = conn.cursor()
+            cursor.execute("""
+                UPDATE ripples
+                SET learned_words = ?
+                WHERE id = ?
+            """, (json.dumps(total_learned), ripple_id))
+            conn.commit()
+            conn.close()
 
         ripple.learned_words = total_learned
 
@@ -464,7 +473,7 @@ class NicoleSubjectivity:
 
     def get_learning_stats(self) -> Dict[str, Any]:
         """Get statistics about autonomous learning"""
-        conn = sqlite3.connect(self.db_path)
+        conn = sqlite3.connect(self.db_path, timeout=5.0)
         cursor = conn.cursor()
 
         # Total ripples
