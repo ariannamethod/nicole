@@ -12,7 +12,7 @@ import asyncio
 try:
     import importlib.metadata as importlib_metadata
 except ImportError:
-    # Python 3.7 совместимость
+    # Python 3.7 compatibility
     import importlib_metadata
 from datetime import datetime
 from pathlib import Path
@@ -590,7 +590,7 @@ async def main() -> None:
     try:
         readline.read_history_file(str(HISTORY_PATH))
     except (FileNotFoundError, PermissionError):
-        # Игнорируем ошибки доступа к history файлу
+        # Ignore history file access errors
         pass
 
     command_summary = " ".join(sorted(COMMAND_HANDLERS))

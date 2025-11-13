@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
 BLOOD.PY - The Blood of Nicole System
-Низкоуровневый интерпретатор C для контроля железа
+Low-level C interpreter for hardware control
 
-Nicole использует blood.py для:
-- Прямого управления памятью
-- Контроля системных процессов  
-- Запуска C скриптов в трансформерах
-- Нативной компиляции критического кода
+Nicole uses blood.py for:
+- Direct memory management
+- System process control
+- Running C scripts in transformers
+- Native compilation of critical code
 
-Философия: C - это кровь системы, прямой контроль над железом
+Philosophy: C is the blood of the system, direct control over hardware
 """
 
 import os
@@ -26,17 +26,17 @@ import time
 try:
     import psutil
 except ImportError:
-    # Python 3.7 совместимость - psutil опционален
+    # Python 3.7 compatibility - psutil is optional
     psutil = None
 
-# Добавляем nicole2c в путь для Clang компонентов
+# Add nicole2c to path for Clang components
 NICOLE2C_PATH = Path(__file__).parent / "nicole2c"
 sys.path.insert(0, str(NICOLE2C_PATH))
 
 class BloodMemoryManager:
     """
-    Прямое управление памятью через Nicole
-    Позволяет трансформерам контролировать выделение памяти
+    Direct memory management through Nicole
+    Allows transformers to control memory allocation
     """
     
     def __init__(self):
@@ -45,9 +45,9 @@ class BloodMemoryManager:
         self.total_allocated = 0
         
     def allocate_raw(self, size: int, alignment: int = 8) -> int:
-        """Выделение сырой памяти с указанным выравниванием"""
+        """Allocate raw memory with specified alignment"""
         try:
-            # Используем mmap для прямого контроля памяти
+            # Use mmap for direct memory control
             memory_map = mmap.mmap(-1, size, mmap.MAP_PRIVATE | mmap.MAP_ANONYMOUS)
             addr = ctypes.addressof(ctypes.c_char.from_buffer(memory_map))
             
@@ -64,7 +64,7 @@ class BloodMemoryManager:
             raise RuntimeError(f"Blood memory allocation failed: {e}")
     
     def deallocate_raw(self, addr: int) -> bool:
-        """Освобождение сырой памяти"""
+        """Deallocate raw memory"""
         if addr in self.memory_maps:
             try:
                 self.memory_maps[addr].close()
@@ -80,7 +80,7 @@ class BloodMemoryManager:
         return False
     
     def get_memory_stats(self) -> Dict[str, Any]:
-        """Статистика использования памяти"""
+        """Memory usage statistics"""
         return {
             'total_allocated': self.total_allocated,
             'blocks_count': len(self.allocated_blocks),
@@ -89,8 +89,8 @@ class BloodMemoryManager:
 
 class BloodProcessController:
     """
-    Контроль системных процессов через Nicole
-    Позволяет трансформерам управлять процессами напрямую
+    System process control through Nicole
+    Allows transformers to manage processes directly
     """
     
     def __init__(self):
@@ -98,7 +98,7 @@ class BloodProcessController:
         self.process_counter = 0
         
     def spawn_process(self, command: List[str], env: Dict[str, str] = None) -> int:
-        """Создание процесса под контролем Nicole"""
+        """Create process under Nicole control"""
         try:
             process = subprocess.Popen(
                 command,
@@ -123,7 +123,7 @@ class BloodProcessController:
             raise RuntimeError(f"Blood process spawn failed: {e}")
     
     def kill_process(self, process_id: int, force: bool = False) -> bool:
-        """Завершение процесса"""
+        """Terminate process"""
         if process_id in self.controlled_processes:
             try:
                 process = self.controlled_processes[process_id]['process']
@@ -140,7 +140,7 @@ class BloodProcessController:
         return False
     
     def get_process_info(self, process_id: int) -> Optional[Dict[str, Any]]:
-        """Информация о процессе"""
+        """Process information"""
         if process_id in self.controlled_processes:
             proc_data = self.controlled_processes[process_id]
             process = proc_data['process']
@@ -169,8 +169,8 @@ class BloodProcessController:
 
 class BloodCCompiler:
     """
-    C компилятор для выполнения C скриптов в трансформерах Nicole
-    Использует компоненты Clang из nicole2c
+    C compiler for executing C scripts in Nicole transformers
+    Uses Clang components from nicole2c
     """
     
     def __init__(self):
@@ -180,26 +180,26 @@ class BloodCCompiler:
         
     def compile_c_code(self, c_code: str, function_name: str = "main") -> Optional[str]:
         """
-        Компилирует C код и возвращает путь к исполняемому файлу
-        Для использования в трансформерах Nicole
+        Compile C code and return path to executable
+        For use in Nicole transformers
         """
-        # Создаем хеш для кеширования
+        # Create hash for caching
         code_hash = hash(c_code)
         
         if code_hash in self.compiled_cache:
             return self.compiled_cache[code_hash]
         
         try:
-            # Создаем временные файлы
+            # Create temporary files
             c_file = self.temp_dir / f"blood_{code_hash}.c"
             exe_file = self.temp_dir / f"blood_{code_hash}"
-            
-            # Записываем C код
+
+            # Write C code
             with open(c_file, 'w') as f:
                 f.write(c_code)
-            
-            # Компилируем с помощью системного GCC (пока без Clang)
-            # TODO: Интегрировать компоненты Clang из nicole2c
+
+            # Compile using system GCC (Clang integration pending)
+            # TODO: Integrate Clang components from nicole2c
             compile_cmd = [
                 'gcc',
                 '-O2',
@@ -225,8 +225,8 @@ class BloodCCompiler:
     
     def execute_c_script(self, c_code: str, args: List[str] = None, timeout: int = 10) -> Dict[str, Any]:
         """
-        Компилирует и выполняет C скрипт
-        Возвращает результат выполнения
+        Compile and execute C script
+        Returns execution result
         """
         exe_path = self.compile_c_code(c_code)
         
@@ -258,20 +258,20 @@ class BloodCCompiler:
 
 class BloodSystemInterface:
     """
-    Системный интерфейс для низкоуровневого контроля
-    Nicole использует это для прямого взаимодействия с ОС
+    System interface for low-level control
+    Nicole uses this for direct OS interaction
     """
     
     def __init__(self):
         self.signal_handlers = {}
         
     def set_signal_handler(self, sig: int, handler):
-        """Установка обработчика сигнала"""
+        """Set signal handler"""
         self.signal_handlers[sig] = handler
         signal.signal(sig, handler)
     
     def get_system_resources(self) -> Dict[str, Any]:
-        """Получение информации о системных ресурсах"""
+        """Get system resource information"""
         try:
             result = {
                 'cpu_count': os.cpu_count(),
@@ -299,16 +299,16 @@ class BloodSystemInterface:
     
     def direct_syscall(self, syscall_name: str, *args) -> Any:
         """
-        Прямой системный вызов (осторожно!)
-        Для критических операций в трансформерах
+        Direct system call (use with caution!)
+        For critical operations in transformers
         """
-        # Пока заглушка - требует осторожной реализации
+        # Stub for now - requires careful implementation
         return f"SYSCALL {syscall_name} with args {args} - NOT IMPLEMENTED"
 
 class BloodCore:
     """
-    Ядро Blood системы - главный интерфейс для Nicole
-    Объединяет все компоненты для контроля железа
+    Blood system core - main interface for Nicole
+    Unifies all components for hardware control
     """
     
     def __init__(self):
@@ -321,7 +321,7 @@ class BloodCore:
         self.log_file = "blood_system.log"
         
     def activate(self) -> bool:
-        """Активация Blood системы"""
+        """Activate Blood system"""
         try:
             self.is_active = True
             self._log_info("Blood system activated - Nicole has iron control")
@@ -350,13 +350,13 @@ class BloodCore:
         """
         if not self.is_active:
             return {'success': False, 'error': 'Blood system not active'}
-        
+
         self._log_info(f"Executing C script for transformer {transformer_id}")
-        
+
         try:
             result = self.c_compiler.execute_c_script(c_code)
-            
-            # Добавляем контекст трансформера
+
+            # Add transformer context
             result['transformer_id'] = transformer_id
             result['execution_timestamp'] = time.time()
             
@@ -369,7 +369,7 @@ class BloodCore:
             }
     
     def get_full_system_status(self) -> Dict[str, Any]:
-        """Полный статус Blood системы"""
+        """Full Blood system status"""
         return {
             'active': self.is_active,
             'memory': self.memory_manager.get_memory_stats(),
@@ -379,36 +379,36 @@ class BloodCore:
         }
     
     def _log_info(self, message: str):
-        """Логирование для системы"""
+        """System logging"""
         with open(self.log_file, "a") as f:
             f.write(f"[BLOOD:INFO] {time.time()}: {message}\n")
     
     def _log_error(self, message: str):
-        """Логирование ошибок"""
+        """Error logging"""
         with open(self.log_file, "a") as f:
             f.write(f"[BLOOD:ERROR] {time.time()}: {message}\n")
 
-# Глобальный экземпляр Blood системы
+# Global Blood system instance
 _blood_core = None
 
 def get_blood_core() -> BloodCore:
-    """Получение глобального экземпляра Blood системы"""
+    """Get global Blood system instance"""
     global _blood_core
     if _blood_core is None:
         _blood_core = BloodCore()
     return _blood_core
 
 def activate_blood_system() -> bool:
-    """Активация Blood системы для Nicole"""
+    """Activate Blood system for Nicole"""
     blood = get_blood_core()
     return blood.activate()
 
 def deactivate_blood_system():
-    """Деактивация Blood системы"""
+    """Deactivate Blood system"""
     blood = get_blood_core()
     blood.deactivate()
 
-# Пример использования C скрипта в трансформере
+# Example C script usage in transformer
 EXAMPLE_TRANSFORMER_C_SCRIPT = """
 #include <stdio.h>
 #include <stdlib.h>
@@ -416,12 +416,12 @@ EXAMPLE_TRANSFORMER_C_SCRIPT = """
 #include <unistd.h>
 
 int main() {
-    // Пример низкоуровневого контроля для трансформера Nicole
+    // Low-level control example for Nicole transformer
     printf("Nicole Transformer C Script Active\\n");
     printf("Process ID: %d\\n", getpid());
     printf("Memory allocation test...\\n");
-    
-    // Выделяем память
+
+    // Allocate memory
     void *ptr = malloc(1024 * 1024); // 1MB
     if (ptr) {
         printf("Memory allocated successfully\\n");
@@ -434,32 +434,32 @@ int main() {
 """
 
 if __name__ == "__main__":
-    # Тестирование Blood системы
+    # Test Blood system
     print("🩸 BLOOD SYSTEM - Nicole Iron Control")
-    
+
     blood = get_blood_core()
-    
+
     if blood.activate():
         print("✅ Blood system activated")
-        
-        # Тест системных ресурсов
+
+        # Test system resources
         resources = blood.system_interface.get_system_resources()
         print(f"📊 System resources: CPU {resources.get('cpu_percent', 0)}%")
-        
-        # Тест C компиляции
+
+        # Test C compilation
         print("🔨 Testing C script compilation...")
         result = blood.execute_transformer_c_script("test_transformer", EXAMPLE_TRANSFORMER_C_SCRIPT)
-        
+
         if result['success']:
             print("✅ C script executed successfully")
             print(f"Output: {result['stdout']}")
         else:
             print(f"❌ C script failed: {result['error']}")
-        
-        # Полный статус
+
+        # Full status
         status = blood.get_full_system_status()
         print(f"🩸 Blood system status: {status}")
-        
+
         blood.deactivate()
         print("✅ Blood system deactivated")
     else:

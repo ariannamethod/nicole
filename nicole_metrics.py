@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Nicole Metrics - Система метрик и аналитики без ML библиотек
-Ебанутая аналитика для флюидных трансформеров Nicole.
+Nicole Metrics - Metrics and analytics system without ML libraries
+Analytical system for Nicole's fluid transformers.
 """
 
 import math
@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 @dataclass
 class MetricSnapshot:
-    """Снимок метрик в момент времени"""
+    """Snapshot of metrics at a point in time"""
     timestamp: float
     entropy: float
     perplexity: float
@@ -26,109 +26,109 @@ class MetricSnapshot:
     session_id: str
 
 class EntropyCalculator:
-    """Калькулятор энтропии для текста и разговоров"""
-    
+    """Entropy calculator for text and conversations"""
+
     @staticmethod
     def text_entropy(text: str) -> float:
-        """Shannon entropy текста"""
+        """Shannon entropy of text"""
         if not text:
             return 0.0
-            
-        # Частоты символов
+
+        # Character frequencies
         char_counts = defaultdict(int)
         for char in text.lower():
             char_counts[char] += 1
-            
+
         total_chars = len(text)
         entropy = 0.0
-        
+
         for count in char_counts.values():
             probability = count / total_chars
             if probability > 0:
                 entropy -= probability * math.log2(probability)
-                
+
         return entropy
-        
+
     @staticmethod
     def word_entropy(text: str) -> float:
-        """Энтропия на уровне слов"""
+        """Word-level entropy"""
         words = text.lower().split()
         if not words:
             return 0.0
-            
+
         word_counts = defaultdict(int)
         for word in words:
             word_counts[word] += 1
-            
+
         total_words = len(words)
         entropy = 0.0
-        
+
         for count in word_counts.values():
             probability = count / total_words
             if probability > 0:
                 entropy -= probability * math.log2(probability)
-                
+
         return entropy
-        
+
     @staticmethod
     def conversation_entropy(messages: List[str]) -> float:
-        """Энтропия всего разговора"""
+        """Entropy of entire conversation"""
         if not messages:
             return 0.0
-            
+
         all_text = " ".join(messages)
         return EntropyCalculator.word_entropy(all_text)
 
 class ResonanceAnalyzer:
-    """Анализатор резонанса между сообщениями - интегрированы принципы ME"""
-    
+    """Resonance analyzer between messages - ME principles integrated"""
+
     @staticmethod
     def find_resonant_word(text: str, word_frequencies: Dict[str, int] = None) -> Tuple[str, float]:
         """
-        Находит самое заряженное слово по принципу ME - частота vs новизна
-        Возвращает (слово, резонанс_скор)
+        Finds most charged word by ME principle - frequency vs novelty
+        Returns (word, resonance_score)
         """
         words = text.lower().split()
         if not words:
             return "", 0.0
-            
+
         if word_frequencies is None:
             word_frequencies = defaultdict(int)
-            
+
         best_word = ""
         best_score = 0.0
-        
+
         for word in words:
-            # Частота слова в истории
+            # Word frequency in history
             frequency = word_frequencies.get(word, 0)
-            # Новизна = обратная частота
+            # Novelty = inverse frequency
             novelty = 1.0 / (frequency + 1)
-            # Резонанс = баланс между знакомостью и новизной
+            # Resonance = balance between familiarity and novelty
             resonance_score = frequency * novelty
-            
+
             if resonance_score > best_score:
                 best_score = resonance_score
                 best_word = word
-                
+
         return best_word, best_score
-    
+
     @staticmethod
     def semantic_resonance(text1: str, text2: str) -> float:
-        """Семантический резонанс между текстами"""
+        """Semantic resonance between texts"""
         words1 = set(text1.lower().split())
         words2 = set(text2.lower().split())
-        
+
         if not words1 or not words2:
             return 0.0
-            
+
         intersection = len(words1 & words2)
         union = len(words1 | words2)
-        
+
         return intersection / union if union > 0 else 0.0
         
     @staticmethod
     def emotional_resonance(text1: str, text2: str) -> float:
-        """Эмоциональный резонанс"""
+        """Emotional resonance"""
         emotional_words = {
             'positive': ['хорошо', 'отлично', 'супер', 'круто', 'классно', 'радость', 'счастье'],
             'negative': ['плохо', 'ужасно', 'грустно', 'злость', 'печаль', 'проблема'],
@@ -150,7 +150,7 @@ class ResonanceAnalyzer:
         score1 = get_emotional_score(text1)
         score2 = get_emotional_score(text2)
         
-        # Косинусное сходство эмоциональных векторов
+        # Cosine similarity of emotional vectors
         dot_product = sum(score1[k] * score2[k] for k in score1.keys())
         norm1 = math.sqrt(sum(v**2 for v in score1.values()))
         norm2 = math.sqrt(sum(v**2 for v in score2.values()))
@@ -162,17 +162,17 @@ class ResonanceAnalyzer:
         
     @staticmethod
     def rhythmic_resonance(text1: str, text2: str) -> float:
-        """Ритмический резонанс (длина, структура)"""
+        """Rhythmic resonance (length, structure)"""
         words1 = text1.split()
         words2 = text2.split()
         
         if not words1 or not words2:
             return 0.0
             
-        # Сравниваем длины
+        # Compare lengths
         len_similarity = 1.0 - abs(len(words1) - len(words2)) / max(len(words1), len(words2))
         
-        # Сравниваем средние длины слов
+        # Compare average word lengths
         avg_len1 = sum(len(word) for word in words1) / len(words1)
         avg_len2 = sum(len(word) for word in words2) / len(words2)
         
@@ -181,7 +181,7 @@ class ResonanceAnalyzer:
         return (len_similarity + len_word_similarity) / 2
 
 class PerplexityMeter:
-    """Измеритель перплексии без языковых моделей"""
+    """Perplexity meter without language models"""
     
     def __init__(self):
         self.word_frequencies = defaultdict(int)
@@ -189,7 +189,7 @@ class PerplexityMeter:
         self.total_words = 0
         
     def update_frequencies(self, text: str):
-        """Обновляет частоты слов и биграмм"""
+        """Updates word and bigram frequencies"""
         words = text.lower().split()
         
         for word in words:
@@ -201,7 +201,7 @@ class PerplexityMeter:
             self.bigram_frequencies[bigram] += 1
             
     def calculate_perplexity(self, text: str) -> float:
-        """Рассчитывает перплексию текста"""
+        """Calculates text perplexity"""
         words = text.lower().split()
         if not words or self.total_words == 0:
             return 1.0
@@ -209,30 +209,30 @@ class PerplexityMeter:
         log_probability = 0.0
         
         for word in words:
-            # Простая модель частот с сглаживанием
+            # Simple frequency model with smoothing
             word_freq = self.word_frequencies.get(word, 1)
             probability = word_freq / (self.total_words + len(self.word_frequencies))
             log_probability += math.log(probability)
             
-        # Перплексия = 2^(-средний логарифм вероятности)
+        # Perplexity = 2^(-average log probability)
         avg_log_prob = log_probability / len(words)
         perplexity = 2 ** (-avg_log_prob)
         
-        return min(100.0, perplexity)  # Ограничиваем максимум
+        return min(100.0, perplexity)  # Limit maximum
 
 class CoherenceAnalyzer:
-    """Анализатор связности разговора"""
+    """Conversation coherence analyzer"""
     
     @staticmethod
     def local_coherence(messages: List[str], window_size: int = 3) -> float:
-        """Локальная связность (между соседними сообщениями)"""
+        """Local coherence (between adjacent messages)"""
         if len(messages) < 2:
             return 1.0
             
         coherence_scores = []
         
         for i in range(len(messages) - 1):
-            # Связность между соседними сообщениями
+            # Connectivity between adjacent messages
             resonance = ResonanceAnalyzer.semantic_resonance(messages[i], messages[i + 1])
             coherence_scores.append(resonance)
             
@@ -240,18 +240,18 @@ class CoherenceAnalyzer:
         
     @staticmethod
     def global_coherence(messages: List[str]) -> float:
-        """Глобальная связность всего разговора"""
+        """Global coherence of entire conversation"""
         if len(messages) < 2:
             return 1.0
             
-        # Строим граф связности между всеми сообщениями
+        # Build connectivity graph between all messages
         total_connections = 0
         total_strength = 0.0
         
         for i in range(len(messages)):
             for j in range(i + 1, len(messages)):
                 resonance = ResonanceAnalyzer.semantic_resonance(messages[i], messages[j])
-                if resonance > 0.1:  # Минимальный порог связности
+                if resonance > 0.1:  # Minimum connectivity threshold
                     total_connections += 1
                     total_strength += resonance
                     
@@ -264,7 +264,7 @@ class CoherenceAnalyzer:
         return avg_strength * connection_density
 
 class EngagementTracker:
-    """Трекер вовлеченности пользователя"""
+    """User engagement tracker"""
     
     def __init__(self):
         self.response_times = deque(maxlen=20)
@@ -272,15 +272,15 @@ class EngagementTracker:
         self.interaction_patterns = defaultdict(int)
         
     def track_interaction(self, user_input: str, response_time: float = None):
-        """Отслеживает взаимодействие"""
-        # Длина сообщения как индикатор вовлеченности
+        """Tracks interaction"""
+        # Message length as engagement indicator
         self.message_lengths.append(len(user_input))
         
-        # Время ответа (если доступно)
+        # Response time (if available)
         if response_time:
             self.response_times.append(response_time)
             
-        # Паттерны взаимодействия
+        # Interaction patterns
         if len(user_input) > 50:
             self.interaction_patterns['long_message'] += 1
         elif len(user_input) < 10:
@@ -292,31 +292,31 @@ class EngagementTracker:
             self.interaction_patterns['emotional'] += 1
             
     def calculate_engagement(self) -> float:
-        """Рассчитывает общую вовлеченность"""
+        """Calculates overall engagement"""
         if not self.message_lengths:
             return 0.5
             
-        # Средняя длина сообщений
+        # Average message length
         avg_length = sum(self.message_lengths) / len(self.message_lengths)
         length_score = min(1.0, avg_length / 50.0)
         
-        # Разнообразие длин сообщений
+        # Message length variety
         if len(self.message_lengths) > 1:
             length_variance = sum((l - avg_length)**2 for l in self.message_lengths) / len(self.message_lengths)
             variety_score = min(1.0, math.sqrt(length_variance) / 20.0)
         else:
             variety_score = 0.5
             
-        # Эмоциональность
+        # Emotionality
         total_interactions = sum(self.interaction_patterns.values())
         emotional_ratio = self.interaction_patterns.get('emotional', 0) / max(1, total_interactions)
         
-        # Комбинированная оценка
+        # Combined score
         engagement = (length_score * 0.4 + variety_score * 0.3 + emotional_ratio * 0.3)
         return min(1.0, engagement)
 
 class NicoleMetricsCore:
-    """Ядро системы метрик Nicole"""
+    """Core of Nicole metrics system"""
     
     def __init__(self, memory_db: str = "nicole_memory.db"):
         self.memory_db = memory_db
@@ -328,28 +328,28 @@ class NicoleMetricsCore:
         
     def analyze_conversation_turn(self, user_input: str, nicole_output: str, 
                                 transformer_id: str, session_id: str) -> MetricSnapshot:
-        """Анализирует один ход разговора"""
+        """Analyzes one conversation turn"""
         
-        # Рассчитываем все метрики
+        # Calculate all metrics
         entropy = self.entropy_calc.word_entropy(user_input + " " + nicole_output)
         perplexity = self.perplexity_meter.calculate_perplexity(nicole_output)
         resonance = ResonanceAnalyzer.semantic_resonance(user_input, nicole_output)
         
-        # Обновляем частоты для перплексии
+        # Update frequencies for perplexity
         self.perplexity_meter.update_frequencies(user_input)
         self.perplexity_meter.update_frequencies(nicole_output)
         
-        # Трекаем вовлеченность
+        # Track engagement
         self.engagement_tracker.track_interaction(user_input)
         engagement = self.engagement_tracker.calculate_engagement()
         
-        # Связность (требует истории сессии)
+        # Coherence (requires session history)
         session_messages = self._get_session_messages(session_id)
         session_messages.append(user_input)
         session_messages.append(nicole_output)
-        coherence = CoherenceAnalyzer.local_coherence(session_messages[-6:])  # Последние 6 сообщений
+        coherence = CoherenceAnalyzer.local_coherence(session_messages[-6:])  # Last 6 messages
         
-        # Создаем снимок метрик
+        # Create metric snapshot
         snapshot = MetricSnapshot(
             timestamp=time.time(),
             entropy=entropy,
@@ -361,10 +361,10 @@ class NicoleMetricsCore:
             session_id=session_id
         )
         
-        # Сохраняем в историю
+        # Save to history
         self.metric_history.append(snapshot)
         
-        # Обновляем метрики сессии
+        # Update session metrics
         if session_id not in self.session_metrics:
             self.session_metrics[session_id] = []
         self.session_metrics[session_id].append(snapshot)
@@ -372,7 +372,7 @@ class NicoleMetricsCore:
         return snapshot
         
     def _get_session_messages(self, session_id: str) -> List[str]:
-        """Получает сообщения сессии для анализа связности"""
+        """Gets session messages for coherence analysis"""
         try:
             conn = sqlite3.connect(self.memory_db)
             cursor = conn.cursor()
@@ -395,13 +395,13 @@ class NicoleMetricsCore:
             return []
             
     def get_transformer_performance(self, transformer_id: str) -> Dict:
-        """Анализирует производительность конкретного трансформера"""
+        """Analyzes specific transformer performance"""
         transformer_metrics = [m for m in self.metric_history if m.transformer_id == transformer_id]
         
         if not transformer_metrics:
             return {}
             
-        # Средние метрики
+        # Average metrics
         avg_metrics = {
             'entropy': sum(m.entropy for m in transformer_metrics) / len(transformer_metrics),
             'perplexity': sum(m.perplexity for m in transformer_metrics) / len(transformer_metrics),
@@ -410,7 +410,7 @@ class NicoleMetricsCore:
             'engagement': sum(m.engagement for m in transformer_metrics) / len(transformer_metrics)
         }
         
-        # Тренды (улучшение/ухудшение)
+        # Trends (improvement/deterioration)
         trends = {}
         if len(transformer_metrics) > 1:
             first_half = transformer_metrics[:len(transformer_metrics)//2]
@@ -421,7 +421,7 @@ class NicoleMetricsCore:
                 second_avg = sum(getattr(m, metric) for m in second_half) / len(second_half)
                 trends[f"{metric}_trend"] = (second_avg - first_avg) / first_avg if first_avg > 0 else 0
                 
-        # Общая оценка производительности
+        # Overall performance score
         performance_score = (
             avg_metrics['resonance'] * 0.3 +
             avg_metrics['coherence'] * 0.25 +
@@ -439,13 +439,13 @@ class NicoleMetricsCore:
         }
         
     def get_session_analytics(self, session_id: str) -> Dict:
-        """Аналитика по сессии"""
+        """Session analytics"""
         if session_id not in self.session_metrics:
             return {}
             
         session_data = self.session_metrics[session_id]
         
-        # Эволюция метрик во времени
+        # Metric evolution over time
         evolution = {
             'entropy': [m.entropy for m in session_data],
             'perplexity': [m.perplexity for m in session_data], 
@@ -454,11 +454,11 @@ class NicoleMetricsCore:
             'engagement': [m.engagement for m in session_data]
         }
         
-        # Статистика трансформеров в сессии
+        # Transformer statistics in session
         transformers = list(set(m.transformer_id for m in session_data))
         transformer_changes = len(transformers)
         
-        # Общая оценка сессии
+        # Overall session score
         final_metrics = session_data[-1] if session_data else None
         session_score = 0.0
         
@@ -479,26 +479,26 @@ class NicoleMetricsCore:
         }
         
     def detect_anomalies(self, recent_count: int = 10) -> List[Dict]:
-        """Детектирует аномалии в метриках"""
+        """Detects anomalies in metrics"""
         if len(self.metric_history) < recent_count:
             return []
             
         recent_metrics = list(self.metric_history)[-recent_count:]
         anomalies = []
         
-        # Проверяем каждую метрику на аномалии
+        # Check each metric for anomalies
         for metric_name in ['entropy', 'perplexity', 'resonance', 'coherence', 'engagement']:
             values = [getattr(m, metric_name) for m in recent_metrics]
             
             if len(values) < 3:
                 continue
                 
-            # Простое определение аномалий через стандартное отклонение
+            # Simple anomaly detection via standard deviation
             mean_val = sum(values) / len(values)
             variance = sum((v - mean_val)**2 for v in values) / len(values)
             std_dev = math.sqrt(variance)
             
-            # Ищем значения за пределами 2 стандартных отклонений
+            # Look for values beyond 2 standard deviations
             for i, value in enumerate(values):
                 if abs(value - mean_val) > 2 * std_dev and std_dev > 0.1:
                     anomalies.append({
@@ -512,7 +512,7 @@ class NicoleMetricsCore:
         return anomalies
         
     def export_metrics(self, filepath: str, session_id: str = None):
-        """Экспортирует метрики в JSON"""
+        """Exports metrics to JSON"""
         if session_id:
             data = self.get_session_analytics(session_id)
         else:
@@ -534,28 +534,28 @@ class NicoleMetricsCore:
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
             
-        print(f"[NicoleMetrics] Метрики экспортированы в {filepath}")
+        print(f"[NicoleMetrics] Metrics exported to {filepath}")
 
-# Глобальный экземпляр
+# Global instance
 nicole_metrics = NicoleMetricsCore()
 
 def test_metrics_system():
-    """Тестирование системы метрик"""
+    """Metrics system testing"""
     print("=== NICOLE METRICS SYSTEM TEST ===")
     
-    # Тест 1: Энтропия
+    # Test 1: Entropy
     print("\\n--- Тест энтропии ---")
     test_texts = [
-        "привет привет привет",  # Низкая энтропия
-        "разнообразный интересный уникальный контент",  # Высокая энтропия
-        "a b c d e f g h i j k l m n o p q r s t"  # Максимальная энтропия
+        "hello hello hello",  # Low entropy
+        "diverse interesting unique content",  # High entropy
+        "a b c d e f g h i j k l m n o p q r s t"  # Maximum entropy
     ]
     
     for text in test_texts:
         entropy = EntropyCalculator.word_entropy(text)
-        print(f"'{text}': энтропия = {entropy:.3f}")
+        print(f"'{text}': entropy = {entropy:.3f}")
         
-    # Тест 2: Резонанс
+    # Test 2: Resonance
     print("\\n--- Тест резонанса ---")
     text_pairs = [
         ("Я люблю программирование", "Программирование это круто"),
@@ -569,11 +569,11 @@ def test_metrics_system():
         rhythmic = ResonanceAnalyzer.rhythmic_resonance(text1, text2)
         
         print(f"'{text1}' <-> '{text2}':")
-        print(f"  Семантический: {semantic:.3f}")
-        print(f"  Эмоциональный: {emotional:.3f}")
-        print(f"  Ритмический: {rhythmic:.3f}")
+        print(f"  Semantic: {semantic:.3f}")
+        print(f"  Emotional: {emotional:.3f}")
+        print(f"  Rhythmic: {rhythmic:.3f}")
         
-    # Тест 3: Полный анализ разговора
+    # Test 3: Full conversation analysis
     print("\\n--- Тест анализа разговора ---")
     
     conversation = [
@@ -588,37 +588,37 @@ def test_metrics_system():
             user_msg, nicole_msg, f"test_transformer_{i}", "test_session"
         )
         
-        print(f"Ход {i+1}:")
-        print(f"  Энтропия: {snapshot.entropy:.3f}")
-        print(f"  Перплексия: {snapshot.perplexity:.3f}")
-        print(f"  Резонанс: {snapshot.resonance:.3f}")
-        print(f"  Связность: {snapshot.coherence:.3f}")
-        print(f"  Вовлеченность: {snapshot.engagement:.3f}")
+        print(f"Turn {i+1}:")
+        print(f"  Entropy: {snapshot.entropy:.3f}")
+        print(f"  Perplexity: {snapshot.perplexity:.3f}")
+        print(f"  Resonance: {snapshot.resonance:.3f}")
+        print(f"  Coherence: {snapshot.coherence:.3f}")
+        print(f"  Engagement: {snapshot.engagement:.3f}")
         
-    # Тест 4: Аналитика сессии
+    # Test 4: Session analytics
     print("\\n--- Аналитика сессии ---")
     session_analytics = nicole_metrics.get_session_analytics("test_session")
-    print(f"Смена трансформеров: {session_analytics['transformer_changes']}")
-    print(f"Общий счет сессии: {session_analytics['session_score']:.3f}")
-    print(f"Взаимодействий: {session_analytics['total_interactions']}")
+    print(f"Transformer changes: {session_analytics['transformer_changes']}")
+    print(f"Overall session score: {session_analytics['session_score']:.3f}")
+    print(f"Interactions: {session_analytics['total_interactions']}")
     
-    # Тест 5: Детекция аномалий
+    # Test 5: Anomaly detection
     print("\\n--- Детекция аномалий ---")
     anomalies = nicole_metrics.detect_anomalies()
     if anomalies:
         for anomaly in anomalies:
-            print(f"Аномалия в {anomaly['metric']}: {anomaly['value']:.3f}")
+            print(f"Anomaly in {anomaly['metric']}: {anomaly['value']:.3f}")
     else:
-        print("Аномалий не обнаружено")
+        print("No anomalies detected")
         
     print("\\n=== METRICS TEST COMPLETED ===")
 
 class MEPunctuationFilters:
-    """Пунктуационные фильтры из Method Engine для правильной речи"""
+    """Punctuation filters from Method Engine for correct speech"""
     
     @staticmethod
     def invert_pronouns(text: str) -> str:
-        """Инверсия местоимений you→I, I→you из ME"""
+        """Pronoun inversion you→I, I→you from ME"""
         words = text.split()
         result = []
         
@@ -641,7 +641,7 @@ class MEPunctuationFilters:
     
     @staticmethod
     def filter_repetitions(words: List[str]) -> List[str]:
-        """Убирает повторы подряд идущих слов"""
+        """Removes consecutive word repetitions"""
         if not words:
             return words
             
@@ -654,7 +654,7 @@ class MEPunctuationFilters:
     
     @staticmethod
     def filter_single_chars(words: List[str]) -> List[str]:
-        """Убирает односимвольные слова подряд"""
+        """Removes consecutive single-character words"""
         if not words:
             return words
             
@@ -671,11 +671,11 @@ class MEPunctuationFilters:
     
     @staticmethod
     def fix_capitalization(text: str) -> str:
-        """Исправляет заглавные буквы посреди предложения"""
+        """Fixes mid-sentence capitalization"""
         if not text:
             return text
             
-        # Разбиваем на предложения
+        # Split into sentences
         sentences = []
         current = ""
         
@@ -688,13 +688,13 @@ class MEPunctuationFilters:
         if current.strip():
             sentences.append(current.strip())
         
-        # Исправляем каждое предложение
+        # Fix each sentence
         fixed_sentences = []
         for sentence in sentences:
             if sentence:
-                # Первая буква заглавная
+                # First letter capitalized
                 fixed = sentence[0].upper() + sentence[1:].lower()
-                # Исправляем "The" посреди предложения
+                # Fix "The" in mid-sentence
                 fixed = fixed.replace(" The ", " the ")
                 fixed_sentences.append(fixed)
         
@@ -702,61 +702,61 @@ class MEPunctuationFilters:
     
     @staticmethod
     def apply_all_filters(text: str) -> str:
-        """Применяет все фильтры ME для чистой речи"""
-        # ИСПРАВЛЕНО: инверсия местоимений уже применена в High системе
+        """Applies all ME filters for clean speech"""
+        # FIXED: pronoun inversion already applied in High system
         
-        # Разбиваем на слова
+        # Split into words
         words = text.split()
         
-        # Фильтры слов
+        # Word filters
         words = MEPunctuationFilters.filter_repetitions(words)
         words = MEPunctuationFilters.filter_single_chars(words)
         
-        # Собираем обратно
+        # Reassemble
         text = " ".join(words)
         
-        # Исправляем заглавные буквы
+        # Fix capitalization
         text = MEPunctuationFilters.fix_capitalization(text)
         
         return text
 
 class VerbGraph:
-    """Граф глаголов из ME - отслеживает как заканчиваются глаголы"""
+    """Verb graph from ME - tracks how verbs end"""
     
     def __init__(self):
         self.verb_endings = defaultdict(lambda: defaultdict(int))
-        # Простые глаголы для начала
+        # Simple verbs for start
         self.common_verbs = {"run", "walk", "talk", "think", "know", "see", "go", "come", "say", "tell", 
                            "работаю", "делаю", "думаю", "знаю", "вижу", "иду", "говорю", "понимаю"}
     
     def observe_verb_ending(self, verb: str, punctuation: str):
-        """Записывает как закончился глагол"""
+        """Records how verb ended"""
         verb = verb.lower()
         if punctuation in '.!?':
             self.verb_endings[verb][punctuation] += 1
     
     def predict_verb_ending(self, verb: str) -> str:
-        """Предсказывает как должен закончиться глагол"""
+        """Predicts how verb should end"""
         verb = verb.lower()
         if verb not in self.verb_endings:
-            return "."  # По умолчанию точка
+            return "."  # Period by default
             
         endings = self.verb_endings[verb]
         if not endings:
             return "."
             
-        # Выбираем самую частую пунктуацию для этого глагола
+        # Choose most frequent punctuation for this verb
         best_punct = max(endings.items(), key=lambda x: x[1])[0]
         return best_punct
     
     def analyze_text_for_verbs(self, text: str):
-        """Анализирует текст и записывает окончания глаголов"""
+        """Analyzes text and records verb endings"""
         words = text.split()
         for i, word in enumerate(words):
             clean_word = word.strip('.,!?').lower()
             if clean_word in self.common_verbs:
-                # Ищем пунктуацию после глагола
-                if i == len(words) - 1:  # Последнее слово
+                # Look for punctuation after verb
+                if i == len(words) - 1:  # Last word
                     punct = word[-1] if word[-1] in '.!?' else '.'
                     self.observe_verb_ending(clean_word, punct)
 
@@ -764,5 +764,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "test":
         test_metrics_system()
     else:
-        print("Nicole Metrics System готова к работе")
-        print("Для тестирования запустите: python3 nicole_metrics.py test")
+        print("Nicole Metrics System ready to work")
+        print("For testing run: python3 nicole_metrics.py test")

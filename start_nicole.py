@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Nicole Startup Script - Главный запускальщик системы
-Автоматически проверяет зависимости и запускает нужный режим.
+Nicole Startup Script - Main system launcher
+Automatically checks dependencies and starts the appropriate mode.
 """
 
 import os

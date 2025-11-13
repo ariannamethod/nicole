@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Nicole2Nicole - Модуль дообучения без весов
-Асинхронное дообучение при смерти/перерождении трансформеров.
-Учится на логах разговоров и эволюции архитектур.
+Nicole2Nicole - Weightless retraining module
+Asynchronous retraining on transformer death/rebirth.
+Learns from conversation logs and architecture evolution.
 """
 
 import sqlite3
@@ -16,11 +16,11 @@ import os
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
 import h2o
-# import nicole  # Убираем циклический импорт
+# import nicole  # Remove circular import
 
-@dataclass 
+@dataclass
 class LearningPattern:
-    """Паттерн обучения из истории"""
+    """Learning pattern from history"""
     input_pattern: str
     output_pattern: str
     metrics_context: Dict
@@ -29,25 +29,25 @@ class LearningPattern:
     frequency: int = 1
     
 class Nicole2NicoleCore:
-    """Ядро системы дообучения"""
-    
+    """Core retraining system"""
+
     def __init__(self, memory_db: str = "nicole_memory.db", knowledge_file: str = "nicole_learned_knowledge.json"):
         self.memory_db = memory_db
-        self.knowledge_file = knowledge_file  # ОПТИМИЗАЦИЯ: Auto-save файл
+        self.knowledge_file = knowledge_file  # OPTIMIZATION: Auto-save file
         self.learning_patterns = {}
         self.evolution_patterns = {}
         self.architecture_preferences = {}
         self.learning_lock = threading.Lock()
         self.is_learning = False
-        self.learning_cycles = 0  # ОПТИМИЗАЦИЯ: Счетчик циклов для auto-save
+        self.learning_cycles = 0  # OPTIMIZATION: Cycle counter for auto-save
 
-        # ОПТИМИЗАЦИЯ: Auto-load знаний при старте
+        # OPTIMIZATION: Auto-load knowledge on startup
         if os.path.exists(self.knowledge_file):
             print(f"[Nicole2Nicole] Loading previous knowledge from {self.knowledge_file}...")
             self.import_learned_knowledge(self.knowledge_file)
         
     def analyze_conversation_logs(self, limit: int = 1000) -> List[LearningPattern]:
-        """Анализирует логи разговоров для извлечения паттернов"""
+        """Analyzes conversation logs to extract patterns"""
         conn = sqlite3.connect(self.memory_db)
         cursor = conn.cursor()
         
@@ -68,8 +68,9 @@ class Nicole2NicoleCore:
             try:
                 metrics = json.loads(metrics_str)
                 config = json.loads(config_str)
-                
-                # Создаем паттерн обучения
+
+
+                # Create learning pattern
                 pattern = LearningPattern(
                     input_pattern=self._extract_input_pattern(user_input),
                     output_pattern=self._extract_output_pattern(nicole_output),
@@ -79,26 +80,26 @@ class Nicole2NicoleCore:
                 )
                 
                 patterns.append(pattern)
-                
+
             except Exception as e:
-                print(f"[Nicole2Nicole] Ошибка анализа лога: {e}")
+                print(f"[Nicole2Nicole] Log analysis error: {e}")
                 
         return patterns
         
     def _extract_input_pattern(self, user_input: str) -> str:
-        """Извлекает паттерн из пользовательского ввода"""
+        """Extracts pattern from user input"""
         words = user_input.lower().split()
-        
-        # Категоризация типов сообщений
-        if any(word in words for word in ['привет', 'hello', 'hi', 'здравствуй']):
+
+        # Categorize message types
+        if any(word in words for word in ['hello', 'hi', 'hey', 'greetings']):
             return "greeting"
-        elif any(word in words for word in ['пока', 'bye', 'goodbye', 'увидимся']):
-            return "farewell"  
-        elif any(word in words for word in ['как', 'дела', 'жизнь', 'настроение']):
+        elif any(word in words for word in ['bye', 'goodbye', 'farewell']):
+            return "farewell"
+        elif any(word in words for word in ['how', 'what', 'doing']):
             return "status_inquiry"
-        elif any(word in words for word in ['что', 'расскажи', 'объясни', 'опиши']):
+        elif any(word in words for word in ['tell', 'explain', 'describe']):
             return "information_request"
-        elif any(word in words for word in ['почему', 'зачем', 'отчего']):
+        elif any(word in words for word in ['why', 'reason']):
             return "reasoning_request"
         elif len(words) > 10:
             return "long_message"
@@ -108,10 +109,10 @@ class Nicole2NicoleCore:
             return "general_conversation"
             
     def _extract_output_pattern(self, nicole_output: str) -> str:
-        """Извлекает паттерн из ответа Nicole через семантический анализ (БЕЗ ШАБЛОНОВ!)"""
+        """Extracts pattern from Nicole's response via semantic analysis (NO TEMPLATES!)"""
         words = nicole_output.lower().split()
 
-        # Анализируем длину и структуру (не содержимое!)
+        # Analyze length and structure (not content!)
         word_count = len(words)
         has_question = '?' in nicole_output
 
@@ -125,15 +126,15 @@ class Nicole2NicoleCore:
             return "general_response"
             
     def _calculate_success_score(self, metrics: Dict) -> float:
-        """Рассчитывает оценку успешности взаимодействия"""
+        """Calculates interaction success score"""
         try:
             entropy = metrics.get('entropy', 0.5)
             perplexity = metrics.get('perplexity', 1.0)
             resonance = metrics.get('resonance', 0.3)
             coherence = metrics.get('coherence', 0.5)
             engagement = metrics.get('engagement', 0.5)
-            
-            # Взвешенная оценка успешности
+
+            # Weighted success score
             score = (
                 entropy * 0.2 +
                 (1.0 / max(0.1, perplexity)) * 0.3 +
@@ -141,47 +142,47 @@ class Nicole2NicoleCore:
                 coherence * 0.1 +
                 engagement * 0.1
             )
-            
+
             return min(1.0, max(0.0, score))
-            
+
         except Exception:
-            return 0.5  # Нейтральная оценка при ошибке
+            return 0.5  # Neutral score on error
             
     def learn_from_patterns(self, patterns: List[LearningPattern]):
-        """Обучается на паттернах взаимодействий"""
+        """Learns from interaction patterns"""
         with self.learning_lock:
             self.is_learning = True
-            
+
             try:
-                # Группируем паттерны по типам
+                # Group patterns by type
                 pattern_groups = {}
                 for pattern in patterns:
                     key = (pattern.input_pattern, pattern.output_pattern)
                     if key not in pattern_groups:
                         pattern_groups[key] = []
                     pattern_groups[key].append(pattern)
-                    
-                # Анализируем каждую группу
+
+                # Analyze each group
                 for (input_type, output_type), group in pattern_groups.items():
                     self._analyze_pattern_group(input_type, output_type, group)
-                    
-                # Анализируем эволюции архитектур
+
+                # Analyze architecture evolution
                 self._analyze_architecture_evolution(patterns)
-                
-                print(f"[Nicole2Nicole] Обучение завершено на {len(patterns)} паттернах")
-                
+
+                print(f"[Nicole2Nicole] Learning completed on {len(patterns)} patterns")
+
             finally:
                 self.is_learning = False
                 
     def _analyze_pattern_group(self, input_type: str, output_type: str, patterns: List[LearningPattern]):
-        """Анализирует группу похожих паттернов"""
+        """Analyzes group of similar patterns"""
         if len(patterns) < 2:
             return
-            
-        # Вычисляем средние метрики для этого типа взаимодействия
+
+        # Calculate average metrics for this interaction type
         avg_metrics = {}
         metric_keys = ['entropy', 'perplexity', 'resonance', 'coherence', 'engagement']
-        
+
         for key in metric_keys:
             values = []
             for pattern in patterns:
@@ -189,12 +190,12 @@ class Nicole2NicoleCore:
                     values.append(pattern.metrics_context[key])
             if values:
                 avg_metrics[key] = sum(values) / len(values)
-                
-        # Находим лучшие архитектуры для этого типа
+
+        # Find best architectures for this type
         best_patterns = sorted(patterns, key=lambda p: p.success_score, reverse=True)[:3]
         best_architectures = [p.architecture_context for p in best_patterns]
-        
-        # Сохраняем паттерн
+
+        # Save pattern
         pattern_key = f"{input_type}::{output_type}"
         self.learning_patterns[pattern_key] = {
             'avg_metrics': avg_metrics,
@@ -202,64 +203,64 @@ class Nicole2NicoleCore:
             'frequency': len(patterns),
             'avg_success': sum(p.success_score for p in patterns) / len(patterns)
         }
-        
-        print(f"[Nicole2Nicole] Паттерн {pattern_key}: {len(patterns)} примеров, успешность {self.learning_patterns[pattern_key]['avg_success']:.3f}")
+
+        print(f"[Nicole2Nicole] Pattern {pattern_key}: {len(patterns)} examples, success {self.learning_patterns[pattern_key]['avg_success']:.3f}")
         
     def _analyze_architecture_evolution(self, patterns: List[LearningPattern]):
-        """Анализирует эволюцию архитектур"""
-        # Группируем по параметрам архитектуры
+        """Analyzes architecture evolution"""
+        # Group by architecture parameters
         arch_performance = {}
-        
+
         for pattern in patterns:
             arch = pattern.architecture_context
             for param, value in arch.items():
                 if param not in arch_performance:
                     arch_performance[param] = []
                 arch_performance[param].append((value, pattern.success_score))
-                
-        # Находим оптимальные диапазоны для каждого параметра
+
+        # Find optimal ranges for each parameter
         for param, value_scores in arch_performance.items():
             if len(value_scores) < 5:
                 continue
-                
-            # Сортируем по успешности
+
+            # Sort by success
             sorted_values = sorted(value_scores, key=lambda x: x[1], reverse=True)
             top_20_percent = sorted_values[:max(1, len(sorted_values) // 5)]
-            
-            # Находим диапазон лучших значений
+
+            # Find range of best values
             top_values = [v[0] for v in top_20_percent]
-            
+
             if isinstance(top_values[0], (int, float)):
                 min_val = min(top_values)
                 max_val = max(top_values)
                 avg_val = sum(top_values) / len(top_values)
-                
+
                 self.architecture_preferences[param] = {
                     'min': min_val,
                     'max': max_val,
                     'avg': avg_val,
                     'samples': len(top_values)
                 }
-                
-        print(f"[Nicole2Nicole] Проанализированы предпочтения архитектуры для {len(self.architecture_preferences)} параметров")
+
+        print(f"[Nicole2Nicole] Analyzed architecture preferences for {len(self.architecture_preferences)} parameters")
         
     def suggest_architecture_improvements(self, current_arch: Dict, conversation_context: str) -> Dict:
         """
-        Предлагает улучшения архитектуры на основе обучения + exploration noise
+        Suggests architecture improvements based on learning + exploration noise
 
-        ANTI-OVERFITTING: добавляет 10% шанс случайного исследования
+        ANTI-OVERFITTING: adds 10% chance of random exploration
         """
         if not self.learning_patterns or not self.architecture_preferences:
             return current_arch
 
         improved_arch = current_arch.copy()
 
-        # EXPLORATION NOISE: 10% шанс случайного исследования
-        # Предотвращает застревание в локальном оптимуме
+        # EXPLORATION NOISE: 10% chance of random exploration
+        # Prevents getting stuck in local optimum
         exploration_probability = 0.1
 
         if random.random() < exploration_probability:
-            # Случайно выбираем параметр для исследования
+            # Randomly select parameter to explore
             explorable_params = [p for p in improved_arch.keys()
                                if isinstance(improved_arch[p], (int, float))]
 
@@ -267,68 +268,68 @@ class Nicole2NicoleCore:
                 param_to_explore = random.choice(explorable_params)
                 current_value = improved_arch[param_to_explore]
 
-                # Случайное возмущение ±20%
+                # Random perturbation ±20%
                 noise_factor = random.uniform(0.8, 1.2)
                 improved_arch[param_to_explore] = current_value * noise_factor
 
-                print(f"[Nicole2Nicole:Exploration] 🎲 Исследование параметра '{param_to_explore}': "
+                print(f"[Nicole2Nicole:Exploration] 🎲 Exploring parameter '{param_to_explore}': "
                       f"{current_value:.3f} → {improved_arch[param_to_explore]:.3f}")
 
-        # Применяем изученные предпочтения
+        # Apply learned preferences
         for param, preferences in self.architecture_preferences.items():
             if param in improved_arch:
                 current_val = improved_arch[param]
-                
-                # Двигаемся к оптимальному диапазону
+
+                # Move toward optimal range
                 if isinstance(current_val, (int, float)):
                     target_val = preferences['avg']
-                    
-                    # Плавное движение к цели
+
+                    # Smooth movement toward target
                     if current_val < preferences['min']:
                         improved_arch[param] = min(preferences['max'], current_val * 1.1)
                     elif current_val > preferences['max']:
                         improved_arch[param] = max(preferences['min'], current_val * 0.9)
                     else:
-                        # Мелкие случайные изменения в оптимальном диапазоне
+                        # Small random changes in optimal range
                         noise = random.uniform(-0.05, 0.05)
                         improved_arch[param] = current_val * (1 + noise)
                         
         return improved_arch
         
     def suggest_response_strategy(self, user_input: str, current_metrics: Dict) -> str:
-        """Предлагает стратегию ответа на основе изученных паттернов"""
+        """Suggests response strategy based on learned patterns"""
         input_pattern = self._extract_input_pattern(user_input)
-        
-        # Ищем подходящие паттерны
+
+        # Find matching patterns
         matching_patterns = []
         for pattern_key, pattern_data in self.learning_patterns.items():
             if pattern_key.startswith(input_pattern + "::"):
                 matching_patterns.append((pattern_key, pattern_data))
-                
+
         if not matching_patterns:
             return "general_response"
-            
-        # Выбираем лучший паттерн
+
+        # Select best pattern
         best_pattern = max(matching_patterns, key=lambda x: x[1]['avg_success'])
         output_pattern = best_pattern[0].split("::")[-1]
-        
+
         return output_pattern
         
     def continuous_learning_loop(self):
         """
-        Непрерывное обучение в фоновом режиме
-        ОПТИМИЗАЦИЯ: Auto-save каждые 10 циклов (~5 минут)
+        Continuous learning in background
+        OPTIMIZATION: Auto-save every 10 cycles (~5 minutes)
         """
         while True:
             try:
                 if not self.is_learning:
-                    # Анализируем новые логи каждые 30 секунд
+                    # Analyze new logs every 30 seconds
                     patterns = self.analyze_conversation_logs(100)
                     if patterns:
                         self.learn_from_patterns(patterns)
                         self.learning_cycles += 1
 
-                        # ОПТИМИЗАЦИЯ: Auto-save каждые 10 циклов
+                        # OPTIMIZATION: Auto-save every 10 cycles
                         if self.learning_cycles % 10 == 0:
                             print(f"[Nicole2Nicole] Auto-saving knowledge (cycle {self.learning_cycles})...")
                             self.export_learned_knowledge(self.knowledge_file)
@@ -336,17 +337,17 @@ class Nicole2NicoleCore:
                 time.sleep(30)
 
             except Exception as e:
-                print(f"[Nicole2Nicole:ERROR] Ошибка непрерывного обучения: {e}")
-                time.sleep(60)  # Увеличиваем интервал при ошибке
-                
+                print(f"[Nicole2Nicole:ERROR] Continuous learning error: {e}")
+                time.sleep(60)  # Increase interval on error
+
     def start_continuous_learning(self):
-        """Запускает непрерывное обучение в отдельном потоке"""
+        """Starts continuous learning in separate thread"""
         learning_thread = threading.Thread(target=self.continuous_learning_loop, daemon=True)
         learning_thread.start()
-        print("[Nicole2Nicole] Непрерывное обучение запущено")
-        
+        print("[Nicole2Nicole] Continuous learning started")
+
     def get_learning_statistics(self) -> Dict:
-        """Возвращает статистику обучения"""
+        """Returns learning statistics"""
         return {
             'learned_patterns': len(self.learning_patterns),
             'architecture_preferences': len(self.architecture_preferences),
@@ -359,80 +360,80 @@ class Nicole2NicoleCore:
         }
         
     def force_learning_session(self):
-        """Принудительно запускает сессию обучения"""
-        print("[Nicole2Nicole] Принудительное обучение...")
+        """Forcibly starts learning session"""
+        print("[Nicole2Nicole] Forced learning...")
         patterns = self.analyze_conversation_logs(500)
         if patterns:
             self.learn_from_patterns(patterns)
             return True
         return False
-        
+
     def export_learned_knowledge(self, filepath: str):
-        """Экспортирует изученные знания в файл"""
+        """Exports learned knowledge to file"""
         knowledge = {
             'learning_patterns': self.learning_patterns,
             'evolution_patterns': self.evolution_patterns,
             'architecture_preferences': self.architecture_preferences,
             'export_timestamp': time.time()
         }
-        
+
         with open(filepath, 'w', encoding='utf-8') as f:
             json.dump(knowledge, f, ensure_ascii=False, indent=2)
-            
-        print(f"[Nicole2Nicole] Знания экспортированы в {filepath}")
-        
+
+        print(f"[Nicole2Nicole] Knowledge exported to {filepath}")
+
     def import_learned_knowledge(self, filepath: str):
-        """Импортирует изученные знания из файла"""
+        """Imports learned knowledge from file"""
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 knowledge = json.load(f)
-                
+
             self.learning_patterns.update(knowledge.get('learning_patterns', {}))
             self.evolution_patterns.update(knowledge.get('evolution_patterns', {}))
             self.architecture_preferences.update(knowledge.get('architecture_preferences', {}))
-            
-            print(f"[Nicole2Nicole] Знания импортированы из {filepath}")
+
+            print(f"[Nicole2Nicole] Knowledge imported from {filepath}")
             return True
-            
+
         except Exception as e:
-            print(f"[Nicole2Nicole:ERROR] Ошибка импорта: {e}")
+            print(f"[Nicole2Nicole:ERROR] Import error: {e}")
             return False
 
-# Интеграция с основной Nicole системой
-class EnhancedFluidTransformer:  # Убираем наследование от nicole.FluidTransformer
-    """Расширенный трансформер с дообучением"""
-    
+# Integration with main Nicole system
+class EnhancedFluidTransformer:  # Remove inheritance from nicole.FluidTransformer
+    """Enhanced transformer with retraining"""
+
     def __init__(self, transformer_id: str, session_context: Dict = None, learning_core = None):
-        # Убираем super() вызов
+        # Remove super() call
         self.transformer_id = transformer_id
         self.session_context = session_context or {}
         self.learning_core = learning_core
-        
-        # Применяем изученные улучшения архитектуры
+
+        # Apply learned architecture improvements
         if self.learning_core:
             improved_arch = self.learning_core.suggest_architecture_improvements(
-                self.architecture, 
+                self.architecture,
                 session_context.get('conversation_context', '')
             )
             self.architecture = improved_arch
-            
+
     def evolve_architecture(self, metrics):
-        """Эволюция с учетом изученных паттернов"""
-        # Сначала стандартная эволюция
+        """Evolution with learned patterns"""
+        # First standard evolution
         evolved = super().evolve_architecture(metrics)
-        
-        # Затем применяем изученные улучшения
+
+        # Then apply learned improvements
         if self.learning_core and evolved:
             learned_improvements = self.learning_core.suggest_architecture_improvements(
                 self.architecture,
-                ""  # Контекст разговора
+                ""  # Conversation context
             )
-            
-            # Мягко применяем изученные улучшения
+
+            # Softly apply learned improvements
             for param, target_val in learned_improvements.items():
                 if param in self.architecture and isinstance(target_val, (int, float)):
                     current_val = self.architecture[param]
-                    # Движемся на 10% к изученному оптимуму
+                    # Move 10% toward learned optimum
                     self.architecture[param] = current_val * 0.9 + target_val * 0.1
-                    
+
         return evolved

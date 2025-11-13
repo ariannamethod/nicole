@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 H2O - Hydrogen Oxide
-Минимальный компилятор и среда исполнения Python, заточенная под трансформеры.
-Без лишнего говна, только то что нужно для Nicole.
+Minimal Python compiler and runtime environment tailored for transformers.
+Lean and focused, only what Nicole needs.
 """
 
 import ast
@@ -15,7 +15,7 @@ import threading
 import time
 
 class H2ORuntime:
-    """Минимальная среда исполнения для трансформеров Nicole"""
+    """Minimal runtime environment for Nicole transformers"""
     
     def __init__(self):
         self.globals_dict = {
@@ -91,7 +91,7 @@ class H2ORuntime:
         self.transformer_context = {}
         
     def _create_math_module(self):
-        """Минимальный math модуль для трансформеров"""
+        """Minimal math module for transformers"""
         import math
         return types.SimpleNamespace(
             sin=math.sin, cos=math.cos, tan=math.tan,
@@ -103,7 +103,7 @@ class H2ORuntime:
         )
         
     def _create_random_module(self):
-        """Минимальный random модуль"""
+        """Minimal random module"""
         import random
         return types.SimpleNamespace(
             random=random.random,
@@ -117,7 +117,7 @@ class H2ORuntime:
         )
         
     def _create_time_module(self):
-        """Минимальный time модуль"""
+        """Minimal time module"""
         return types.SimpleNamespace(
             time=time.time,
             sleep=time.sleep,
@@ -125,7 +125,7 @@ class H2ORuntime:
         )
     
     def _create_requests_module(self):
-        """Минимальный requests модуль для objectivity"""
+        """Minimal requests module for objectivity"""
         try:
             import requests
             return types.SimpleNamespace(
@@ -137,7 +137,7 @@ class H2ORuntime:
                 RequestException=requests.RequestException
             )
         except ImportError:
-            # Заглушка если requests не установлен
+            # Mock if requests not installed
             def mock_get(*args, **kwargs):
                 class MockResponse:
                     status_code = 200
@@ -152,7 +152,7 @@ class H2ORuntime:
             )
     
     def _create_sqlite_module(self):
-        """Минимальный sqlite3 модуль"""
+        """Minimal sqlite3 module"""
         import sqlite3
         return types.SimpleNamespace(
             connect=sqlite3.connect,
@@ -161,57 +161,57 @@ class H2ORuntime:
         )
 
 class H2OCompiler:
-    """Компилятор Python кода для Nicole трансформеров"""
+    """Python code compiler for Nicole transformers"""
     
     def __init__(self, runtime: H2ORuntime):
         self.runtime = runtime
         self.compiled_cache = {}
         
     def compile_transformer_script(self, code: str, script_id: str) -> types.CodeType:
-        """Компилирует скрипт трансформера"""
+        """Compiles transformer script"""
         if script_id in self.compiled_cache:
             return self.compiled_cache[script_id]
-            
+
         try:
-            # Парсим AST
+            # Parse AST
             tree = ast.parse(code)
-            
-            # Оптимизируем для трансформеров
+
+            # Optimize for transformers
             tree = self._optimize_for_transformers(tree)
-            
-            # Компилируем в байт-код
+
+            # Compile to bytecode
             compiled = compile(tree, f"<transformer_{script_id}>", 'exec')
-            
+
             self.compiled_cache[script_id] = compiled
             return compiled
-            
+
         except Exception as e:
-            raise H2OCompilationError(f"Ошибка компиляции трансформера {script_id}: {e}")
+            raise H2OCompilationError(f"Transformer {script_id} compilation error: {e}")
     
     def _optimize_for_transformers(self, tree: ast.AST) -> ast.AST:
-        """Оптимизации специфичные для трансформеров Nicole"""
-        
+        """Optimizations specific to Nicole transformers"""
+
         class TransformerOptimizer(ast.NodeTransformer):
             def visit_FunctionDef(self, node):
-                # Добавляем декораторы для трекинга метрик
+                # Add decorators for metric tracking
                 if node.name.startswith('attention_') or node.name.startswith('feed_forward_'):
-                    # Оборачиваем функции трансформера в метрики
+                    # Wrap transformer functions in metrics
                     pass
                 return self.generic_visit(node)
-                
+
             def visit_For(self, node):
-                # Оптимизируем циклы для матричных операций
+                # Optimize loops for matrix operations
                 return self.generic_visit(node)
-                
+
             def visit_ListComp(self, node):
-                # Оптимизируем list comprehensions для векторных операций
+                # Optimize list comprehensions for vector operations
                 return self.generic_visit(node)
         
         optimizer = TransformerOptimizer()
         return optimizer.visit(tree)
 
 class H2OExecutor:
-    """Исполнитель скриптов трансформеров"""
+    """Transformer script executor"""
     
     def __init__(self, runtime: H2ORuntime, compiler: H2OCompiler):
         self.runtime = runtime
@@ -220,188 +220,188 @@ class H2OExecutor:
         self.execution_lock = threading.Lock()
         
     def execute_transformer(self, code: str, transformer_id: str, context: Dict[str, Any] = None) -> Any:
-        """Исполняет скрипт трансформера в изолированной среде"""
-        
+        """Executes transformer script in isolated environment"""
+
         with self.execution_lock:
             try:
-                # Компилируем код
+                # Compile code
                 compiled_code = self.compiler.compile_transformer_script(code, transformer_id)
-                
-                # Создаем изолированное окружение
+
+                # Create isolated environment
                 execution_globals = self.runtime.globals_dict.copy()
                 execution_locals = {}
-                
-                # Добавляем контекст трансформера
+
+                # Add transformer context
                 if context:
                     execution_globals.update(context)
-                    
-                # Добавляем специальные функции для трансформеров
+
+                # Add special functions for transformers
                 execution_globals.update({
                     'transformer_id': transformer_id,
                     'h2o_log': lambda msg: self._log_transformer_action(transformer_id, msg),
                     'h2o_metric': lambda name, value: self._record_metric(transformer_id, name, value),
                     'h2o_reshape': self._reshape_transformer,
                     'h2o_evolve': self._evolve_transformer,
-                    # КРИТИЧНО: добавляем globals() функцию для objectivity скриптов
+                    # CRITICAL: add globals() function for objectivity scripts
                     'globals': lambda: execution_globals,
                     'locals': lambda: execution_locals,
                 })
-                
-                # Исполняем код (ВАЖНО: только globals, чтобы переменные попадали туда)
+
+                # Execute code (IMPORTANT: only globals, so variables end up there)
                 result = exec(compiled_code, execution_globals, execution_globals)
-                
-                # Сохраняем состояние трансформера
+
+                # Save transformer state
                 self.active_transformers[transformer_id] = {
                     'globals': execution_globals,
-                    'locals': execution_locals,  # Теперь тоже globals
+                    'locals': execution_locals,  # Now also globals
                     'last_execution': time.time(),
                     'code': code
                 }
-                
-                # Логируем что сохранилось
-                user_vars = {k: v for k, v in execution_globals.items() 
+
+                # Log what was saved
+                user_vars = {k: v for k, v in execution_globals.items()
                            if not k.startswith('__') and k not in ['transformer_id', 'h2o_log', 'h2o_metric', 'h2o_reshape', 'h2o_evolve', 'globals', 'locals', 'math', 'random', 'time', 'requests', 'sqlite3']}
                 if user_vars:
-                    self._log_transformer_action(transformer_id, f"Сохранены переменные: {list(user_vars.keys())}")
-                
+                    self._log_transformer_action(transformer_id, f"Saved variables: {list(user_vars.keys())}")
+
                 return result
-                
+
             except Exception as e:
                 self._log_transformer_error(transformer_id, str(e))
-                raise H2OExecutionError(f"Ошибка исполнения трансформера {transformer_id}: {e}")
+                raise H2OExecutionError(f"Transformer {transformer_id} execution error: {e}")
     
     def _log_transformer_action(self, transformer_id: str, message: str):
-        """Логирует действия трансформера"""
+        """Logs transformer actions"""
         print(f"[H2O:{transformer_id}] {message}")
-        
+
     def _record_metric(self, transformer_id: str, metric_name: str, value: float):
-        """Записывает метрики трансформера"""
-        # Тут будет интеграция с Nicole для записи метрик
+        """Records transformer metrics"""
+        # Nicole integration for metric recording will go here
         pass
-        
+
     def _reshape_transformer(self, transformer_id: str, new_architecture: Dict):
-        """Изменяет архитектуру трансформера на лету"""
-        # Тут будет логика изменения архитектуры
+        """Changes transformer architecture on the fly"""
+        # Architecture change logic will go here
         pass
-        
+
     def _evolve_transformer(self, transformer_id: str, evolution_params: Dict):
-        """Эволюционирует трансформер"""
-        # Тут будет логика эволюции
+        """Evolves transformer"""
+        # Evolution logic will go here
         pass
-        
+
     def _log_transformer_error(self, transformer_id: str, error: str):
-        """Логирует ошибки трансформера"""
+        """Logs transformer errors"""
         print(f"[H2O:ERROR:{transformer_id}] {error}")
-        
+
     def kill_transformer(self, transformer_id: str):
-        """Убивает трансформер и освобождает ресурсы"""
+        """Kills transformer and frees resources"""
         if transformer_id in self.active_transformers:
             del self.active_transformers[transformer_id]
             self._log_transformer_action(transformer_id, "TERMINATED")
-            
+
     def list_active_transformers(self) -> List[str]:
-        """Возвращает список активных трансформеров"""
+        """Returns list of active transformers"""
         return list(self.active_transformers.keys())
 
 class H2OEngine:
-    """Главный движок H2O"""
-    
+    """Main H2O engine"""
+
     def __init__(self):
         self.runtime = H2ORuntime()
         self.compiler = H2OCompiler(self.runtime)
         self.executor = H2OExecutor(self.runtime, self.compiler)
         self.session_id = None
-        
+
     def start_session(self, session_id: str):
-        """Запускает новую сессию"""
+        """Starts new session"""
         self.session_id = session_id
-        print(f"[H2O] Сессия {session_id} запущена")
-        
+        print(f"[H2O] Session {session_id} started")
+
     def run_transformer_script(self, code: str, transformer_id: str = None, context: Dict = None) -> Any:
-        """Запускает скрипт трансформера"""
+        """Runs transformer script"""
         if not transformer_id:
             transformer_id = f"transformer_{int(time.time() * 1000000)}"
-            
+
         return self.executor.execute_transformer(code, transformer_id, context)
-        
+
     def kill_all_transformers(self):
-        """Убивает все активные трансформеры"""
+        """Kills all active transformers"""
         for transformer_id in self.executor.list_active_transformers():
             self.executor.kill_transformer(transformer_id)
-            
+
     def end_session(self):
-        """Завершает сессию"""
+        """Ends session"""
         if self.session_id:
             self.kill_all_transformers()
-            print(f"[H2O] Сессия {self.session_id} завершена")
+            print(f"[H2O] Session {self.session_id} ended")
             self.session_id = None
 
-# Исключения H2O
+# H2O Exceptions
 class H2OError(Exception):
-    """Базовое исключение H2O"""
+    """Base H2O exception"""
     pass
 
 class H2OCompilationError(H2OError):
-    """Ошибка компиляции"""
+    """Compilation error"""
     pass
 
 class H2OExecutionError(H2OError):
-    """Ошибка исполнения"""
+    """Execution error"""
     pass
 
-# Глобальный экземпляр H2O движка
+# Global H2O engine instance
 h2o_engine = H2OEngine()
 
 def run_script(code: str, transformer_id: str = None, context: Dict = None) -> Any:
-    """Удобная функция для запуска скриптов"""
+    """Convenient function for running scripts"""
     return h2o_engine.run_transformer_script(code, transformer_id, context)
 
 def test_h2o():
-    """Тестирование H2O движка"""
+    """Testing H2O engine"""
     print("=== H2O ENGINE TEST ===")
-    
-    # Тест 1: Простой скрипт
+
+    # Test 1: Simple script
     test_code1 = """
 def simple_transformer():
-    h2o_log("Простой трансформер запущен")
+    h2o_log("Simple transformer started")
     return "Hello from transformer!"
 
 result = simple_transformer()
-h2o_log(f"Результат: {result}")
+h2o_log(f"Result: {result}")
 """
-    
+
     h2o_engine.start_session("test_session")
-    
+
     try:
         run_script(test_code1, "test_transformer_1")
-        print("✓ Тест 1 пройден")
+        print("✓ Test 1 passed")
     except Exception as e:
-        print(f"✗ Тест 1 провален: {e}")
-        
-    # Тест 2: Математические операции
+        print(f"✗ Test 1 failed: {e}")
+
+    # Test 2: Mathematical operations
     test_code2 = """
 import math
 
 def math_transformer():
-    h2o_log("Математический трансформер")
+    h2o_log("Math transformer")
     values = [math.sin(i) for i in range(10)]
     h2o_metric("values_sum", sum(values))
     return values
 
 result = math_transformer()
-h2o_log(f"Математический результат: {len(result)} значений")
+h2o_log(f"Math result: {len(result)} values")
 """
-    
+
     try:
         run_script(test_code2, "test_transformer_2")
-        print("✓ Тест 2 пройден")
+        print("✓ Test 2 passed")
     except Exception as e:
-        print("✗ Тест 2 провален:", e)
-        
-    # Показываем активные трансформеры
+        print("✗ Test 2 failed:", e)
+
+    # Show active transformers
     active = h2o_engine.executor.list_active_transformers()
-    print(f"Активные трансформеры: {active}")
-    
+    print(f"Active transformers: {active}")
+
     h2o_engine.end_session()
     print("=== H2O TEST COMPLETED ===")
 
@@ -409,5 +409,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "test":
         test_h2o()
     else:
-        print("H2O Engine готов к работе")
-        print("Для тестирования запустите: python h2o.py test")
+        print("H2O Engine ready")
+        print("For testing run: python h2o.py test")

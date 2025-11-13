@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Nicole Memory - Модуль долговременной памяти без весов
-Хранит и извлекает контекстную информацию для поддержания связности разговоров.
-Использует семантический поиск и ассоциативные связи.
+Nicole Memory - Long-term memory module without weights
+Stores and retrieves contextual information to maintain conversation coherence.
+Uses semantic search and associative connections.
 """
 
 import sqlite3
@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from collections import defaultdict, deque
 import h2o
 
-# ОПТИМИЗАЦИЯ: Импортируем утилиты БД для WAL mode и индексов
+# OPTIMIZATION: Import DB utilities for WAL mode and indexes
 try:
     from db_utils import get_optimized_connection, create_memory_indexes
     DB_UTILS_AVAILABLE = True
@@ -26,7 +26,7 @@ except ImportError:
 
 @dataclass
 class MemoryEntry:
-    """Запись в памяти"""
+    """Memory entry"""
     id: str
     content: str
     context: str
@@ -41,110 +41,110 @@ class MemoryEntry:
             self.associations = []
 
 class SemanticIndex:
-    """Семантический индекс для быстрого поиска без векторных баз"""
-    
+    """Semantic index for fast search without vector databases"""
+
     def __init__(self):
         self.word_to_entries = defaultdict(set)
         self.bigram_to_entries = defaultdict(set)
         self.trigram_to_entries = defaultdict(set)
-        
+
     def index_entry(self, entry: MemoryEntry):
-        """Индексирует запись для поиска"""
+        """Indexes entry for search"""
         words = self._extract_words(entry.content + " " + entry.context)
-        
-        # Индексируем по словам
+
+        # Index by words
         for word in words:
             self.word_to_entries[word].add(entry.id)
-            
-        # Индексируем по биграммам
+
+        # Index by bigrams
         for i in range(len(words) - 1):
             bigram = (words[i], words[i + 1])
             self.bigram_to_entries[bigram].add(entry.id)
-            
-        # Индексируем по триграммам
+
+        # Index by trigrams
         for i in range(len(words) - 2):
             trigram = (words[i], words[i + 1], words[i + 2])
             self.trigram_to_entries[trigram].add(entry.id)
             
     def search(self, query: str, limit: int = 10) -> Set[str]:
-        """Поиск по запросу, возвращает ID записей"""
+        """Search by query, returns entry IDs"""
         query_words = self._extract_words(query)
-        
+
         if not query_words:
             return set()
-            
-        # Поиск по словам
+
+        # Search by words
         word_matches = set()
         for word in query_words:
             word_matches.update(self.word_to_entries.get(word, set()))
-            
-        # Поиск по биграммам
+
+        # Search by bigrams
         bigram_matches = set()
         for i in range(len(query_words) - 1):
             bigram = (query_words[i], query_words[i + 1])
             bigram_matches.update(self.bigram_to_entries.get(bigram, set()))
-            
-        # Поиск по триграммам (наивысший приоритет)
+
+        # Search by trigrams (highest priority)
         trigram_matches = set()
         for i in range(len(query_words) - 2):
             trigram = (query_words[i], query_words[i + 1], query_words[i + 2])
             trigram_matches.update(self.trigram_to_entries.get(trigram, set()))
-            
-        # Объединяем результаты с весами
+
+        # Combine results with weights
         all_matches = []
-        
+
         for entry_id in trigram_matches:
-            all_matches.append((entry_id, 3.0))  # Триграммы весят больше
-            
+            all_matches.append((entry_id, 3.0))  # Trigrams weigh more
+
         for entry_id in bigram_matches:
             if entry_id not in trigram_matches:
-                all_matches.append((entry_id, 2.0))  # Биграммы средний вес
-                
+                all_matches.append((entry_id, 2.0))  # Bigrams medium weight
+
         for entry_id in word_matches:
             if entry_id not in trigram_matches and entry_id not in bigram_matches:
-                all_matches.append((entry_id, 1.0))  # Слова минимальный вес
-                
-        # Сортируем по релевантности и ограничиваем
+                all_matches.append((entry_id, 1.0))  # Words minimum weight
+
+        # Sort by relevance and limit
         all_matches.sort(key=lambda x: x[1], reverse=True)
         return {match[0] for match in all_matches[:limit]}
         
     def _extract_words(self, text: str) -> List[str]:
-        """Извлекает слова из текста"""
-        # Простая токенизация
+        """Extracts words from text"""
+        # Simple tokenization
         words = text.lower().replace('.', '').replace(',', '').replace('!', '').replace('?', '').split()
-        return [word for word in words if len(word) > 2]  # Фильтруем короткие слова
+        return [word for word in words if len(word) > 2]  # Filter short words
 
 class AssociativeNetwork:
-    """Ассоциативная сеть для связывания концепций"""
-    
+    """Associative network for linking concepts"""
+
     def __init__(self):
         self.associations = defaultdict(lambda: defaultdict(float))
         self.concept_strength = defaultdict(float)
-        
+
     def add_association(self, concept1: str, concept2: str, strength: float = 1.0):
-        """Добавляет ассоциацию между концепциями"""
+        """Adds association between concepts"""
         self.associations[concept1][concept2] += strength
         self.associations[concept2][concept1] += strength
         self.concept_strength[concept1] += strength * 0.5
         self.concept_strength[concept2] += strength * 0.5
-        
+
     def get_related_concepts(self, concept: str, limit: int = 5) -> List[Tuple[str, float]]:
-        """Возвращает связанные концепции"""
+        """Returns related concepts"""
         if concept not in self.associations:
             return []
-            
+
         related = list(self.associations[concept].items())
         related.sort(key=lambda x: x[1], reverse=True)
         return related[:limit]
-        
+
     def strengthen_association(self, concept1: str, concept2: str, factor: float = 1.1):
-        """Усиливает ассоциацию между концепциями"""
+        """Strengthens association between concepts"""
         if concept2 in self.associations[concept1]:
             self.associations[concept1][concept2] *= factor
             self.associations[concept2][concept1] *= factor
-            
+
     def decay_associations(self, decay_factor: float = 0.99):
-        """Ослабляет все ассоциации (забывание)"""
+        """Weakens all associations (forgetting)"""
         for concept1 in self.associations:
             for concept2 in list(self.associations[concept1].keys()):
                 self.associations[concept1][concept2] *= decay_factor
@@ -152,8 +152,8 @@ class AssociativeNetwork:
                     del self.associations[concept1][concept2]
 
 class NicoleMemoryCore:
-    """Ядро системы памяти Nicole"""
-    
+    """Core of Nicole's memory system"""
+
     def __init__(self, db_path: str = "nicole_memory.db"):
         self.db_path = db_path
         self.semantic_index = SemanticIndex()
@@ -163,17 +163,17 @@ class NicoleMemoryCore:
         self.memory_lock = threading.Lock()
         self.init_database()
         self.load_memories_to_cache()
-        
+
     def init_database(self):
-        """Инициализация базы памяти с оптимизациями (WAL mode)"""
-        # ОПТИМИЗАЦИЯ: Используем оптимизированное подключение с WAL mode
+        """Initialize memory database with optimizations (WAL mode)"""
+        # OPTIMIZATION: Use optimized connection with WAL mode
         if DB_UTILS_AVAILABLE:
             conn = get_optimized_connection(self.db_path)
         else:
             conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
-        # Новые таблицы для продвинутой памяти
+
+        # New tables for advanced memory
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS memory_entries (
             id TEXT PRIMARY KEY,
@@ -198,7 +198,7 @@ class NicoleMemoryCore:
         )
         """)
         
-        # СОВМЕСТИМОСТЬ: создаем старые таблицы для обратной совместимости
+        # COMPATIBILITY: create old tables for backwards compatibility
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS conversations (
             id INTEGER PRIMARY KEY,
@@ -239,15 +239,15 @@ class NicoleMemoryCore:
 
         conn.commit()
 
-        # ОПТИМИЗАЦИЯ: Создаем индексы для быстрых запросов
+        # OPTIMIZATION: Create indexes for fast queries
         if DB_UTILS_AVAILABLE:
             create_memory_indexes(conn)
             print("[nicole_memory] Database optimized with WAL mode + indexes")
 
         conn.close()
-        
+
     def load_memories_to_cache(self):
-        """Загружает воспоминания в кеш и индексы"""
+        """Loads memories into cache and indexes"""
         conn = get_optimized_connection(self.db_path) if DB_UTILS_AVAILABLE else sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -268,23 +268,23 @@ class NicoleMemoryCore:
             
             self.memory_cache[entry.id] = entry
             self.semantic_index.index_entry(entry)
-            
-        # Загружаем ассоциации
+
+        # Load associations
         cursor.execute("SELECT concept1, concept2, strength FROM concept_associations")
         assoc_rows = cursor.fetchall()
-        
+
         for concept1, concept2, strength in assoc_rows:
             self.associative_network.associations[concept1][concept2] = strength
-            
+
         conn.close()
-        
-        # МИГРАЦИЯ: загружаем старые данные если новых нет
+
+        # MIGRATION: load old data if no new data exists
         if len(self.memory_cache) == 0:
             self.migrate_old_memory_data()
-        
-        print(f"[NicoleMemory] Загружено {len(self.memory_cache)} воспоминаний")
-        
-        # Добавляем совместимость с основной Nicole
+
+        print(f"[NicoleMemory] Loaded {len(self.memory_cache)} memories")
+
+        # Add compatibility with main Nicole
         self.word_frequencies = defaultdict(int)
         self.bigram_transitions = defaultdict(lambda: defaultdict(int))
         try:
@@ -292,16 +292,16 @@ class NicoleMemoryCore:
             self.verb_graph = VerbGraph()
         except ImportError:
             self.verb_graph = None
-            
-        # Загружаем word_frequencies и bigrams
+
+        # Load word_frequencies and bigrams
         self.load_compatibility_data()
         
-    def store_memory(self, content: str, context: str = "", importance: float = 1.0, 
+    def store_memory(self, content: str, context: str = "", importance: float = 1.0,
                     associations: List[str] = None) -> str:
-        """Сохраняет новое воспоминание"""
+        """Stores new memory"""
         with self.memory_lock:
             memory_id = f"mem_{int(time.time() * 1000000)}"
-            
+
             entry = MemoryEntry(
                 id=memory_id,
                 content=content,
@@ -310,35 +310,35 @@ class NicoleMemoryCore:
                 importance=importance,
                 associations=associations or []
             )
-            
-            # Сохраняем в кеш и индекс
+
+            # Save to cache and index
             self.memory_cache[memory_id] = entry
             self.semantic_index.index_entry(entry)
             self.recent_memories.append(memory_id)
-            
-            # Создаем ассоциации
+
+            # Create associations
             self._create_associations(entry)
-            
-            # Сохраняем в базу
+
+            # Save to database
             self._save_entry_to_db(entry)
-            
-            print(f"[NicoleMemory] Сохранено воспоминание {memory_id}")
+
+            print(f"[NicoleMemory] Stored memory {memory_id}")
             return memory_id
             
     def _create_associations(self, entry: MemoryEntry):
-        """Создает ассоциации для нового воспоминания"""
+        """Creates associations for new memory"""
         words = self.semantic_index._extract_words(entry.content + " " + entry.context)
-        
-        # Создаем ассоциации между словами в воспоминании
+
+        # Create associations between words in memory
         for i, word1 in enumerate(words):
             for j, word2 in enumerate(words):
                 if i != j:
                     distance = abs(i - j)
-                    strength = 1.0 / (1 + distance * 0.1)  # Ближние слова связаны сильнее
+                    strength = 1.0 / (1 + distance * 0.1)  # Nearby words are linked stronger
                     self.associative_network.add_association(word1, word2, strength * entry.importance)
-                    
+
     def _save_entry_to_db(self, entry: MemoryEntry):
-        """Сохраняет запись в базу данных"""
+        """Saves entry to database"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -361,49 +361,49 @@ class NicoleMemoryCore:
         conn.close()
         
     def recall_memories(self, query: str, limit: int = 5, min_importance: float = 0.1) -> List[MemoryEntry]:
-        """Вспоминает релевантные воспоминания"""
+        """Recalls relevant memories"""
         with self.memory_lock:
-            # Семантический поиск
+            # Semantic search
             matching_ids = self.semantic_index.search(query, limit * 3)
-            
-            # Фильтруем по важности и получаем записи
+
+            # Filter by importance and get entries
             relevant_memories = []
             for memory_id in matching_ids:
                 if memory_id in self.memory_cache:
                     entry = self.memory_cache[memory_id]
                     if entry.importance >= min_importance:
                         relevant_memories.append(entry)
-                        
-            # Сортируем по релевантности (важность + свежесть + частота доступа)
+
+            # Sort by relevance (importance + recency + access frequency)
             def relevance_score(entry: MemoryEntry) -> float:
-                recency = 1.0 / (1 + (time.time() - entry.timestamp) / 86400)  # Свежесть в днях
+                recency = 1.0 / (1 + (time.time() - entry.timestamp) / 86400)  # Recency in days
                 access_freq = math.log(1 + entry.access_count) / 10
                 return entry.importance * 0.5 + recency * 0.3 + access_freq * 0.2
-                
+
             relevant_memories.sort(key=relevance_score, reverse=True)
-            
-            # Обновляем статистику доступа
+
+            # Update access statistics
             for entry in relevant_memories[:limit]:
                 entry.access_count += 1
                 entry.last_access = time.time()
                 self._save_entry_to_db(entry)
-                
+
             return relevant_memories[:limit]
             
     def get_associative_context(self, query: str, depth: int = 2) -> List[str]:
-        """Получает ассоциативный контекст для запроса"""
+        """Gets associative context for query"""
         words = self.semantic_index._extract_words(query)
-        
+
         all_associations = set()
-        
-        # Первый уровень ассоциаций
+
+        # First level of associations
         for word in words:
             related = self.associative_network.get_related_concepts(word, 3)
             for concept, strength in related:
-                if strength > 0.5:  # Только сильные ассоциации
+                if strength > 0.5:  # Only strong associations
                     all_associations.add(concept)
-                    
-        # Второй уровень (ассоциации ассоциаций)
+
+        # Second level (associations of associations)
         if depth > 1:
             second_level = set()
             for concept in list(all_associations):
@@ -412,61 +412,61 @@ class NicoleMemoryCore:
                     if strength > 0.3:
                         second_level.add(concept2)
             all_associations.update(second_level)
-            
+
         return list(all_associations)
         
     def consolidate_memories(self, threshold: float = 0.8):
-        """Консолидирует похожие воспоминания"""
+        """Consolidates similar memories"""
         with self.memory_lock:
             memories = list(self.memory_cache.values())
             to_merge = []
-            
-            # Находим похожие воспоминания
+
+            # Find similar memories
             for i, mem1 in enumerate(memories):
                 for j, mem2 in enumerate(memories[i+1:], i+1):
                     similarity = self._calculate_similarity(mem1, mem2)
                     if similarity > threshold:
                         to_merge.append((mem1, mem2, similarity))
-                        
-            # Объединяем похожие воспоминания
+
+            # Merge similar memories
             for mem1, mem2, similarity in to_merge:
                 merged_entry = self._merge_memories(mem1, mem2)
-                
-                # Удаляем старые записи
+
+                # Remove old entries
                 if mem1.id in self.memory_cache:
                     del self.memory_cache[mem1.id]
                 if mem2.id in self.memory_cache:
                     del self.memory_cache[mem2.id]
-                    
-                # Добавляем объединенную
+
+                # Add merged entry
                 self.memory_cache[merged_entry.id] = merged_entry
                 self.semantic_index.index_entry(merged_entry)
                 self._save_entry_to_db(merged_entry)
-                
+
             if to_merge:
-                print(f"[NicoleMemory] Консолидировано {len(to_merge)} пар воспоминаний")
+                print(f"[NicoleMemory] Consolidated {len(to_merge)} memory pairs")
                 
     def _calculate_similarity(self, mem1: MemoryEntry, mem2: MemoryEntry) -> float:
-        """Рассчитывает схожесть двух воспоминаний"""
+        """Calculates similarity of two memories"""
         words1 = set(self.semantic_index._extract_words(mem1.content))
         words2 = set(self.semantic_index._extract_words(mem2.content))
-        
+
         if not words1 or not words2:
             return 0.0
-            
+
         intersection = len(words1 & words2)
         union = len(words1 | words2)
-        
+
         jaccard = intersection / union if union > 0 else 0.0
-        
-        # Учитываем временную близость
+
+        # Account for temporal proximity
         time_diff = abs(mem1.timestamp - mem2.timestamp)
-        time_similarity = 1.0 / (1 + time_diff / 3600)  # Часы
-        
+        time_similarity = 1.0 / (1 + time_diff / 3600)  # Hours
+
         return jaccard * 0.7 + time_similarity * 0.3
-        
+
     def _merge_memories(self, mem1: MemoryEntry, mem2: MemoryEntry) -> MemoryEntry:
-        """Объединяет два воспоминания"""
+        """Merges two memories"""
         merged_content = f"{mem1.content} | {mem2.content}"
         merged_context = f"{mem1.context} | {mem2.context}"
         
@@ -481,125 +481,125 @@ class NicoleMemoryCore:
             associations=list(set(mem1.associations + mem2.associations))
         )
         
-    def forget_old_memories(self, age_threshold: float = 7 * 24 * 3600):  # 7 дней
-        """Забывает старые неважные воспоминания"""
+    def forget_old_memories(self, age_threshold: float = 7 * 24 * 3600):  # 7 days
+        """Forgets old unimportant memories"""
         with self.memory_lock:
             current_time = time.time()
             to_forget = []
-            
+
             for memory_id, entry in self.memory_cache.items():
                 age = current_time - entry.timestamp
-                
-                # Забываем если старое И неважное И редко используется
-                if (age > age_threshold and 
-                    entry.importance < 0.3 and 
+
+                # Forget if old AND unimportant AND rarely used
+                if (age > age_threshold and
+                    entry.importance < 0.3 and
                     entry.access_count < 2):
                     to_forget.append(memory_id)
-                    
-            # Удаляем забытые воспоминания
+
+            # Remove forgotten memories
             for memory_id in to_forget:
                 del self.memory_cache[memory_id]
-                
+
             if to_forget:
-                print(f"[NicoleMemory] Забыто {len(to_forget)} старых воспоминаний")
+                print(f"[NicoleMemory] Forgot {len(to_forget)} old memories")
                 
     def get_conversation_context(self, current_input: str, session_id: str = None) -> str:
-        """Получает контекст для текущего разговора"""
-        # Вспоминаем релевантные воспоминания
+        """Gets context for current conversation"""
+        # Recall relevant memories
         relevant_memories = self.recall_memories(current_input, limit=3)
-        
-        # Получаем ассоциативный контекст
+
+        # Get associative context
         associations = self.get_associative_context(current_input, depth=1)
-        
-        # Формируем контекст
+
+        # Form context
         context_parts = []
-        
+
         if relevant_memories:
-            context_parts.append("Релевантные воспоминания:")
+            context_parts.append("Relevant memories:")
             for mem in relevant_memories:
                 context_parts.append(f"- {mem.content[:100]}...")
-                
+
         if associations:
-            context_parts.append(f"Ассоциации: {', '.join(associations[:10])}")
-            
+            context_parts.append(f"Associations: {', '.join(associations[:10])}")
+
         return " ".join(context_parts) if context_parts else ""
         
-    def learn_from_conversation(self, user_input: str, nicole_output: str, 
+    def learn_from_conversation(self, user_input: str, nicole_output: str,
                               session_context: str = "", importance: float = None):
-        """Обучается на основе разговора"""
+        """Learns from conversation"""
         if importance is None:
-            # Автоматически определяем важность
+            # Automatically determine importance
             importance = self._calculate_importance(user_input, nicole_output)
-            
-        # Сохраняем воспоминание о взаимодействии
-        memory_content = f"Пользователь: {user_input} | Nicole: {nicole_output}"
+
+        # Store memory of interaction
+        memory_content = f"User: {user_input} | Nicole: {nicole_output}"
         memory_id = self.store_memory(memory_content, session_context, importance)
-        
-        # Создаем ассоциации между концепциями в разговоре
+
+        # Create associations between concepts in conversation
         user_concepts = self.semantic_index._extract_words(user_input)
         nicole_concepts = self.semantic_index._extract_words(nicole_output)
-        
-        # Связываем концепции пользователя и Nicole
+
+        # Link user and Nicole concepts
         for user_concept in user_concepts:
             for nicole_concept in nicole_concepts:
                 self.associative_network.add_association(user_concept, nicole_concept, importance)
-                
+
         return memory_id
         
     def _calculate_importance(self, user_input: str, nicole_output: str) -> float:
-        """Автоматически рассчитывает важность взаимодействия"""
-        # Базовая важность
+        """Automatically calculates interaction importance"""
+        # Base importance
         importance = 0.5
-        
-        # Увеличиваем важность для:
-        # - Длинных сообщений (больше информации)
+
+        # Increase importance for:
+        # - Long messages (more information)
         if len(user_input) > 50:
             importance += 0.2
-            
-        # - Вопросов (требуют запоминания)
+
+        # - Questions (require remembering)
         if any(char in user_input for char in '?'):
             importance += 0.1
-            
-        # - Личной информации
+
+        # - Personal information (Russian words preserved as data)
         personal_words = ['я', 'мне', 'мой', 'моя', 'мое', 'меня', 'себя']
         if any(word in user_input.lower().split() for word in personal_words):
             importance += 0.3
-            
-        # - Эмоциональных слов
+
+        # - Emotional words (Russian words preserved as data)
         emotional_words = ['люблю', 'ненавижу', 'нравится', 'злой', 'грустный', 'счастливый']
         if any(word in user_input.lower() for word in emotional_words):
             importance += 0.2
-            
+
         return min(1.0, importance)
         
     def periodic_maintenance(self):
-        """Периодическое обслуживание памяти"""
+        """Periodic memory maintenance"""
         while True:
             try:
-                time.sleep(3600)  # Каждый час
-                
-                # Консолидируем воспоминания
+                time.sleep(3600)  # Every hour
+
+                # Consolidate memories
                 self.consolidate_memories()
-                
-                # Забываем старые воспоминания
+
+                # Forget old memories
                 self.forget_old_memories()
-                
-                # Ослабляем ассоциации
+
+                # Decay associations
                 self.associative_network.decay_associations()
-                
-                print("[NicoleMemory] Периодическое обслуживание выполнено")
-                
+
+                print("[NicoleMemory] Periodic maintenance completed")
+
             except Exception as e:
-                print(f"[NicoleMemory:ERROR] Ошибка обслуживания: {e}")
-                
+                print(f"[NicoleMemory:ERROR] Maintenance error: {e}")
+
     def start_maintenance(self):
-        """Запускает периодическое обслуживание"""
+        """Starts periodic maintenance"""
         maintenance_thread = threading.Thread(target=self.periodic_maintenance, daemon=True)
         maintenance_thread.start()
-        print("[NicoleMemory] Периодическое обслуживание запущено")
-        
+        print("[NicoleMemory] Periodic maintenance started")
+
     def get_memory_statistics(self) -> Dict:
-        """Возвращает статистику памяти"""
+        """Returns memory statistics"""
         total_memories = len(self.memory_cache)
         
         if total_memories == 0:
@@ -618,128 +618,128 @@ class NicoleMemoryCore:
         }
     
     def migrate_old_memory_data(self):
-        """Мигрирует данные из старых таблиц в новую систему памяти"""
+        """Migrates data from old tables to new memory system"""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            
-            # Проверяем есть ли старые данные
+
+            # Check if old data exists
             cursor.execute("SELECT COUNT(*) FROM conversations")
             old_conversations = cursor.fetchone()[0]
-            
+
             if old_conversations > 0:
-                print(f"[NicoleMemory] Мигрирую {old_conversations} старых разговоров...")
-                
-                # Загружаем старые разговоры
+                print(f"[NicoleMemory] Migrating {old_conversations} old conversations...")
+
+                # Load old conversations
                 cursor.execute("""
-                    SELECT user_input, nicole_output, timestamp, session_id 
-                    FROM conversations 
+                    SELECT user_input, nicole_output, timestamp, session_id
+                    FROM conversations
                     WHERE user_input IS NOT NULL AND nicole_output IS NOT NULL
-                    ORDER BY timestamp DESC 
+                    ORDER BY timestamp DESC
                     LIMIT 500
                 """)
-                
+
                 for user_input, nicole_output, timestamp, session_id in cursor.fetchall():
-                    # Создаем воспоминание из разговора
+                    # Create memory from conversation
                     content = f"User: {user_input} | Nicole: {nicole_output}"
                     context = f"conversation_{session_id or 'unknown'}"
-                    importance = 0.7  # Средняя важность для мигрированных данных
-                    
+                    importance = 0.7  # Medium importance for migrated data
+
                     memory_id = self.store_memory(content, context, importance)
-                    
-                print(f"[NicoleMemory] Миграция завершена!")
-                
+
+                print(f"[NicoleMemory] Migration completed!")
+
             conn.close()
-            
+
         except Exception as e:
-            print(f"[NicoleMemory] Ошибка миграции: {e}")
-    
+            print(f"[NicoleMemory] Migration error: {e}")
+
     def load_compatibility_data(self):
-        """Загружает word_frequencies и bigrams для совместимости"""
+        """Loads word_frequencies and bigrams for compatibility"""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            
-            # Загружаем частоты слов
+
+            # Load word frequencies
             cursor.execute("SELECT word, count FROM word_frequencies")
             for word, count in cursor.fetchall():
                 self.word_frequencies[word] = count
-                
-            # Загружаем биграммы  
+
+            # Load bigrams
             cursor.execute("SELECT w1, w2, count FROM bigrams")
             for w1, w2, count in cursor.fetchall():
                 self.bigram_transitions[w1][w2] = count
-                
+
             conn.close()
-            
+
             words_count = len(self.word_frequencies)
             bigrams_count = sum(len(transitions) for transitions in self.bigram_transitions.values())
             if words_count > 0 or bigrams_count > 0:
-                print(f"[NicoleMemory] Загружена совместимость: {words_count} слов, {bigrams_count} биграмм")
-                
+                print(f"[NicoleMemory] Loaded compatibility: {words_count} words, {bigrams_count} bigrams")
+
         except Exception as e:
-            print(f"[NicoleMemory] Ошибка загрузки совместимости: {e}")
+            print(f"[NicoleMemory] Compatibility loading error: {e}")
 
-# Интеграция будет добавлена позже
-# TODO: Интегрировать с основной Nicole системой
+# Integration will be added later
+# TODO: Integrate with main Nicole system
 
-# Функция интеграции будет добавлена позже
+# Integration function will be added later
 
 def test_memory_system():
-    """Тестирование системы памяти"""
+    """Memory system testing"""
     print("=== NICOLE MEMORY SYSTEM TEST ===")
     
     memory_core = NicoleMemoryCore()
-    
-    # Тест 1: Сохранение воспоминаний
-    print("\\n--- Тест сохранения ---")
-    mem1 = memory_core.store_memory("Пользователь любит кофе", "разговор о предпочтениях", 0.8)
-    mem2 = memory_core.store_memory("Обсуждали погоду вчера", "casual разговор", 0.3)
-    mem3 = memory_core.store_memory("Пользователь работает программистом", "личная информация", 0.9)
-    
-    # Тест 2: Поиск воспоминаний
-    print("\\n--- Тест поиска ---")
-    results = memory_core.recall_memories("кофе программист", limit=3)
+
+    # Test 1: Storing memories
+    print("\\n--- Storage test ---")
+    mem1 = memory_core.store_memory("User likes coffee", "preferences conversation", 0.8)
+    mem2 = memory_core.store_memory("Discussed weather yesterday", "casual conversation", 0.3)
+    mem3 = memory_core.store_memory("User works as programmer", "personal information", 0.9)
+
+    # Test 2: Memory recall
+    print("\\n--- Recall test ---")
+    results = memory_core.recall_memories("coffee programmer", limit=3)
     for mem in results:
-        print(f"Найдено: {mem.content} (важность: {mem.importance:.2f})")
-        
-    # Тест 3: Ассоциативный контекст
-    print("\\n--- Тест ассоциаций ---")
-    associations = memory_core.get_associative_context("работа кофе")
-    print(f"Ассоциации: {associations[:10]}")
-    
-    # Тест 4: Симуляция разговора
-    print("\\n--- Тест симуляции разговора ---")
-    
+        print(f"Found: {mem.content} (importance: {mem.importance:.2f})")
+
+    # Test 3: Associative context
+    print("\\n--- Associations test ---")
+    associations = memory_core.get_associative_context("work coffee")
+    print(f"Associations: {associations[:10]}")
+
+    # Test 4: Conversation simulation
+    print("\\n--- Conversation simulation test ---")
+
     test_conversations = [
-        ("Привет! Меня зовут Алекс", "Привет Алекс!"),
-        ("Я работаю программистом", "Круто! Программирование интересная работа"),
-        ("Люблю пить кофе по утрам", "Кофе - отличный способ начать день"), 
-        ("Как дела?", "Хорошо, спасибо!"),
+        ("Hello! My name is Alex", "Hi Alex!"),
+        ("I work as a programmer", "Cool! Programming is interesting work"),
+        ("I love drinking coffee in the morning", "Coffee is a great way to start the day"),
+        ("How are you?", "Good, thanks!"),
     ]
-    
+
     for user_msg, nicole_response in test_conversations:
         memory_core.learn_from_conversation(user_msg, nicole_response, "test_session")
-        print(f"Сохранено: {user_msg} -> {nicole_response}")
-        
-    # Проверяем поиск по сохраненным разговорам
-    print("\\n--- Поиск по сохраненным разговорам ---")
-    results = memory_core.recall_memories("работа программист", limit=2)
+        print(f"Stored: {user_msg} -> {nicole_response}")
+
+    # Check search on stored conversations
+    print("\\n--- Search on stored conversations ---")
+    results = memory_core.recall_memories("work programmer", limit=2)
     for mem in results:
-        print(f"Найдено: {mem.content[:100]}...")
-    
-    # Статистика
+        print(f"Found: {mem.content[:100]}...")
+
+    # Statistics
     stats = memory_core.get_memory_statistics()
-    print(f"\\nСтатистика памяти:")
+    print(f"\\nMemory statistics:")
     for key, value in stats.items():
         print(f"- {key}: {value}")
-        
+
     print("\\n=== MEMORY TEST COMPLETED ===")
 
-# === МЕТОДЫ СОВМЕСТИМОСТИ С ОСНОВНОЙ NICOLE ===
+# === COMPATIBILITY METHODS WITH MAIN NICOLE ===
 
 def add_compatibility_methods():
-    """Добавляет методы совместимости к NicoleMemoryCore"""
+    """Adds compatibility methods to NicoleMemoryCore"""
     
     def update_word_frequencies(self, text: str):
         words = text.lower().split()
@@ -771,13 +771,13 @@ def add_compatibility_methods():
     
     def get_semantic_candidates(self, word: str, distance_percent: float = 0.5) -> List[str]:
         """
-        Получает семантические кандидаты (совместимость с nicole.py)
+        Gets semantic candidates (compatibility with nicole.py)
 
         FIXED: When DB is empty, return [] instead of [word] to avoid duplicates
         - Empty DB → candidates_50 = [], candidates_70 = []
         - Let objectivity seeds be the primary source when learning hasn't started
         """
-        # Конвертируем distance_percent в limit для совместимости
+        # Convert distance_percent to limit for compatibility
         limit = max(5, int(distance_percent * 20))  # 0.5 -> 10, 0.7 -> 14
         candidates = []
         if word in self.associative_network.associations:
@@ -786,8 +786,8 @@ def add_compatibility_methods():
         # FIX: Don't return [word] as fallback - causes duplicates
         # Instead return empty list and let caller handle it
         return candidates
-    
-    # Добавляем методы к классу
+
+    # Add methods to class
     NicoleMemoryCore.update_word_frequencies = update_word_frequencies
     NicoleMemoryCore.update_bigrams = update_bigrams
     NicoleMemoryCore.log_conversation = log_conversation
@@ -795,12 +795,12 @@ def add_compatibility_methods():
     NicoleMemoryCore.is_response_repetitive = is_response_repetitive
     NicoleMemoryCore.get_semantic_candidates = get_semantic_candidates
 
-# Автоматически добавляем совместимость
+# Automatically add compatibility
 add_compatibility_methods()
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "test":
         test_memory_system()
     else:
-        print("Nicole Memory System готова к работе")
-        print("Для тестирования запустите: python3 nicole_memory.py test")
+        print("Nicole Memory System ready to work")
+        print("For testing run: python3 nicole_memory.py test")

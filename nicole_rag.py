@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Nicole RAG - Retrieval Augmented Generation без векторных баз
-Ебанутая система поиска и дополнения контекста для Nicole.
+Nicole RAG - Retrieval Augmented Generation without vector databases
+Search and context augmentation system for Nicole.
 """
 
 import sqlite3
@@ -14,35 +14,35 @@ from collections import defaultdict, Counter
 import h2o
 
 class ChaoticRetriever:
-    """Хаотичный поисковик контекста"""
+    """Chaotic context retriever"""
 
     def __init__(self, memory_db: str = "nicole_memory.db"):
         self.memory_db = memory_db
-        self.chaos_factor = 0.1  # Базовый элемент хаоса в поиске
+        self.chaos_factor = 0.1  # Basic chaos element in search
         self.retrieval_patterns = {}
-        self.user_chaos_preferences = {}  # ADAPTIVE: персональный chaos per user
+        self.user_chaos_preferences = {}  # ADAPTIVE: personal chaos per user
         
     def retrieve_context(self, query: str, chaos_level: float = None, limit: int = 8) -> List[Dict]:
-        """Извлекает контекст с элементом хаоса"""
+        """Retrieves context with chaos element"""
         if chaos_level is None:
             chaos_level = self.chaos_factor
             
-        # Обычный поиск
+        # Normal search
         normal_results = self._semantic_search(query, limit=10)
         
-        # Хаотичный поиск (случайные связи)
+        # Chaotic search (random connections)
         chaotic_results = self._chaotic_search(query, chaos_level)
         
-        # Объединяем результаты
+        # Combine results
         all_results = normal_results + chaotic_results
         
-        # Убираем дубликаты и сортируем
+        # Remove duplicates and sort
         unique_results = {}
         for result in all_results:
             if result['id'] not in unique_results:
                 unique_results[result['id']] = result
             else:
-                # Увеличиваем релевантность для дубликатов
+                # Increase relevance for duplicates
                 unique_results[result['id']]['relevance'] += result['relevance'] * 0.5
                 
         final_results = list(unique_results.values())
@@ -51,11 +51,11 @@ class ChaoticRetriever:
         return final_results[:limit]
         
     def _semantic_search(self, query: str, limit: int) -> List[Dict]:
-        """Обычный семантический поиск"""
+        """Normal semantic search"""
         conn = sqlite3.connect(self.memory_db)
         cursor = conn.cursor()
         
-        # Поиск в разговорах
+        # Search in conversations
         cursor.execute("""
         SELECT user_input, nicole_output, timestamp, metrics 
         FROM conversations 
@@ -68,7 +68,7 @@ class ChaoticRetriever:
         for row in cursor.fetchall():
             user_input, nicole_output, timestamp, metrics = row
 
-            # TEMPORAL: передаём timestamp для temporal weighting
+            # TEMPORAL: pass timestamp for temporal weighting
             relevance = self._calculate_relevance(query, user_input + " " + nicole_output, timestamp=timestamp)
 
             results.append({
@@ -83,14 +83,14 @@ class ChaoticRetriever:
         return results
         
     def _chaotic_search(self, query: str, chaos_level: float) -> List[Dict]:
-        """Хаотичный поиск с неожиданными связями"""
+        """Chaotic search with unexpected connections"""
         if chaos_level <= 0:
             return []
             
         conn = sqlite3.connect(self.memory_db)
         cursor = conn.cursor()
         
-        # Случайный поиск записей
+        # Random record search
         cursor.execute("""
         SELECT user_input, nicole_output, timestamp 
         FROM conversations 
@@ -102,7 +102,7 @@ class ChaoticRetriever:
         for row in cursor.fetchall():
             user_input, nicole_output, timestamp = row
 
-            # Случайная релевантность с элементом хаоса + temporal
+            # Random relevance with chaos element + temporal
             base_relevance = self._calculate_relevance(query, user_input + " " + nicole_output, timestamp=timestamp)
             chaos_boost = chaos_level * (0.5 + 0.5 * hash(user_input) % 100 / 100)
             
@@ -119,10 +119,10 @@ class ChaoticRetriever:
         
     def _calculate_relevance(self, query: str, content: str, timestamp: float = None) -> float:
         """
-        Рассчитывает релевантность контента к запросу + temporal weighting
+        Calculates content relevance to query + temporal weighting
 
-        Добавлен временной вес: свежие мемори важнее старых
-        Затухание: e^(-age_days / 30) - полураспад 30 дней
+        Added temporal weight: fresh memories more important than old
+        Decay: e^(-age_days / 30) - half-life 30 days
         """
         query_words = set(query.lower().split())
         content_words = set(content.lower().split())
@@ -135,24 +135,24 @@ class ChaoticRetriever:
 
         jaccard = intersection / union if union > 0 else 0.0
 
-        # Бонус за точные совпадения фраз
+        # Bonus for exact phrase matches
         exact_matches = sum(1 for word in query_words if word in content.lower())
         exact_bonus = exact_matches / len(query_words)
 
         base_relevance = jaccard * 0.7 + exact_bonus * 0.3
 
-        # TEMPORAL WEIGHTING: свежие воспоминания важнее
+        # TEMPORAL WEIGHTING: fresh memories more important
         if timestamp:
             age_seconds = time.time() - timestamp
-            age_days = age_seconds / 86400  # Секунды в дни
+            age_days = age_seconds / 86400  # Seconds to days
 
-            # Экспоненциальное затухание: e^(-age / 30)
-            # age=0 дней: weight=1.0
-            # age=30 дней: weight=0.37
-            # age=60 дней: weight=0.14
+            # Exponential decay: e^(-age / 30)
+            # age=0 days: weight=1.0
+            # age=30 days: weight=0.37
+            # age=60 days: weight=0.14
             temporal_weight = math.exp(-age_days / 30)
 
-            # Комбинируем: 70% content relevance + 30% temporal weight
+            # Combine: 70% content relevance + 30% temporal weight
             final_relevance = base_relevance * 0.7 + temporal_weight * 0.3
 
             return final_relevance
@@ -161,15 +161,15 @@ class ChaoticRetriever:
 
     def adapt_chaos_from_feedback(self, user_id: str, feedback_score: float):
         """
-        ADAPTIVE CHAOS: Адаптирует chaos_factor под юзера на основе фидбека
+        ADAPTIVE CHAOS: Adapts chaos_factor to user based on feedback
 
-        Логика:
-        - feedback > 0.7: юзер любит неожиданности → увеличиваем chaos
-        - feedback < 0.3: юзер любит точность → уменьшаем chaos
+        Logic:
+        - feedback > 0.7: user likes surprises → increase chaos
+        - feedback < 0.3: user likes precision → decrease chaos
 
         Args:
-            user_id: ID юзера
-            feedback_score: оценка успешности [0.0 - 1.0]
+            user_id: User ID
+            feedback_score: success score [0.0 - 1.0]
         """
         if user_id not in self.user_chaos_preferences:
             self.user_chaos_preferences[user_id] = self.chaos_factor
@@ -177,25 +177,25 @@ class ChaoticRetriever:
         current_chaos = self.user_chaos_preferences[user_id]
 
         if feedback_score > 0.7:
-            # Юзер доволен → увеличиваем chaos (больше креатива)
+            # User satisfied → increase chaos (more creativity)
             new_chaos = min(0.3, current_chaos * 1.1)
             print(f"[RAG:AdaptiveChaos] User {user_id}: feedback={feedback_score:.2f} → chaos {current_chaos:.2f} → {new_chaos:.2f} ↑")
         elif feedback_score < 0.3:
-            # Юзер недоволен → уменьшаем chaos (больше точности)
+            # User dissatisfied → decrease chaos (more precision)
             new_chaos = max(0.05, current_chaos * 0.9)
             print(f"[RAG:AdaptiveChaos] User {user_id}: feedback={feedback_score:.2f} → chaos {current_chaos:.2f} → {new_chaos:.2f} ↓")
         else:
-            # Нормально → оставляем как есть
+            # Normal → leave as is
             new_chaos = current_chaos
 
         self.user_chaos_preferences[user_id] = new_chaos
 
     def get_user_chaos_level(self, user_id: str) -> float:
-        """Получить персональный chaos_factor юзера"""
+        """Get user's personal chaos_factor"""
         return self.user_chaos_preferences.get(user_id, self.chaos_factor)
 
 class ContextAugmenter:
-    """Дополнитель контекста для генерации"""
+    """Context augmenter for generation"""
     
     def __init__(self, retriever: ChaoticRetriever):
         self.retriever = retriever
@@ -208,12 +208,12 @@ class ContextAugmenter:
         
     def augment_context(self, user_input: str, current_context: str = "", 
                        strategy: str = 'balanced') -> str:
-        """Дополняет контекст для генерации ответа"""
+        """Augments context for response generation"""
         
-        # Получаем релевантный контекст
+        # Get relevant context
         retrieved_context = self.retriever.retrieve_context(user_input)
         
-        # Применяем стратегию дополнения
+        # Apply augmentation strategy
         augmentation_func = self.augmentation_strategies.get(strategy, self._balanced_augmentation)
         augmented_context = augmentation_func(user_input, current_context, retrieved_context)
         
@@ -221,63 +221,63 @@ class ContextAugmenter:
         
     def _factual_augmentation(self, user_input: str, current_context: str, 
                             retrieved: List[Dict]) -> str:
-        """Фактическое дополнение - только релевантные факты"""
+        """Factual augmentation - only relevant facts"""
         factual_parts = [current_context] if current_context else []
         
-        # Берем только самые релевантные записи
+        # Take only most relevant records
         for item in retrieved[:3]:
             if item['relevance'] > 0.5 and item['type'] == 'conversation':
-                factual_parts.append(f"Контекст: {item['content']}")
+                factual_parts.append(f"Context: {item['content']}")
                 
         return " | ".join(factual_parts)
         
     def _creative_augmentation(self, user_input: str, current_context: str,
                              retrieved: List[Dict]) -> str:
-        """Креативное дополнение - неожиданные связи"""
+        """Creative augmentation - unexpected connections"""
         creative_parts = [current_context] if current_context else []
         
-        # Берем разнообразные записи для креативности
-        for item in retrieved[::2]:  # Каждую вторую запись
-            creative_parts.append(f"Вдохновение: {item['content']}")
+        # Take diverse records for creativity
+        for item in retrieved[::2]:  # Every second record
+            creative_parts.append(f"Inspiration: {item['content']}")
             
         return " | ".join(creative_parts)
         
     def _chaotic_augmentation(self, user_input: str, current_context: str,
                             retrieved: List[Dict]) -> str:
-        """Хаотичное дополнение - полный рандом"""
+        """Chaotic augmentation - full random"""
         chaotic_parts = [current_context] if current_context else []
         
-        # Добавляем случайные элементы
+        # Add random elements
         for item in retrieved:
             if item['type'] == 'chaotic_memory':
-                chaotic_parts.append(f"Хаос: {item['content']}")
+                chaotic_parts.append(f"Chaos: {item['content']}")
                 
         return " | ".join(chaotic_parts)
         
     def _balanced_augmentation(self, user_input: str, current_context: str,
                              retrieved: List[Dict]) -> str:
-        """Сбалансированное дополнение"""
+        """Balanced augmentation"""
         balanced_parts = [current_context] if current_context else []
         
-        # Факты (высокая релевантность)
+        # Facts (high relevance)
         facts = [item for item in retrieved if item['relevance'] > 0.6][:2]
         for fact in facts:
-            balanced_parts.append(f"Факт: {fact['content']}")
+            balanced_parts.append(f"Fact: {fact['content']}")
             
-        # Креатив (средняя релевантность)
+        # Creative (medium relevance)
         creative = [item for item in retrieved if 0.3 < item['relevance'] <= 0.6][:1]
         for cr in creative:
-            balanced_parts.append(f"Связь: {cr['content']}")
+            balanced_parts.append(f"Link: {cr['content']}")
             
-        # Хаос (низкая релевантность или хаотичные)
+        # Chaos (low relevance or chaotic)
         chaos = [item for item in retrieved if item['type'] == 'chaotic_memory'][:1]
         for ch in chaos:
-            balanced_parts.append(f"Интуиция: {ch['content']}")
+            balanced_parts.append(f"Intuition: {ch['content']}")
             
         return " | ".join(balanced_parts)
 
 class NicoleRAG:
-    """Главная RAG система Nicole"""
+    """Main Nicole RAG system"""
     
     def __init__(self, memory_db: str = "nicole_memory.db"):
         self.retriever = ChaoticRetriever(memory_db)
@@ -287,17 +287,17 @@ class NicoleRAG:
         
     def generate_augmented_response(self, user_input: str, base_response: str = "",
                                   strategy: str = 'balanced') -> Tuple[str, str]:
-        """Генерирует дополненный ответ"""
+        """Generates augmented response"""
         
-        # Получаем дополненный контекст
+        # Get augmented context
         augmented_context = self.augmenter.augment_context(user_input, strategy=strategy)
         
-        # Анализируем контекст для улучшения ответа
+        # Analyze context to improve response
         improved_response = self._improve_response_with_context(
             user_input, base_response, augmented_context
         )
         
-        # Сохраняем в историю RAG
+        # Save to RAG history
         self.rag_history.append({
             'user_input': user_input,
             'base_response': base_response,
@@ -311,36 +311,36 @@ class NicoleRAG:
         
     def _improve_response_with_context(self, user_input: str, base_response: str,
                                      context: str) -> str:
-        """Улучшает ответ на основе контекста (БЕЗ ШАБЛОНОВ - только структурные изменения!)"""
+        """Improves response based on context (NO TEMPLATES - only structural changes!)"""
         if not context or not base_response:
-            # АНТИ-ШАБЛОН: просто возвращаем base или None, пусть верхний уровень решает
+            # ANTI-TEMPLATE: just return base or None, let upper level decide
             return base_response
 
-        # Структурные улучшения БЕЗ конкретных фраз:
-        # Если base_response уже включает контекст - оставляем как есть
-        # Иначе просто возвращаем base_response без модификаций
-        # Настоящее улучшение должно идти через resonance, а не через шаблоны!
+        # Structural improvements WITHOUT specific phrases:
+        # If base_response already includes context - leave as is
+        # Otherwise just return base_response without modifications
+        # Real improvement should go through resonance, not templates!
 
         return base_response
         
     def adapt_retrieval_strategy(self, feedback_score: float, last_strategy: str):
-        """Адаптирует стратегию поиска на основе обратной связи"""
+        """Adapts search strategy based on feedback"""
         if last_strategy not in self.adaptation_patterns:
             self.adaptation_patterns[last_strategy] = {'scores': [], 'usage_count': 0}
             
         self.adaptation_patterns[last_strategy]['scores'].append(feedback_score)
         self.adaptation_patterns[last_strategy]['usage_count'] += 1
         
-        # Адаптируем хаос фактор
-        if feedback_score > 0.7:  # Хороший результат
+        # Adapt chaos factor
+        if feedback_score > 0.7:  # Good result
             if last_strategy == 'chaotic':
                 self.retriever.chaos_factor = min(0.3, self.retriever.chaos_factor * 1.1)
-        elif feedback_score < 0.3:  # Плохой результат
+        elif feedback_score < 0.3:  # Bad result
             if last_strategy == 'chaotic':
                 self.retriever.chaos_factor = max(0.05, self.retriever.chaos_factor * 0.9)
                 
     def get_best_strategy(self) -> str:
-        """Возвращает лучшую стратегию на основе истории"""
+        """Returns best strategy based on history"""
         if not self.adaptation_patterns:
             return 'balanced'
             
@@ -356,11 +356,11 @@ class NicoleRAG:
             return 'balanced'
             
     def get_rag_statistics(self) -> Dict:
-        """Статистика RAG системы"""
+        """RAG system statistics"""
         if not self.rag_history:
             return {'total_queries': 0}
             
-        recent_history = self.rag_history[-100:]  # Последние 100 запросов
+        recent_history = self.rag_history[-100:]  # Last 100 queries
         
         strategies_used = Counter(item['strategy'] for item in recent_history)
         
@@ -372,44 +372,44 @@ class NicoleRAG:
             'adaptation_patterns': len(self.adaptation_patterns)
         }
 
-# Глобальный экземпляр
+# Global instance
 nicole_rag = NicoleRAG()
 
 def test_rag_system():
-    """Тестирование RAG системы"""
+    """RAG system testing"""
     print("=== NICOLE RAG SYSTEM TEST ===")
     
-    # Тест 1: Базовый поиск
+    # Test 1: Basic search
     print("\\n--- Тест базового поиска ---")
-    context_results = nicole_rag.retriever.retrieve_context("программирование работа")
-    print(f"Найдено {len(context_results)} контекстных записей")
+    context_results = nicole_rag.retriever.retrieve_context("programming work")
+    print(f"Found {len(context_results)} context records")
     for result in context_results:
-        print(f"- {result['type']}: {result['content'][:80]}... (релевантность: {result['relevance']:.3f})")
+        print(f"- {result['type']}: {result['content'][:80]}... (relevance: {result['relevance']:.3f})")
         
-    # Тест 2: Разные стратегии
+    # Test 2: Different strategies
     print("\\n--- Тест стратегий ---")
     strategies = ['factual', 'creative', 'chaotic', 'balanced']
     
     for strategy in strategies:
         response, context = nicole_rag.generate_augmented_response(
-            "Расскажи о программировании", 
-            "Программирование это круто",
+            "Tell me about programming", 
+            "Programming is cool",
             strategy=strategy
         )
-        print(f"Стратегия {strategy}: {response}")
+        print(f"Strategy {strategy}: {response}")
         
-    # Тест 3: Адаптация
+    # Test 3: Adaptation
     print("\\n--- Тест адаптации ---")
     
-    # Симулируем обратную связь
+    # Simulate feedback
     nicole_rag.adapt_retrieval_strategy(0.8, 'balanced')
     nicole_rag.adapt_retrieval_strategy(0.3, 'chaotic')
     nicole_rag.adapt_retrieval_strategy(0.9, 'creative')
     
     best_strategy = nicole_rag.get_best_strategy()
-    print(f"Лучшая стратегия: {best_strategy}")
+    print(f"Best strategy: {best_strategy}")
     
-    # Статистика
+    # Statistics
     stats = nicole_rag.get_rag_statistics()
     print(f"\\nСтатистика RAG:")
     for key, value in stats.items():
@@ -421,5 +421,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "test":
         test_rag_system()
     else:
-        print("Nicole RAG System готова к работе")
-        print("Для тестирования запустите: python3 nicole_rag.py test")
+        print("Nicole RAG System ready to work")
+        print("For testing run: python3 nicole_rag.py test")

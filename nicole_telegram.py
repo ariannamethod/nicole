@@ -14,26 +14,26 @@ import os
 from typing import Dict, Any, Optional
 import sqlite3
 
-# Импортируем все компоненты Nicole
+# Import all Nicole components
 import sys
 import os
-# Добавляем текущую директорию в путь для импорта наших модулей
+# Add current directory to path for importing our modules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import h2o
 
-# КРИТИЧНО: импортируем high и blood с обработкой ошибок
+# CRITICAL: import high and blood with error handling
 try:
     import high
-    print("[TELEGRAM] High импортирован успешно")
+    print("[TELEGRAM] High imported successfully")
 except ImportError as e:
-    print(f"[TELEGRAM] High НЕ импортирован: {e}")
+    print(f"[TELEGRAM] High NOT imported: {e}")
 
 try:
     import blood
-    print("[TELEGRAM] Blood импортирован успешно") 
+    print("[TELEGRAM] Blood imported successfully")
 except ImportError as e:
-    print(f"[TELEGRAM] Blood НЕ импортирован: {e}")
+    print(f"[TELEGRAM] Blood NOT imported: {e}")
 
 import nicole
 import nicole2nicole
@@ -41,23 +41,23 @@ import nicole_memory
 import nicole_rag
 import nicole_metrics
 
-# НОВОЕ: Включаем repo learning для автоматического обучения на изменениях
+# NEW: Enable repo learning for automatic training on changes
 try:
     from nicole_repo_learner import start_repo_learning
     REPO_LEARNING_AVAILABLE = True
-    print("[TELEGRAM] Repo learning импортирован успешно")
+    print("[TELEGRAM] Repo learning imported successfully")
 except ImportError as e:
     REPO_LEARNING_AVAILABLE = False
-    print(f"[TELEGRAM] Repo learning НЕ импортирован: {e}")
+    print(f"[TELEGRAM] Repo learning NOT imported: {e}")
 
-# Загружаем переменные окружения
+# Load environment variables
 try:
     from load_env import load_env
-    load_env()  # Автоматически загружаем .env если есть
+    load_env()  # Automatically load .env if exists
 except ImportError:
     pass
 
-# Telegram Bot API (если доступен)
+# Telegram Bot API (if available)
 try:
     from telegram import Update, Bot, BotCommand
     from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
@@ -119,78 +119,78 @@ class RealTelegramBot:
         self.chat_sessions = {}
         self.message_history = []
 
-        # НОВОЕ: Запускаем repo learning для автоматического обучения
+        # NEW: Start repo learning for automatic training
         if REPO_LEARNING_AVAILABLE:
             try:
-                print("[RealTelegramBot] 🧠 Запускаем repo learning...")
+                print("[RealTelegramBot] 🧠 Starting repo learning...")
                 self.repo_learner = start_repo_learning(
                     repo_path=".",
-                    check_interval=300  # Проверка каждые 5 минут
+                    check_interval=300  # Check every 5 minutes
                 )
-                print("[RealTelegramBot] ✅ Repo learning активирован!")
+                print("[RealTelegramBot] ✅ Repo learning activated!")
 
-                # ПЕРВИЧНОЕ ОБУЧЕНИЕ: Сразу жрем все существующие markdown
-                print("[RealTelegramBot] 📚 Запускаем первичное обучение на markdown...")
+                # INITIAL TRAINING: Immediately consume all existing markdown
+                print("[RealTelegramBot] 📚 Starting initial training on markdown...")
                 self._initial_markdown_learning()
 
             except Exception as e:
-                print(f"[RealTelegramBot] ⚠️ Repo learning не удалось запустить: {e}")
+                print(f"[RealTelegramBot] ⚠️ Failed to start repo learning: {e}")
                 self.repo_learner = None
         else:
-            print("[RealTelegramBot] ⚠️ Repo learning недоступен")
+            print("[RealTelegramBot] ⚠️ Repo learning unavailable")
             self.repo_learner = None
 
     def _initial_markdown_learning(self):
-        """Первичное обучение на всех существующих markdown файлах"""
+        """Initial training on all existing markdown files"""
         try:
             from pathlib import Path
             import re
 
-            # Ищем все markdown файлы в репо
+            # Find all markdown files in repo
             repo_path = Path(".")
             markdown_files = list(repo_path.glob("**/*.md"))
 
             if not markdown_files:
-                print("[RealTelegramBot] Markdown файлы не найдены")
+                print("[RealTelegramBot] Markdown files not found")
                 return
 
-            print(f"[RealTelegramBot] Найдено {len(markdown_files)} markdown файлов")
+            print(f"[RealTelegramBot] Found {len(markdown_files)} markdown files")
 
-            # Читаем и обучаемся
+            # Read and learn
             learned_words = set()
             for md_file in markdown_files:
                 try:
-                    # Пропускаем огромные файлы
+                    # Skip huge files
                     if md_file.stat().st_size > 100000:  # > 100KB
                         continue
 
                     content = md_file.read_text(encoding='utf-8', errors='ignore')
 
-                    # Извлекаем слова (минимум 3 символа, только латиница)
+                    # Extract words (minimum 3 chars, only Latin)
                     words = re.findall(r'\b[a-zA-Z]{3,}\b', content.lower())
 
-                    # Добавляем в memory word_frequencies
+                    # Add to memory word_frequencies
                     for word in words:
-                        if len(word) > 15:  # Пропускаем очень длинные
+                        if len(word) > 15:  # Skip very long words
                             continue
                         learned_words.add(word)
-                        # Обновляем частоты через Nicole memory
+                        # Update frequencies through Nicole memory
                         nicole.nicole_core.memory.update_word_frequencies(word)
 
                 except Exception as e:
-                    print(f"[RealTelegramBot] Ошибка чтения {md_file}: {e}")
+                    print(f"[RealTelegramBot] Error reading {md_file}: {e}")
                     continue
 
-            print(f"[RealTelegramBot] ✅ Первичное обучение: {len(learned_words)} уникальных слов из {len(markdown_files)} файлов")
+            print(f"[RealTelegramBot] ✅ Initial training: {len(learned_words)} unique words from {len(markdown_files)} files")
 
         except Exception as e:
-            print(f"[RealTelegramBot] Ошибка первичного обучения: {e}")
+            print(f"[RealTelegramBot] Error in initial training: {e}")
         
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Command /start"""
         chat_id = str(update.effective_chat.id)
-        
-        # Устанавливаем menu button при первом /start
+
+        # Set menu button on first /start
         try:
             commands = [BotCommand("newconvo", "RESTART")]
             await self.application.bot.set_my_commands(commands)
@@ -231,28 +231,28 @@ Just write me messages - I will learn and adapt!"""
                 'type': 'user_message'
             })
             
-            # ИСПРАВЛЕНО: НЕ ПЕРЕЗАПУСКАЕМ сессию при каждом сообщении!
+            # FIXED: DO NOT restart session on every message!
             if chat_id not in self.chat_sessions:
-                # Создаем сессию ТОЛЬКО ОДИН РАЗ для нового чата
+                # Create session ONLY ONCE for new chat
                 chat_session_id = f"tg_{chat_id}"
                 nicole.nicole_core.start_conversation(chat_session_id)
-                self.chat_sessions[chat_id] = True  # Помечаем что сессия создана
-                print(f"[RealTelegramBot] СОЗДАНА новая сессия для {chat_id} - High: {nicole.nicole_core.high_enabled}")
+                self.chat_sessions[chat_id] = True  # Mark session created
+                print(f"[RealTelegramBot] CREATED new session for {chat_id} - High: {nicole.nicole_core.high_enabled}")
             else:
-                # Сессия уже создана - НЕ ТРОГАЕМ ЕЕ!
-                print(f"[RealTelegramBot] Используем существующую сессию {nicole.nicole_core.session_id}")
-            
-            # ДИАГНОСТИКА: проверяем состояние систем перед обработкой
-            print(f"[ДИАГНОСТИКА] High enabled: {nicole.nicole_core.high_enabled}")
-            print(f"[ДИАГНОСТИКА] High is_active: {nicole.nicole_core.high_core.is_active if nicole.nicole_core.high_core else 'None'}")
-            print(f"[ДИАГНОСТИКА] Длина сообщения: {len(user_input)} символов")
+                # Session already created - DON'T TOUCH IT!
+                print(f"[RealTelegramBot] Using existing session {nicole.nicole_core.session_id}")
+
+            # DIAGNOSTICS: check system state before processing
+            print(f"[DIAGNOSTICS] High enabled: {nicole.nicole_core.high_enabled}")
+            print(f"[DIAGNOSTICS] High is_active: {nicole.nicole_core.high_core.is_active if nicole.nicole_core.high_core else 'None'}")
+            print(f"[DIAGNOSTICS] Message length: {len(user_input)} characters")
             
             # Process through Nicole with ME principles
             response = nicole.nicole_core.process_message(user_input)
-            
-            # ДИАГНОСТИКА: проверяем результат
-            print(f"[ДИАГНОСТИКА] Длина ответа: {len(response)} символов")
-            print(f"[ДИАГНОСТИКА] Ответ: {response[:100]}...")
+
+            # DIAGNOSTICS: check result
+            print(f"[DIAGNOSTICS] Response length: {len(response)} characters")
+            print(f"[DIAGNOSTICS] Response: {response[:100]}...")
             
             # Log response
             self.message_history.append({
@@ -293,8 +293,8 @@ Just write me messages - I will learn and adapt!"""
         """Runs the bot"""
         self.setup_handlers()
         print(f"[RealTelegramBot] Starting bot with token: {self.token[:10]}...")
-        
-        # Запускаем polling - menu button настроится автоматически
+
+        # Start polling - menu button will be configured automatically
         self.application.run_polling()
 
 class NicoleTelegramInterface:
@@ -311,24 +311,24 @@ class NicoleTelegramInterface:
         }
         
     def _setup_enhanced_nicole(self):
-        """ИСПРАВЛЕНО: Telegram просто использует основную систему Nicole"""
+        """FIXED: Telegram simply uses main Nicole system"""
         class TelegramNicole:
             def __init__(self):
-                # Используем глобальный экземпляр, не создаем свои модули
+                # Use global instance, don't create own modules
                 self.core = nicole.nicole_core
-                
+
             def process_message(self, user_input: str, chat_id: str) -> str:
-                """Простая передача сообщения в основную систему Nicole"""
-                
-                # Проверяем/создаем сессию для этого чата
+                """Simple message forwarding to main Nicole system"""
+
+                # Check/create session for this chat
                 expected_session = f"tg_{chat_id}"
                 if not self.core.session_id or self.core.session_id != expected_session:
-                    print(f"[TelegramInterface] Создаем сессию {expected_session}")
+                    print(f"[TelegramInterface] Creating session {expected_session}")
                     self.core.start_conversation(expected_session)
                 else:
-                    print(f"[TelegramInterface] Сессия {self.core.session_id} активна")
-                    
-                # Передаем в основную систему - она сама все сделает
+                    print(f"[TelegramInterface] Session {self.core.session_id} active")
+
+                # Pass to main system - it will do everything
                 return self.core.process_message(user_input)
                 
             def get_system_status(self) -> Dict:
@@ -389,35 +389,35 @@ Just write me messages - I will learn and adapt!"""
 Just write me messages - I will learn and adapt!"""
 
     def _cmd_stats(self, chat_id: str, text: str) -> str:
-        """Команда /stats"""
+        """Command /stats"""
         try:
             status = self.enhanced_nicole.get_system_status()
-            
-            stats_text = f"""📊 Статистика Nicole:
+
+            stats_text = f"""📊 Nicole Statistics:
 
 🤖 H2O Engine:
-• Активных трансформеров: {status['h2o_active_transformers']}
-• Текущая сессия: {status['current_session']}
-• Сообщений в сессии: {status['conversation_count']}
+• Active transformers: {status['h2o_active_transformers']}
+• Current session: {status['current_session']}
+• Messages in session: {status['conversation_count']}
 
-🧠 Обучение:
-• Изученных паттернов: {status['learning_stats'].get('learned_patterns', 0)}
-• Предпочтений архитектуры: {status['learning_stats'].get('architecture_preferences', 0)}
+🧠 Learning:
+• Learned patterns: {status['learning_stats'].get('learned_patterns', 0)}
+• Architecture preferences: {status['learning_stats'].get('architecture_preferences', 0)}
 
-💾 Память:
-• Всего воспоминаний: {status['memory_stats'].get('total_memories', 0)}
-• Ассоциаций: {status['memory_stats'].get('total_associations', 0)}
+💾 Memory:
+• Total memories: {status['memory_stats'].get('total_memories', 0)}
+• Associations: {status['memory_stats'].get('total_associations', 0)}
 
 🔍 RAG:
-• Запросов: {status['rag_stats'].get('total_queries', 0)}
-• Фактор хаоса: {status['rag_stats'].get('chaos_factor', 0):.3f}
+• Queries: {status['rag_stats'].get('total_queries', 0)}
+• Chaos factor: {status['rag_stats'].get('chaos_factor', 0):.3f}
 
-🎯 Текущий трансформер: {status['current_transformer'] or 'Нет'}"""
+🎯 Current transformer: {status['current_transformer'] or 'None'}"""
 
             return stats_text
-            
+
         except Exception as e:
-            return f"Ошибка получения статистики: {e}"
+            return f"Error getting statistics: {e}"
             
     def _cmd_reset(self, chat_id: str, text: str) -> str:
         """Command /newconvo"""
@@ -444,7 +444,7 @@ Just write me messages - I will learn and adapt!"""
         return response
 
 def test_telegram_interface():
-    """Тестирование телеграм интерфейса"""
+    """Testing telegram interface"""
     print("=== NICOLE TELEGRAM INTERFACE TEST ===")
     
     # Create interface
@@ -496,16 +496,16 @@ def test_telegram_interface():
     print("\\n=== TELEGRAM TEST COMPLETED ===")
 
 class InteractiveNicole:
-    """Интерактивный режим для консоли"""
-    
+    """Interactive mode for console"""
+
     def __init__(self):
         self.tg_interface = NicoleTelegramInterface()
         self.chat_id = "console_user"
-        
+
     def start_interactive(self):
-        """Запускает интерактивный режим"""
+        """Starts interactive mode"""
         print("🤖 Nicole Interactive Mode")
-        print("Введите 'quit' для выхода")
+        print("Enter 'quit' to exit")
         print("-" * 40)
         
         self.tg_interface.start_bot()
@@ -534,18 +534,18 @@ class InteractiveNicole:
                 print(f"Error: {e}")
 
 def run_production_bot():
-    """Запускает продакшен бота с настоящим Telegram API"""
+    """Starts production bot with real Telegram API"""
     token = os.getenv('TELEGRAM_TOKEN')
     if not token:
         print("❌ TELEGRAM_TOKEN not found in environment variables!")
         print("Create .env file or set environment variable")
         return
-        
+
     if not TELEGRAM_AVAILABLE:
         print("❌ python-telegram-bot not installed!")
         print("Install: pip install python-telegram-bot")
         return
-        
+
     print("🚀 Starting Nicole Production Telegram Bot...")
     bot = RealTelegramBot(token)
     bot.run_bot()
