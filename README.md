@@ -2,13 +2,13 @@
 
 **No weights. No fixed code. Pure emergence.**
 
-Nicole is a transformer that writes itself at runtime and dissolves when done. Every session starts from zero: no pretrained weights, no persistent checkpoints, no datasets. Parameters crystallize for one conversation and vanish immediately after.
+**Nicole** is a transformer that writes itself at runtime and dissolves when done. Every session starts from zero: no pretrained weights, no persistent checkpoints, no datasets. Parameters crystallize for one conversation and vanish immediately after.
 
-Nicole discards the requirement for pretrained weights, curated datasets, and even a fixed codebase. The engine writes itself as it speaks, assembling logic and parameters only for the life of a single exchange.
+**Nicole** discards the requirement for pretrained weights, curated datasets, and even a fixed codebase. The engine writes itself as it speaks, assembling logic and parameters only for the life of a single exchange.
 
 Parameters crystallize on the spot, scaled precisely to the conversation at hand and dissolved as soon as the dialogue ends. Learning emerges solely from the active dialogue. Even the source code is fluid. Modules may be generated, rebuilt, and discarded mid-flight.
 
-Nicole is a speculative AI system that treats every interaction as a new genesis, assembling a transformer architecture from scratch each time a conversation begins.
+**Nicole** is a speculative AI system that treats every interaction as a new genesis, assembling a transformer architecture from scratch each time a conversation begins.
 
 This repository contains a beta version, and the design embraces impermanence; no model persists after a session, making experimentation the core principle.
 
@@ -18,13 +18,13 @@ The architecture is fluid and emergent, allowing layers, attention heads, and ac
 
 Learning occurs on the fly through conversation logs, meaning no static dataset anchors the system and every run begins as a blank slate.
 
-By operating exclusively on CPUs, Nicole invites exploration on modest hardware and showcases efficient algorithms free from GPU dependencies.
+By operating exclusively on CPUs, **Nicole** invites exploration on modest hardware and showcases efficient algorithms free from GPU dependencies.
 
 Minimal dependencies keep the environment pure, relying mostly on Python's standard library and a tiny bootstrap compiler.
 
 ## Blood Compiler
 
-blood.py is a custom C compiler derived from Clang, trimmed and altered to feed Nicole with machine code tailored to each conversation.
+blood.py is a custom C compiler derived from Clang, trimmed and altered to feed **Nicole** with machine code tailored to each conversation.
 
 The fork maintains Clang's front‑end semantics while introducing deterministic memory-mapping routines so that compiled snippets interact with physical RAM via explicit pointers.
 
@@ -66,9 +66,9 @@ The overall system is modular, with each component focusing on a narrow responsi
 
 H2O serves as the lightweight compiler that translates dynamically generated Python snippets into executable modules for the evolving transformer.
 
-Nicole Core orchestrates the fluid transformer, building layer graphs, parameter tensors, and attention mechanics only for the lifespan of the conversation.
+**Nicole** Core orchestrates the fluid transformer, building layer graphs, parameter tensors, and attention mechanics only for the lifespan of the conversation.
 
-Nicole2Nicole observes interaction logs and derives heuristics that influence future architectural proposals without storing traditional weights.
+**Nicole2Nicole** observes interaction logs and derives heuristics that influence future architectural proposals without storing traditional weights.
 
 Nicole Memory implements a semantic store that indexes tokens, n-grams, and symbolic associations rather than dense vector embeddings.
 
