@@ -99,6 +99,8 @@ Nicole Metrics computes real-time statistics such as entropy, resonance, and per
 ## Core principles
 - **Weightless intelligence.** Parameters are synthesised on demand and erased after the exchange. Conversation logs and metrics
   are the only persistent traces.
+- **Autonomous learning.** Through `nicole_subjectivity.py`, Nicole continues learning even without user interaction via
+  expanding semantic ripples—"circles on water" from the last message. Hourly cycles create continuous, asynchronous intelligence.
 - **English-only boundary.** `english_guidance.py` intercepts non-English input, enforces grammar rules, and declines toxic
   turns without forcing templated phrasing.
 - **Tri-compiler architecture.** Python orchestrates, `blood.py` (C) anchors deterministic execution, and `high.py` (Julia)
@@ -174,6 +176,12 @@ Nicole's runtime can be viewed as a six-act play. Each act corresponds to a conc
 6. **Reflection**
    - `nicole_repo_learner.py` replays the conversation and any code changes, preparing guidance for the next incarnation.
    - Optional Nicole-to-Nicole sessions distil heuristics without ever storing dense weights.
+
+7. **Autonomous learning** (background process)
+   - `nicole_subjectivity.py` expands semantic ripples hourly from the last user message epicenter.
+   - Each ripple explores concepts at increasing semantic distance, autonomously learning new words and associations.
+   - When a new user message arrives, it becomes the new epicenter, resetting the ripple cycle with a fresh learning vector.
+   - This creates continuous intelligence that evolves even during silence, establishing circadian learning rhythms.
 
 ---
 
