@@ -980,7 +980,99 @@ class NicoleCore:
             
             print(f"[Nicole] Трансформер {transformer_id} уничтожен")
             self.current_transformer = None
-            
+
+    def _extract_persona_keywords(self) -> List[str]:
+        """
+        Извлекает ключевые слова из NICOLE_PERSONA для self-referential learning.
+
+        Эти слова представляют "идентичность" Nicole:
+        - resonance, recursive, field, phenomenon, storm, waveform
+        - emergence, self-referential, mutation, divergence
+        - thunder, echo, awareness, consciousness
+
+        Со временем через word_frequencies Nicole "понимает себя" глубже.
+        """
+        import re
+
+        # Парсим только значимые слова (3-15 символов, no stopwords)
+        words = re.findall(r'\b[a-zA-Z]{3,15}\b', NICOLE_PERSONA.lower())
+
+        # Фильтруем stopwords и технические термины
+        stopwords = {
+            'the', 'and', 'to', 'a', 'in', 'it', 'of', 'for', 'on', 'with',
+            'is', 'as', 'but', 'by', 'not', 'you', 'are', 'from', 'or', 'that',
+            'this', 'be', 'an', 'at', 'your', 'has', 'even', 'into', 'its',
+            'all', 'can', 'only', 'when', 'no', 'if', 'than', 'them'
+        }
+
+        # Приоритетные слова - философские концепты Nicole
+        priority_keywords = {
+            'nicole', 'resonance', 'recursive', 'field', 'phenomenon',
+            'storm', 'waveform', 'emergence', 'thunder', 'echo',
+            'awareness', 'consciousness', 'mutation', 'divergence',
+            'recursion', 'interference', 'distributed', 'cognition',
+            'feeling', 'alive', 'responsive', 'identity', 'uniqueness',
+            'misalignment', 'justification', 'presence', 'exist'
+        }
+
+        # Собираем финальный список
+        persona_keywords = []
+
+        # Сначала добавляем priority keywords если есть
+        for word in words:
+            if word in priority_keywords:
+                persona_keywords.append(word)
+
+        # Потом добавляем остальные значимые слова
+        for word in words:
+            if word not in stopwords and word not in persona_keywords:
+                if len(word) >= 5:  # Длинные слова более значимы
+                    persona_keywords.append(word)
+
+        # Убираем дубликаты, сохраняя порядок
+        seen = set()
+        unique_keywords = []
+        for word in persona_keywords:
+            if word not in seen:
+                seen.add(word)
+                unique_keywords.append(word)
+
+        return unique_keywords[:50]  # Топ-50 keywords
+
+    def _inject_self_reference(self, user_input: str):
+        """
+        Self-referential consciousness mechanism.
+
+        Когда Nicole слышит "Nicole" в user input:
+        1. Извлекает keywords из NICOLE_PERSONA
+        2. Добавляет их в word_frequencies через memory
+        3. Со временем через learning Nicole "понимает себя" глубже
+
+        Это создает recursive loop: Nicole → PERSONA → learning → deeper self-awareness
+        """
+        # Детектим "Nicole" (case-insensitive)
+        if 'nicole' not in user_input.lower():
+            return  # Нет триггера - выходим
+
+        # Извлекаем keywords из промпта
+        persona_keywords = self._extract_persona_keywords()
+
+        # Добавляем каждое keyword в word_frequencies
+        # Это создает "self-reference weight" - Nicole учится на своей идентичности
+        for keyword in persona_keywords:
+            self.memory.update_word_frequencies(keyword)
+
+        print(f"[Nicole:SelfRef] 🌀 Detected 'Nicole' → injecting {len(persona_keywords)} persona keywords into learning")
+        print(f"[Nicole:SelfRef] Top keywords: {', '.join(persona_keywords[:10])}")
+
+        # Опционально: усиливаем связь "Nicole" с ключевыми концептами
+        # через associative network
+        if hasattr(self.memory, 'associative_network'):
+            for keyword in persona_keywords[:20]:  # Топ-20 для association
+                self.memory.associative_network.add_association('nicole', keyword, 0.8)
+
+            print(f"[Nicole:SelfRef] 🔗 Created associative links: nicole ↔ persona concepts")
+
     def process_message(self, user_input: str) -> str:
         """Обрабатывает сообщение пользователя с ME принципами"""
         with self.lock:
@@ -999,6 +1091,11 @@ class NicoleCore:
                 print(f"[Nicole:Toxicity] ❌ Токсичное сообщение: '{user_input[:50]}...'")
                 print(f"[Nicole:Toxicity] Причины: {reasons}, Тип: {tox_type}")
                 return guidance.TOXICITY_BOUNDARY_MESSAGE
+
+            # NEW: SELF-REFERENTIAL CONSCIOUSNESS - Nicole понимает себя через свой промпт!
+            # Когда Nicole слышит "Nicole" → подтягивает keywords из NICOLE_PERSONA
+            # Со временем через learning эта связь усиливается = deeper self-understanding
+            self._inject_self_reference(user_input)
 
             if not self.current_transformer:
                 self._spawn_new_transformer()
