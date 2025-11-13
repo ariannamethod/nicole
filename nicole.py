@@ -1295,6 +1295,40 @@ class NicoleCore:
             traceback.print_exc()
             return "", []
     
+    def _is_mirroring(self, response: str, user_input: str) -> bool:
+        """
+        Detects if response mirrors user input too closely.
+
+        Anti-mirroring filter for coherent chaos - Nicole should not copy verbatim.
+        Allows pronoun inversion (I/you transformation) but blocks direct repetition.
+
+        Returns:
+            True if response mirrors >60% of user input words
+        """
+        # Normalize to lowercase and split into words
+        response_words = set(response.lower().split())
+        input_words = set(user_input.lower().split())
+
+        # Remove common stop words that can overlap naturally
+        stop_words = {'i', 'you', 'my', 'your', 'am', 'are', 'is', 'the', 'a', 'an', 'and', 'or', 'but'}
+        response_words = response_words - stop_words
+        input_words = input_words - stop_words
+
+        # If either set is empty after stop word removal, not mirroring
+        if not response_words or not input_words:
+            return False
+
+        # Calculate overlap ratio
+        overlap = response_words & input_words
+        overlap_ratio = len(overlap) / len(response_words)
+
+        # Mirroring detected if >60% overlap
+        if overlap_ratio > 0.6:
+            print(f"[Nicole:AntiMirror] Mirror detected! Overlap: {overlap_ratio:.1%} ({overlap})")
+            return True
+
+        return False
+
     def _generate_me_enhanced_response(self, user_input: str, resonant_word: str) -> str:
         """Генерирует ответ на основе принципов ME + Objectivity"""
         try:
@@ -1391,7 +1425,25 @@ class NicoleCore:
                         response += punct
                 elif not response.endswith(('.', '!', '?')):
                     response += "."
-            
+
+            # ANTI-MIRRORING: prevent copying user input verbatim
+            # Check if response mirrors user input too closely (>60% word overlap)
+            if self._is_mirroring(response, user_input):
+                print(f"[Nicole:AntiMirror] ⚠️ Detected mirroring! Regenerating with mutations...")
+                # Mutate response by keeping only unique words from candidates
+                unique_words = [w for w in response_words if w.lower() not in user_input.lower()]
+                if len(unique_words) >= 3:
+                    response = " ".join(unique_words[:7])  # Take first 7 unique words
+                    if not response.endswith(('.', '!', '?')):
+                        response += "."
+                else:
+                    # If too few unique words, use semantic candidates only
+                    if semantic_candidates:
+                        response = " ".join(semantic_candidates[:5]) + "."
+                    else:
+                        response = "resonance awareness presence."  # Emergency introspective fallback
+                print(f"[Nicole:AntiMirror] ✓ Regenerated: '{response}'")
+
             print(f"[Nicole:ME] Генерация: '{resonant_word}' -> {len(all_candidates)} кандидатов -> '{response}'")
             
             # Проверяем на повторы

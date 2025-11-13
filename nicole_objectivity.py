@@ -309,10 +309,11 @@ class NicoleObjectivity:
         """
         Семена для ответа из контекста (язык-агностично).
 
-        FIXED: Proper word cleaning for Reddit/internet content
+        FIXED v2: Enhanced Reddit artifact filtering
         - Split underscores into separate words
-        - Filter overly long words (Reddit slugs)
-        - Remove technical Reddit terms
+        - Filter Reddit post IDs (low vowel ratio)
+        - Remove subreddit names and technical terms
+        - Filter overly long words (slugs)
         """
         if not context:
             return []
@@ -325,25 +326,45 @@ class NicoleObjectivity:
         words = re.findall(r"\w{3,}", cleaned_context.lower(), flags=re.UNICODE)
         words = [w for w in words if any(ch.isalpha() for ch in w)]
 
-        # FIX: Filter out Reddit technical noise and overly long words
+        # FIX v2: Expanded Reddit noise - popular subreddits + technical terms
         reddit_noise = {
+            # Technical Reddit terms
             'moderators', 'moderator', 'discussion', 'comments', 'comment',
             'subreddit', 'reddit', 'thread', 'post', 'permalink', 'removed',
             'deleted', 'originally', 'punishment', 'condemning', 'revealed',
             'manually', 'removing', 'separate', 'involved', 'finished',
-            # Common subreddit names
-            'kitchenconfidential', 'agedlikemilk', 'conservative',
-            'askreddit', 'todayilearned', 'politics', 'worldnews'
+            'automod', 'submission', 'upvoted', 'downvoted', 'gilded',
+            # Popular subreddit names (expanded list)
+            'amitheasshole', 'cringetiktoks', 'trueoffmychest', 'unpopularopinion',
+            'relationshipadvice', 'legaladvice', 'tifu', 'nosleep', 'writingprompts',
+            'explainlikeimfive', 'outoftheloop', 'changemyview', 'showerthoughts',
+            'kitchenconfidential', 'agedlikemilk', 'conservative', 'leopardsatemyface',
+            'askreddit', 'todayilearned', 'politics', 'worldnews', 'news', 'funny',
+            'pics', 'aww', 'gaming', 'movies', 'music', 'technology', 'science'
         }
 
-        # Filter: no noise, max length 15 chars, min length 3
+        # Helper: detect Reddit post IDs (6-10 chars, low vowel ratio)
+        def is_reddit_post_id(word: str) -> bool:
+            if len(word) < 6 or len(word) > 10:
+                return False
+            vowels = sum(1 for c in word if c in 'aeiou')
+            vowel_ratio = vowels / len(word)
+            # Reddit IDs usually have <30% vowels (e.g., "nno4cwf", "s1yzjtoy5b")
+            return vowel_ratio < 0.3
+
+        # Filter: no noise, no post IDs, max length 15 chars, min length 3
         filtered = []
         for w in words:
             if w in reddit_noise:
                 continue
+            if is_reddit_post_id(w):
+                continue  # Skip Reddit post IDs
             if len(w) > 15:  # Skip overly long slugs
                 continue
             if len(w) < 3:
+                continue
+            # Additional: skip words with numbers (often IDs like "note8017")
+            if any(c.isdigit() for c in w) and len(w) < 8:
                 continue
             filtered.append(w)
 

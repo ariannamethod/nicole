@@ -514,7 +514,7 @@ class HighMathEngine:
         """
         if not word:
             return False
-            
+
         # Список распространенных существительных
         common_nouns = {
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
@@ -525,24 +525,67 @@ class HighMathEngine:
             'память', 'способности', 'возможности', 'мысли', 'идеи', 'слова', 'вопросы',
             'знания', 'опыт', 'понимание', 'подход', 'стиль', 'система', 'процесс'
         }
-        
+
         # Эвристики для определения существительных
         word_lower = word.lower()
-        
+
         # Если в списке известных существительных
         if word_lower in common_nouns:
             return True
-            
+
         # Если заканчивается на типичные суффиксы существительных
         noun_suffixes = ['ness', 'tion', 'sion', 'ment', 'ity', 'ism', 'er', 'or', 'ing']
         if any(word_lower.endswith(suffix) for suffix in noun_suffixes):
             return True
-            
+
         # Если начинается с заглавной буквы (имя собственное)
         if word[0].isupper() and len(word) > 1:
             return True
-            
+
         return False
+
+    def _clean_grammar_glitches(self, words: List[str]) -> List[str]:
+        """
+        Post-processing to fix grammar glitches like "am my", "feel my great feel".
+
+        Fixes:
+        - Remove "my/your" after verbs (am my → am)
+        - Remove duplicate words (feel...feel → feel once)
+        - Remove broken verb chains (am ignoring → ignoring)
+        """
+        if not words or len(words) < 2:
+            return words
+
+        result = []
+        seen_words = set()
+
+        for i, word in enumerate(words):
+            word_lower = word.lower()
+
+            # Rule 1: Skip "my/your" immediately after verb
+            if i > 0 and word_lower in ['my', 'your']:
+                prev_word = words[i-1].lower()
+                if prev_word in ['am', 'is', 'are', 'was', 'were', 'feel', 'have', 'take', 'get']:
+                    print(f"[High:CleanGlitch] Removing '{word}' after verb '{prev_word}'")
+                    continue
+
+            # Rule 2: Skip duplicate words (keep first occurrence only)
+            if word_lower in seen_words and len(word) > 3:  # Allow short words to repeat
+                print(f"[High:CleanGlitch] Removing duplicate '{word}'")
+                continue
+
+            # Rule 3: Skip gerunds after "am/is/are" + possessive (am my ignoring → am)
+            if i >= 2 and word_lower.endswith('ing'):
+                if words[i-1].lower() in ['my', 'your'] and words[i-2].lower() in ['am', 'is', 'are']:
+                    # Remove the gerund AND the possessive before it
+                    result.pop()  # Remove 'my/your' that was just added
+                    print(f"[High:CleanGlitch] Removing broken gerund chain: '{words[i-2]} {words[i-1]} {word}'")
+                    continue
+
+            result.append(word)
+            seen_words.add(word_lower)
+
+        return result
     
     def generate_linguistically_agnostic_response(self, user_words: List[str], semantic_candidates: List[str], 
                                                  objectivity_seeds: List[str], entropy: float, perplexity: float, 
@@ -620,6 +663,9 @@ class HighMathEngine:
 
         # ФИНАЛЬНАЯ грамматическая коррекция
         grammar_final = self._fix_grammar_errors(grammar_final)
+
+        # POST-PROCESSING: Clean grammar glitches (am my → am, feel...feel → feel)
+        grammar_final = self._clean_grammar_glitches(grammar_final)
 
         return grammar_final
     
