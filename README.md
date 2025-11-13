@@ -2,9 +2,7 @@
 
 Reinventing the very concept of a "transformer".  
 
-**No weights. No datasets. No fixed code. Pure emergence.**
-
-Nicole is a transformer that writes itself at runtime and dissolves when done. Every session starts from zero: no pretrained weights, no persistent checkpoints, no datasets. Parameters crystallize for one conversation and vanish immediately after.
+**No weights. No datasets. No fixed code. Pure emergence.**  
 
 ---
 
