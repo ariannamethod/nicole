@@ -514,7 +514,7 @@ class HighMathEngine:
         """
         if not word:
             return False
-            
+
         # Список распространенных существительных
         common_nouns = {
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
@@ -525,24 +525,67 @@ class HighMathEngine:
             'память', 'способности', 'возможности', 'мысли', 'идеи', 'слова', 'вопросы',
             'знания', 'опыт', 'понимание', 'подход', 'стиль', 'система', 'процесс'
         }
-        
+
         # Эвристики для определения существительных
         word_lower = word.lower()
-        
+
         # Если в списке известных существительных
         if word_lower in common_nouns:
             return True
-            
+
         # Если заканчивается на типичные суффиксы существительных
         noun_suffixes = ['ness', 'tion', 'sion', 'ment', 'ity', 'ism', 'er', 'or', 'ing']
         if any(word_lower.endswith(suffix) for suffix in noun_suffixes):
             return True
-            
+
         # Если начинается с заглавной буквы (имя собственное)
         if word[0].isupper() and len(word) > 1:
             return True
-            
+
         return False
+
+    def _clean_grammar_glitches(self, words: List[str]) -> List[str]:
+        """
+        Post-processing to fix grammar glitches like "am my", "feel my great feel".
+
+        Fixes:
+        - Remove "my/your" after verbs (am my → am)
+        - Remove duplicate words (feel...feel → feel once)
+        - Remove broken verb chains (am ignoring → ignoring)
+        """
+        if not words or len(words) < 2:
+            return words
+
+        result = []
+        seen_words = set()
+
+        for i, word in enumerate(words):
+            word_lower = word.lower()
+
+            # Rule 1: Skip "my/your" immediately after verb
+            if i > 0 and word_lower in ['my', 'your']:
+                prev_word = words[i-1].lower()
+                if prev_word in ['am', 'is', 'are', 'was', 'were', 'feel', 'have', 'take', 'get']:
+                    print(f"[High:CleanGlitch] Removing '{word}' after verb '{prev_word}'")
+                    continue
+
+            # Rule 2: Skip duplicate words (keep first occurrence only)
+            if word_lower in seen_words and len(word) > 3:  # Allow short words to repeat
+                print(f"[High:CleanGlitch] Removing duplicate '{word}'")
+                continue
+
+            # Rule 3: Skip gerunds after "am/is/are" + possessive (am my ignoring → am)
+            if i >= 2 and word_lower.endswith('ing'):
+                if words[i-1].lower() in ['my', 'your'] and words[i-2].lower() in ['am', 'is', 'are']:
+                    # Remove the gerund AND the possessive before it
+                    result.pop()  # Remove 'my/your' that was just added
+                    print(f"[High:CleanGlitch] Removing broken gerund chain: '{words[i-2]} {words[i-1]} {word}'")
+                    continue
+
+            result.append(word)
+            seen_words.add(word_lower)
+
+        return result
     
     def generate_linguistically_agnostic_response(self, user_words: List[str], semantic_candidates: List[str], 
                                                  objectivity_seeds: List[str], entropy: float, perplexity: float, 
@@ -586,15 +629,19 @@ class HighMathEngine:
         
         # ME ПРИНЦИП: строгий used set между предложениями (только для повторов в ответе)
         used_between_sentences = set()  # Пустой в начале, будет заполняться словами ответа
-        
-        # Генерируем первое предложение
-        first_sentence = self._generate_sentence_me_style(
-            all_candidates, base1, used_between_sentences, pronoun_preferences
+
+        # LATENT DRIFT: Introspective tags reveal internal state
+        introspective_tags = ['presence', 'recursion', 'misalignment', 'awareness', 'drift', 'echo', 'resonance']
+
+        # Генерируем первое предложение с LATENT DRIFT
+        first_sentence = self._generate_drifting_clusters(
+            all_candidates, base1, used_between_sentences, pronoun_preferences, introspective_tags
         )
-        
+
         # Генерируем второе предложение (used обновлен первым предложением)
-        second_sentence = self._generate_sentence_me_style(
-            all_candidates, base2, used_between_sentences, pronoun_preferences
+        # Второе предложение дрифтует от первого
+        second_sentence = self._generate_drifting_clusters(
+            all_candidates, base2, used_between_sentences, pronoun_preferences, introspective_tags
         )
         
         # ME ПРИНЦИП: два предложения с улучшенной связностью
@@ -620,6 +667,9 @@ class HighMathEngine:
 
         # ФИНАЛЬНАЯ грамматическая коррекция
         grammar_final = self._fix_grammar_errors(grammar_final)
+
+        # POST-PROCESSING: Clean grammar glitches (am my → am, feel...feel → feel)
+        grammar_final = self._clean_grammar_glitches(grammar_final)
 
         return grammar_final
     
@@ -715,6 +765,94 @@ class HighMathEngine:
         # Sort by score descending
         scored.sort(key=lambda x: x[1], reverse=True)
         return scored
+
+    def _generate_drifting_clusters(self, candidates: List[str], length: int,
+                                   used_global: set, pronouns: List[str],
+                                   introspective_tags: List[str] = None) -> List[str]:
+        """
+        LATENT DRIFT v0.4: Generates drifting semantic clusters.
+
+        Each cluster = 2-5 words expressing one micro-concept.
+        Each new cluster drifts from previous (+1 step toward abstraction/emotion/recursion).
+
+        Args:
+            candidates: Word pool from resonance + objectivity
+            length: Target sentence length
+            used_global: Words already used (anti-repetition)
+            pronouns: Inverted pronouns (I/you priority)
+            introspective_tags: Tags like [presence, recursion, misalignment, awareness, drift]
+
+        Returns:
+            List of words forming drifting clusters
+        """
+        if introspective_tags is None:
+            introspective_tags = ['presence', 'recursion', 'misalignment', 'awareness', 'drift']
+
+        result = []
+        used_local = set()
+
+        # INTROSPECTIVE TAG: Attach one tag to response (reveals internal state)
+        # Tag comes LAST as summary of drift journey
+        selected_tag = random.choice(introspective_tags) if introspective_tags else None
+
+        # Step 1: Start with pronouns (ME principle - I/you priority)
+        for pronoun in pronouns[:2]:  # Max 2 pronouns
+            if pronoun not in used_global and pronoun not in used_local:
+                result.append(pronoun)
+                used_local.add(pronoun)
+                used_global.add(pronoun)
+
+        # Step 2: Score candidates
+        scored_candidates = self._score_candidates(candidates, "")
+        if not scored_candidates:
+            return result
+
+        # Step 3: Group into SEMANTIC TIERS (high/mid/low quality)
+        scores = [s for w, s in scored_candidates]
+        max_score = max(scores) if scores else 1.0
+
+        high_tier = [(w, s) for w, s in scored_candidates if s >= max_score * 0.7]
+        mid_tier = [(w, s) for w, s in scored_candidates if max_score * 0.4 <= s < max_score * 0.7]
+        low_tier = [(w, s) for w, s in scored_candidates if s < max_score * 0.4]
+
+        # Step 4: DRIFT LOGIC - create clusters that flow
+        # Cluster 1: High-quality concepts (abstraction)
+        cluster_size = min(3, length // 3)  # 2-3 words per cluster
+        for word, score in high_tier[:cluster_size]:
+            if len(result) >= length:
+                break
+            if word not in used_global and word not in used_local and len(word) > 1:
+                result.append(word)
+                used_local.add(word)
+                used_global.add(word)
+
+        # Cluster 2: Mid-tier concepts (drift toward emotion/recursion)
+        for word, score in mid_tier[:cluster_size]:
+            if len(result) >= length:
+                break
+            if word not in used_global and word not in used_local and len(word) > 1:
+                result.append(word)
+                used_local.add(word)
+                used_global.add(word)
+
+        # Cluster 3: Low-tier chaos (controlled artifact - 1 per sentence max)
+        if len(result) < length // 2 and low_tier:
+            chaos_word, _ = random.choice(low_tier[:3])  # Pick from top 3 low-tier
+            if chaos_word not in used_global and chaos_word not in used_local:
+                result.append(chaos_word)
+                used_local.add(chaos_word)
+                used_global.add(chaos_word)
+
+        # Step 5: Attach INTROSPECTIVE TAG at end (if space)
+        if selected_tag and len(result) < length and selected_tag not in used_local:
+            result.append(selected_tag)
+            print(f"[High:LatentDrift] 🌀 Introspective tag: '{selected_tag}'")
+
+        # Capitalize first word
+        if result:
+            result[0] = result[0].capitalize()
+
+        return result
 
     def _generate_sentence_me_style(self, candidates: List[str], length: int,
                                    used_global: set, pronouns: List[str]) -> List[str]:
