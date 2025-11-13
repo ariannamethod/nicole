@@ -731,14 +731,18 @@ h2o_log("=== H2O TRANSFORMER READY ===")
 class NicoleCore:
     """Nicole system core"""
 
-    def __init__(self):
+    def __init__(self, memory_db_path: str = "var/nicole_memory.db"):
+        # Ensure var directory exists
+        import os
+        os.makedirs("var", exist_ok=True)
+
         # Use advanced memory if available
         if ADVANCED_MEMORY_AVAILABLE:
-            self.memory = NicoleMemoryCore()
+            self.memory = NicoleMemoryCore(db_path=memory_db_path)
             self.rag_system = nicole_rag
             print("[Nicole] Advanced memory and RAG activated ✅")
         else:
-            self.memory = NicoleMemory()
+            self.memory = NicoleMemory(db_path=memory_db_path)
             self.rag_system = None
             print("[Nicole] Basic memory (advanced unavailable)")
 
@@ -1334,14 +1338,8 @@ class NicoleCore:
     def _generate_me_enhanced_response(self, user_input: str, resonant_word: str) -> str:
         """Generates response based on ME principles + Objectivity"""
         try:
-            # Get objective context asynchronously
-            import asyncio
+            # Get objective context synchronously (async version caused orphaned tasks)
             try:
-                # FIXED: use await instead of asyncio.run() inside event loop
-                import asyncio
-                # FIX: Use only sync version to avoid orphaned tasks
-                # Reason: asyncio.create_task() created task that was never awaited
-                # This caused memory leak and system hangs
                 context, objectivity_seeds = self._get_objectivity_context_sync(user_input)
             except Exception as e:
                 print(f"[Nicole:Objectivity:ERROR] Context retrieval error: {e}")
