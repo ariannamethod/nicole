@@ -244,7 +244,9 @@ class EnglishGuidance:
         """
         Detects if text is likely English
 
-        Uses simple heuristic: % of common English words
+        Uses heuristics:
+        1. Check for non-Latin scripts (Cyrillic, Chinese, etc.) → NOT English
+        2. Check % of common English words
 
         Args:
             text: Input text
@@ -253,11 +255,30 @@ class EnglishGuidance:
         Returns:
             True if likely English, False otherwise
         """
+        # 1. Check for Cyrillic (Russian, Ukrainian, etc.)
+        if re.search(r'[а-яА-ЯёЁ]', text):
+            return False
+
+        # 2. Check for Chinese/Japanese/Korean
+        if re.search(r'[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]', text):
+            return False
+
+        # 3. Check for Arabic
+        if re.search(r'[\u0600-\u06ff]', text):
+            return False
+
+        # 4. Extract Latin words
         words = re.findall(r'\b[a-z]+\b', text.lower())
 
         if not words:
-            return True  # Empty or symbols only - assume English
+            # No Latin words found - could be symbols/numbers only
+            # Check if there's ANY alphabetic character
+            if re.search(r'[a-zA-Z]', text):
+                return True  # Has Latin chars but no complete words - assume English
+            else:
+                return True  # Only symbols/numbers - assume English for now
 
+        # 5. Check ratio of common English words
         english_count = sum(1 for word in words if word in self.english_common_words)
         ratio = english_count / len(words)
 

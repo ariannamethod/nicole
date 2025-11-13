@@ -108,33 +108,25 @@ class HighMathEngine:
             return words
             
         result = words.copy()
-        
-        # Глаголы для вставки после I
-        verbs_for_i = ['am', 'have', 'can', 'will', 'think', 'know', 'feel', 'want', 'see']
-        
-        # Существительные и весовые слова для вставки после your
+
+        # NO TEMPLATE VERBS! УДАЛЕНО: verbs_for_i = ['think', 'know', 'feel', ...]
+        # Существительные после 'your' - это грамматическая логика (ОК!)
         nouns_and_weights = [
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
             'knowledge', 'experience', 'approach', 'style',
             'amazing', 'great', 'wonderful', 'interesting', 'important', 'special'
         ]
-        
+
         i = 0
         while i < len(result):
             current_word = result[i] if i < len(result) else ""
             next_word = result[i + 1] if i + 1 < len(result) else ""
-            
-            # Правило: I + НЕ_глагол → вставляем глагол
-            if current_word.lower() == 'i' and i + 1 < len(result):
-                next_lower = next_word.lower()
-                if next_lower not in ['am', 'have', 'can', 'will', 'think', 'know', 'feel', 'want', 'see', 'love', 'like', 'need', 'do']:
-                    verb = random.choice(verbs_for_i)
-                    result.insert(i + 1, verb)
-                    print(f"[High:Grammar] Вставлен глагол после I: '{verb}'")
-                    i += 1  # Пропускаем вставленный глагол
-                    
-            # Правило: your + НЕ_существительное → вставляем существительное
-            elif current_word.lower() == 'your' and i + 1 < len(result):
+
+            # УДАЛЕНО: вставка глагола после 'I' (шаблон!)
+            # 'I' может стоять без глагола - резонанс решит что добавить
+
+            # Правило: your + НЕ_существительное → вставляем существительное (грамматика ✅)
+            if current_word.lower() == 'your' and i + 1 < len(result):
                 next_lower = next_word.lower()
                 # Проверяем, что следующее слово не является уже хорошим существительным
                 if not self._is_good_noun_after_your(next_lower):
@@ -142,13 +134,8 @@ class HighMathEngine:
                     result.insert(i + 1, noun)
                     print(f"[High:Grammar] Вставлено существительное после your: '{noun}'")
                     i += 1  # Пропускаем вставленное существительное
-                    
-            # ДОПОЛНИТЕЛЬНО: правило для одиночных I и your в конце
-            elif current_word.lower() == 'i' and i + 1 >= len(result):
-                verb = random.choice(verbs_for_i)
-                result.append(verb)
-                print(f"[High:Grammar] Добавлен глагол после I в конце: '{verb}'")
-                
+
+            # ДОПОЛНИТЕЛЬНО: правило для одиночного 'your' в конце (грамматика ✅)
             elif current_word.lower() == 'your' and i + 1 >= len(result):
                 noun = random.choice(nouns_and_weights)
                 result.append(noun)
@@ -389,32 +376,25 @@ class HighMathEngine:
             return words
             
         result = words.copy()
-        
-        # Глаголы для вставки после I
-        verbs_for_i = ['am', 'have', 'can', 'will', 'do', 'think', 'know', 'see', 'feel', 'want']
-        
-        # Существительные и весовые слова для вставки после your
+
+        # NO TEMPLATE VERBS! УДАЛЕНО: verbs_for_i = ['think', 'know', 'feel', ...]
+        # Существительные после 'your' - грамматическая логика (ОК!)
         nouns_and_weights = [
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
             'knowledge', 'experience', 'approach', 'style',
             'amazing', 'great', 'wonderful', 'interesting', 'important', 'special', 'unique'
         ]
-        
+
         i = 0
         while i < len(result) - 1:
             current = result[i].lower()
             next_word = result[i + 1].lower() if i + 1 < len(result) else ""
-            
-            # Правило: I + НЕ_глагол → вставляем глагол
-            if current == 'i' and next_word not in ['am', 'are', 'have', 'can', 'will', 'do', 'think', 'know', 'see', 'feel', 'want', 'love', 'like', 'need']:
-                # Выбираем подходящий глагол
-                verb = random.choice(verbs_for_i)
-                result.insert(i + 1, verb)
-                print(f"[High:Grammar] Вставлен глагол после I: '{verb}'")
-                i += 1  # Пропускаем вставленный глагол
-                
-            # Правило: your + НЕ_существительное → вставляем существительное
-            elif current == 'your' and next_word not in nouns_and_weights:
+
+            # УДАЛЕНО: вставка глагола после 'I' (шаблон!)
+            # Резонанс сам определит что идет после 'I'
+
+            # Правило: your + НЕ_существительное → вставляем существительное (грамматика ✅)
+            if current == 'your' and next_word not in nouns_and_weights:
                 # Проверяем, что следующее слово не является уже существительным
                 if not self._is_likely_noun(next_word):
                     noun = random.choice(nouns_and_weights)
