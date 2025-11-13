@@ -1,0 +1,35 @@
+# PyTorch checkpoints
+*.pt
+*.pth
+checkpoints/
+
+# Training states
+states/
+*.state
+
+# Model outputs
+outputs/
+logs/
+
+# Data
+data/
+*.txt
+*.jsonl
+
+# Analysis
+*.html
+*.png
+*.jpg
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter
+*.ipynb_checkpoints/
+
+# Keep structure
+!README.md
+!ARCHITECTURE.md
+!requirements_torch.txt
