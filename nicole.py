@@ -984,6 +984,20 @@ class NicoleCore:
     def process_message(self, user_input: str) -> str:
         """Обрабатывает сообщение пользователя с ME принципами"""
         with self.lock:
+            # FIX: LANGUAGE DETECTION - English-first philosophy!
+            # Проверяем язык ПЕРЕД любой обработкой
+            from english_guidance import EnglishGuidance
+            guidance = EnglishGuidance()
+            if not guidance.is_likely_english(user_input):
+                print(f"[Nicole:Language] ❌ Не английский язык обнаружен: '{user_input[:50]}...'")
+                return guidance.ENGLISH_ONLY_MESSAGE
+
+            # FIX: TOXICITY DETECTION - Self-respect boundaries!
+            # Проверяем токсичность направленную на Nicole
+            if guidance.is_toxic_toward_nicole(user_input):
+                print(f"[Nicole:Toxicity] ❌ Токсичное сообщение: '{user_input[:50]}...'")
+                return guidance.TOXICITY_BOUNDARY_MESSAGE
+
             if not self.current_transformer:
                 self._spawn_new_transformer()
 
@@ -1193,19 +1207,10 @@ class NicoleCore:
             try:
                 # ИСПРАВЛЕНО: используем await вместо asyncio.run() внутри event loop
                 import asyncio
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    # Создаем task в существующем loop
-                    task = asyncio.create_task(self._get_objectivity_context(user_input))
-                    # Ждем результат синхронно (не блокируя основной поток)
-                    context, objectivity_seeds = "", []
-                    try:
-                        # Простое решение - делаем синхронную версию
-                        context, objectivity_seeds = self._get_objectivity_context_sync(user_input)
-                    except:
-                        context, objectivity_seeds = "", []
-                else:
-                    context, objectivity_seeds = asyncio.run(self._get_objectivity_context(user_input))
+                # FIX: Используем только sync версию чтобы избежать orphaned tasks
+                # Причина: asyncio.create_task() создавал task который никогда не awaited
+                # Это вызывало memory leak и зависания системы
+                context, objectivity_seeds = self._get_objectivity_context_sync(user_input)
             except Exception as e:
                 print(f"[Nicole:Objectivity:ERROR] Ошибка получения контекста: {e}")
                 context, objectivity_seeds = "", []

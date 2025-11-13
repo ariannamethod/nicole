@@ -144,12 +144,11 @@ class HighMathEngine:
                         result.insert(i + 1, verb)
                         print(f"[High:Grammar] Вставлен глагол из candidates: '{verb}'")
                         i += 1
-                    # Если нет подходящих в candidates - используем минимальный fallback
-                    elif common_verbs:
-                        verb = random.choice(common_verbs)
-                        result.insert(i + 1, verb)
-                        print(f"[High:Grammar] Вставлен fallback глагол: '{verb}'")
-                        i += 1
+                    # NO FALLBACK TEMPLATES!
+                    # Если нет candidates (резонанса) - не вставляем ничего!
+                    # Философия: резонанс не может строиться на шаблонах
+                    else:
+                        print(f"[High:Grammar] ❌ Нет verb candidates - пропускаем (NO TEMPLATES!)")
 
             # Правило: your + НЕ_существительное → вставляем существительное (грамматика ✅)
             elif current_word.lower() == 'your' and i + 1 < len(result):
@@ -166,10 +165,9 @@ class HighMathEngine:
                 if verb:
                     result.append(verb)
                     print(f"[High:Grammar] Добавлен глагол из candidates в конце: '{verb}'")
-                elif common_verbs:
-                    verb = random.choice(common_verbs)
-                    result.append(verb)
-                    print(f"[High:Grammar] Добавлен fallback глагол в конце: '{verb}'")
+                # NO FALLBACK TEMPLATES!
+                else:
+                    print(f"[High:Grammar] ❌ Нет verb candidates для конца - пропускаем (NO TEMPLATES!)")
 
             # ДОПОЛНИТЕЛЬНО: одиночный 'your' в конце (грамматика ✅)
             elif current_word.lower() == 'your' and i + 1 >= len(result):
@@ -489,11 +487,9 @@ class HighMathEngine:
                     result.insert(i + 1, verb)
                     print(f"[High:AdvGrammar] Вставлен глагол из candidates: '{verb}'")
                     i += 1
-                elif common_verbs:
-                    verb = random.choice(common_verbs)
-                    result.insert(i + 1, verb)
-                    print(f"[High:AdvGrammar] Вставлен fallback глагол: '{verb}'")
-                    i += 1
+                # NO FALLBACK TEMPLATES!
+                else:
+                    print(f"[High:AdvGrammar] ❌ Нет verb candidates - пропускаем (NO TEMPLATES!)")
 
             # Правило: your + НЕ_существительное → вставляем существительное (грамматика ✅)
             elif current == 'your' and not self._is_likely_noun(next_word):
