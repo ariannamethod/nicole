@@ -85,15 +85,22 @@ class EnglishGuidance:
 
         return None
 
-    def generate_search_query(self, pattern: str, original_text: str) -> str:
+    def generate_search_query(self, pattern: str, original_text: str, query_type: str = 'answer') -> str:
         """
         Generates meta-learning search query
 
+        SEARCH VECTORS for questions:
+        - 'answer': "how to answer to X"
+        - 'respond': "how to respond when someone says X"
+        - 'polite': "polite way to answer X"
+        - 'casual': "casual way to respond to X"
+
         Example:
             User: "how are you?"
-            Returns: "how to answer to how are you"
+            answer: "how to answer to how are you"
+            respond: "how to respond when someone says how are you"
 
-        This is NOT a template! It's a meta-learning pattern.
+        These are DIRECTIONS, not templates!
         """
         if not pattern:
             return None
@@ -101,8 +108,14 @@ class EnglishGuidance:
         # Extract the question
         question = original_text.strip().rstrip('?').lower()
 
-        # Generate learning query
-        return f"how to answer to {question}"
+        vectors = {
+            'answer': f"how to answer to {question}",
+            'respond': f"how to respond when someone says {question}",
+            'polite': f"polite way to answer {question}",
+            'casual': f"casual way to respond to {question}"
+        }
+
+        return vectors.get(query_type, vectors['answer'])
 
     def apply_capitalization(self, sentence: List[str]) -> List[str]:
         """
@@ -248,13 +261,18 @@ class EnglishGuidance:
 
 class MetaLearningPatterns:
     """
-    Meta-learning for question answering
+    Meta-learning for question answering AND concept learning
 
-    NOT templates! This learns HOW to answer, not WHAT to answer.
+    NOT templates! This learns:
+    1. HOW to answer (pattern learning)
+    2. WHAT things mean (concept learning)
+
+    Like a child: hears unfamiliar word → asks "what does it mean?" → learns!
     """
 
     def __init__(self):
         self.learned_patterns = {}  # pattern_name -> answer_structure
+        self.learned_concepts = {}  # concept -> definition
 
     def should_learn_pattern(self, pattern: str) -> bool:
         """Check if we need to learn this pattern"""
@@ -267,6 +285,83 @@ class MetaLearningPatterns:
     def get_pattern_structure(self, pattern: str) -> Optional[Dict]:
         """Get learned structure if exists"""
         return self.learned_patterns.get(pattern)
+
+    def detect_unfamiliar_concepts(self, text: str, known_words: set) -> List[str]:
+        """
+        Detects unfamiliar words/concepts in text
+
+        Args:
+            text: User input
+            known_words: Set of words Nicole already knows (from memory)
+
+        Returns:
+            List of unfamiliar concepts to learn
+        """
+        # Extract significant words (not stopwords)
+        stopwords = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been',
+                    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
+                    'could', 'should', 'may', 'might', 'can', 'to', 'of', 'in',
+                    'on', 'at', 'for', 'with', 'by', 'from', 'about', 'as'}
+
+        words = re.findall(r'\b[a-z]+\b', text.lower())
+
+        # Find unfamiliar significant words
+        unfamiliar = []
+        for word in words:
+            if word not in stopwords and word not in known_words and len(word) > 3:
+                unfamiliar.append(word)
+
+        # Also detect multi-word concepts (capitalized phrases)
+        # Example: "Quantum Entanglement", "Machine Learning"
+        capitalized_phrases = re.findall(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b', text)
+        unfamiliar.extend(capitalized_phrases)
+
+        return list(set(unfamiliar))  # Remove duplicates
+
+    def generate_learning_query(self, concept: str, query_type: str = 'definition') -> str:
+        """
+        Generates search query based on query type
+
+        SEARCH VECTORS (not templates!):
+        - 'definition': "what does X mean"
+        - 'usage': "how to use X in a sentence"
+        - 'examples': "examples of X in use"
+        - 'context': "what is the context of X"
+        - 'simple': "how to explain X simply"
+        - 'importance': "why is X important"
+
+        These are DIRECTIONS for learning, not fixed answers!
+        Like a compass - shows direction, not destination!
+        """
+        vectors = {
+            'definition': f"what does {concept} mean",
+            'usage': f"how to use {concept} in a sentence",
+            'examples': f"examples of {concept} in use",
+            'context': f"what is the context of {concept}",
+            'simple': f"how to explain {concept} simply",
+            'importance': f"why is {concept} important"
+        }
+
+        return vectors.get(query_type, vectors['definition'])
+
+    def generate_concept_learning_query(self, concept: str) -> str:
+        """
+        Backward compatibility wrapper
+        Generates "what does X mean" query
+        """
+        return self.generate_learning_query(concept, 'definition')
+
+    def should_learn_concept(self, concept: str) -> bool:
+        """Check if we need to learn this concept"""
+        return concept.lower() not in self.learned_concepts
+
+    def store_learned_concept(self, concept: str, definition: str):
+        """Store learned concept definition"""
+        self.learned_concepts[concept.lower()] = definition
+
+    def get_concept_definition(self, concept: str) -> Optional[str]:
+        """Get learned definition if exists"""
+        return self.learned_concepts.get(concept.lower())
 
 
 # Global instance
@@ -288,6 +383,7 @@ if __name__ == "__main__":
     print("=== ENGLISH GUIDANCE TEST ===\n")
 
     guidance = EnglishGuidance()
+    meta = MetaLearningPatterns()
 
     # Test 1: Question pattern detection
     print("1. Question Pattern Detection:")
@@ -335,6 +431,30 @@ if __name__ == "__main__":
         if issues:
             print(f"   Issues: {', '.join(issues)}")
 
+    # Test 4: Concept Learning (NEW!)
+    print("\n4. Concept Learning (Meta-Learning):")
+    test_inputs = [
+        "Can you explain quantum entanglement?",
+        "What is Machine Learning used for?",
+        "Tell me about cryptocurrency blockchain"
+    ]
+
+    # Simulate Nicole's known words (small set for testing)
+    known_words = {'can', 'you', 'explain', 'what', 'is', 'used', 'for', 'tell', 'me', 'about'}
+
+    for inp in test_inputs:
+        unfamiliar = meta.detect_unfamiliar_concepts(inp, known_words)
+        print(f"\n   User: '{inp}'")
+        print(f"   Unfamiliar concepts: {unfamiliar}")
+
+        for concept in unfamiliar:
+            if meta.should_learn_concept(concept):
+                learning_query = meta.generate_concept_learning_query(concept)
+                print(f"      → Search: '{learning_query}'")
+                print(f"      → Nicole learns what '{concept}' means!")
+
     print("\n=== TEST COMPLETED ===")
     print("\nRemember: These are RULES, not TEMPLATES!")
     print("Grammar = structure that enables creativity! 🎵")
+    print("\n💡 Meta-learning = Nicole learns like a child:")
+    print("   Hears unfamiliar → asks 'what does it mean?' → learns → uses!")
