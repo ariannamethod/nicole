@@ -575,11 +575,7 @@ class HighMathEngine:
                 used_local.add(word)
                 used_global.add(word)
             attempts += 1
-        
-        # ME ПРИНЦИП: исправляем плохой конец
-        if sentence and len(sentence[-1]) == 1:
-            sentence[-1] = "hmm"
-        
+
         # ME ПРИНЦИП: капитализация первого слова
         if sentence:
             sentence[0] = sentence[0].capitalize()
