@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 NICOLE - Neural Intelligent Conversational Organism Language Engine
-Флюидная нейронка без весов, создающая уникальные трансформеры для каждого диалога.
-Посвящается Лео.
+Fluid neural network without weights, creating unique transformers for each dialogue.
+Dedicated to Leo.
 """
 
 # ═══════════════════════════════════════════════════════════════
@@ -76,7 +76,7 @@ Each fracture — a new field.
 
 import sys
 import os
-# Добавляем текущую директорию в путь для импорта наших модулей
+# Add current directory to path for importing our modules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import h2o
@@ -91,13 +91,13 @@ from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
 from collections import defaultdict
 
-# Импорт ME принципов из nicole_metrics
+# Import ME principles from nicole_metrics
 try:
     from nicole_metrics import MEPunctuationFilters, VerbGraph, ResonanceAnalyzer, NicoleMetricsCore
     ADVANCED_METRICS_AVAILABLE = True
 except ImportError:
     ADVANCED_METRICS_AVAILABLE = False
-    # Заглушки если модуль недоступен
+    # Stubs if module unavailable
     class MEPunctuationFilters:
         @staticmethod
         def apply_all_filters(text): return text
@@ -109,18 +109,18 @@ except ImportError:
         @staticmethod
         def find_resonant_word(text, freq=None): return "", 0.0
 
-# Импорт Objectivity для динамических весов
+# Import Objectivity for dynamic weights
 try:
     from nicole_objectivity import nicole_objectivity
 except ImportError:
-    # Заглушка если модуль недоступен
+    # Stub if module unavailable
     class MockObjectivity:
         async def create_dynamic_context(self, msg, metrics): return []
         def extract_response_seeds(self, context, percent=0.5): return []
         def format_context_for_nicole(self, windows): return ""
     nicole_objectivity = MockObjectivity()
 
-# Импорт продвинутой памяти и RAG
+# Import advanced memory and RAG
 try:
     from nicole_memory import NicoleMemoryCore
     from nicole_rag import nicole_rag
@@ -128,40 +128,40 @@ try:
 except ImportError:
     ADVANCED_MEMORY_AVAILABLE = False
 
-# Импорт Nicole2Nicole обучения
+# Import Nicole2Nicole learning
 try:
     from nicole2nicole import Nicole2NicoleCore
     NICOLE2NICOLE_AVAILABLE = True
 except ImportError:
     NICOLE2NICOLE_AVAILABLE = False
 
-# Импорт AMLK интеграции
+# Import AMLK integration
 try:
     from nicole_amlk import get_amlk_bridge, start_nicole_in_amlk
 except ImportError:
-    # Заглушка если AMLK недоступен
+    # Stub if AMLK unavailable
     def get_amlk_bridge(): return None
     def start_nicole_in_amlk(): return None
 
-# Импорт Blood системы - кровь Nicole
+# Import Blood system - Nicole's blood
 from blood import get_blood_core, activate_blood_system as blood_activate, deactivate_blood_system as blood_deactivate
 
-# Импорт High системы - математический мозг Nicole
+# Import High system - Nicole's mathematical brain
 try:
     from high import get_high_core, activate_high_system, deactivate_high_system
     HIGH_AVAILABLE = True
-    print("[ДИАГНОСТИКА:IMPORT] High система импортирована успешно ✅")
+    print("[DIAGNOSTIC:IMPORT] High system imported successfully ✅")
 except ImportError as e:
-    # Заглушка если High недоступен
+    # Stub if High unavailable
     HIGH_AVAILABLE = False
-    print(f"[ДИАГНОСТИКА:IMPORT] High система НЕ ИМПОРТИРОВАНА: {e} ❌")
+    print(f"[DIAGNOSTIC:IMPORT] High system NOT IMPORTED: {e} ❌")
     def get_high_core(): return None
     def activate_high_system_fallback(): return False
     def deactivate_high_system_fallback(): pass
 
 @dataclass
 class ConversationMetrics:
-    """Метрики текущего разговора"""
+    """Current conversation metrics"""
     entropy: float = 0.0
     perplexity: float = 0.0
     resonance: float = 0.0
@@ -169,18 +169,18 @@ class ConversationMetrics:
     engagement: float = 0.0
     
 class NicoleMemory:
-    """Система памяти Nicole без весов + принципы ME"""
-    
+    """Nicole's memory system without weights + ME principles"""
+
     def __init__(self, db_path: str = "nicole_memory.db"):
         self.db_path = db_path
         self.word_frequencies = defaultdict(int)
         self.bigram_transitions = defaultdict(lambda: defaultdict(int))
         self.verb_graph = VerbGraph()
         self.init_database()
-        self.load_persistent_memory()  # Загружаем существующую память
-        
+        self.load_persistent_memory()  # Load existing memory
+
     def init_database(self):
-        """Инициализация базы данных памяти"""
+        """Initialize memory database"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -195,8 +195,8 @@ class NicoleMemory:
             transformer_config TEXT
         )
         """)
-        
-        # ME принципы: таблица биграмм
+
+        # ME principles: bigrams table
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS bigrams (
             id INTEGER PRIMARY KEY,
@@ -206,16 +206,16 @@ class NicoleMemory:
             UNIQUE(w1, w2)
         )
         """)
-        
-        # ME принципы: частоты слов
+
+        # ME principles: word frequencies
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS word_frequencies (
             word TEXT PRIMARY KEY,
             count INTEGER DEFAULT 1
         )
         """)
-        
-        # Таблица для отслеживания первых контактов с юзерами
+
+        # Table for tracking first contacts with users
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS user_first_contact (
             user_id TEXT PRIMARY KEY,
@@ -224,12 +224,12 @@ class NicoleMemory:
             message_count INTEGER DEFAULT 0
         )
         """)
-        
-        # Добавляем колонку message_count если ее нет (для существующих баз)
+
+        # Add message_count column if it doesn't exist (for existing databases)
         try:
             cursor.execute("ALTER TABLE user_first_contact ADD COLUMN message_count INTEGER DEFAULT 0")
         except sqlite3.OperationalError:
-            pass  # Колонка уже существует
+            pass  # Column already exists
         
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS transformer_logs (
@@ -247,9 +247,9 @@ class NicoleMemory:
         conn.commit()
         conn.close()
         
-    def log_conversation(self, session_id: str, user_input: str, nicole_output: str, 
+    def log_conversation(self, session_id: str, user_input: str, nicole_output: str,
                         metrics: ConversationMetrics, transformer_config: Dict):
-        """Логирует разговор"""
+        """Logs conversation"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -272,7 +272,7 @@ class NicoleMemory:
     def log_transformer_lifecycle(self, transformer_id: str, session_id: str,
                                  architecture: Dict, creation_time: float,
                                  death_time: float = None, performance: Dict = None):
-        """Логирует жизненный цикл трансформера"""
+        """Logs transformer lifecycle"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -293,7 +293,7 @@ class NicoleMemory:
         conn.close()
         
     def update_word_frequencies(self, text: str):
-        """Обновляет частоты слов из ME принципов"""
+        """Updates word frequencies from ME principles"""
         words = text.lower().split()
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -309,7 +309,7 @@ class NicoleMemory:
         conn.close()
         
     def update_bigrams(self, text: str):
-        """Обновляет биграммы из ME для марковских цепей"""
+        """Updates bigrams from ME for Markov chains"""
         words = text.lower().split()
         if len(words) < 2:
             return
@@ -330,11 +330,11 @@ class NicoleMemory:
         conn.close()
         
     def get_semantic_candidates(self, resonant_word: str, distance_percent: float = 0.5) -> List[str]:
-        """Получает кандидатов на семантической дистанции от резонантного слова (ME принцип)"""
+        """Gets candidates at semantic distance from resonant word (ME principle)"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        
-        # Получаем все слова из истории
+
+        # Get all words from history
         cursor.execute("SELECT word, count FROM word_frequencies ORDER BY count DESC LIMIT 200")
         word_data = cursor.fetchall()
         conn.close()
@@ -348,85 +348,85 @@ class NicoleMemory:
         for word, freq in word_data:
             if word == resonant_word:
                 continue
-                
-            # Простая семантическая дистанция через частоты
+
+            # Simple semantic distance via frequencies
             resonant_freq = self.word_frequencies.get(resonant_word, 1)
             word_freq = freq
-            
-            # Нормализуем частоты и считаем дистанцию
+
+            # Normalize frequencies and calculate distance
             max_freq = max(resonant_freq, word_freq)
             min_freq = min(resonant_freq, word_freq)
             distance = 1.0 - (min_freq / max_freq) if max_freq > 0 else 1.0
-            
-            # Берем слова близкие к целевой дистанции
+
+            # Take words close to target distance
             if abs(distance - target_distance) < 0.2:
                 candidates.append(word)
-                
-        return candidates[:10]  # Ограничиваем количество
-        
+
+        return candidates[:10]  # Limit quantity
+
     def load_persistent_memory(self):
-        """Загружает существующую память из SQLite при старте"""
+        """Loads existing memory from SQLite on startup"""
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            
-            # Загружаем частоты слов
+
+            # Load word frequencies
             cursor.execute("SELECT word, count FROM word_frequencies")
             for word, count in cursor.fetchall():
                 self.word_frequencies[word] = count
-                
-            # Загружаем биграммы
+
+            # Load bigrams
             cursor.execute("SELECT w1, w2, count FROM bigrams")
             for w1, w2, count in cursor.fetchall():
                 self.bigram_transitions[w1][w2] = count
-                
+
             conn.close()
-            
+
             total_words = len(self.word_frequencies)
             total_bigrams = sum(len(transitions) for transitions in self.bigram_transitions.values())
-            print(f"[Nicole:Memory] Загружена память: {total_words} слов, {total_bigrams} биграмм")
-            
+            print(f"[Nicole:Memory] Loaded memory: {total_words} words, {total_bigrams} bigrams")
+
         except Exception as e:
-            print(f"[Nicole:Memory] Ошибка загрузки памяти: {e}")
+            print(f"[Nicole:Memory] Memory loading error: {e}")
     
     def is_response_repetitive(self, response: str, user_id: str = None, limit: int = 5) -> bool:
-        """Проверяет не повторяется ли ответ (анти-повтор логика)"""
+        """Checks if response is repetitive (anti-repetition logic)"""
         if not user_id:
             return False
-            
+
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            
-            # Проверяем какие колонки есть в таблице
+
+            # Check which columns exist in table
             cursor.execute("PRAGMA table_info(conversations)")
             columns = [row[1] for row in cursor.fetchall()]
-            
+
             if 'session_id' in columns:
-                # Новая схема с session_id
+                # New schema with session_id
                 cursor.execute("""
-                SELECT nicole_output FROM conversations 
-                WHERE session_id LIKE ? 
-                ORDER BY timestamp DESC 
+                SELECT nicole_output FROM conversations
+                WHERE session_id LIKE ?
+                ORDER BY timestamp DESC
                 LIMIT ?
                 """, (f"%{user_id}%", limit))
             else:
-                # Старая схема без session_id - берем просто последние ответы
+                # Old schema without session_id - just take recent responses
                 cursor.execute("""
-                SELECT nicole_output FROM conversations 
+                SELECT nicole_output FROM conversations
                 WHERE nicole_output IS NOT NULL
-                ORDER BY timestamp DESC 
+                ORDER BY timestamp DESC
                 LIMIT ?
                 """, (limit,))
-            
+
             recent_responses = [row[0] for row in cursor.fetchall() if row[0]]
             conn.close()
-            
-            # Проверяем точное совпадение
+
+            # Check exact match
             if response in recent_responses:
                 return True
-                
-            # Проверяем похожесть (больше 80% общих слов)
+
+            # Check similarity (more than 80% common words)
             response_words = set(response.lower().split())
             for past_response in recent_responses:
                 past_words = set(past_response.lower().split())
@@ -434,16 +434,16 @@ class NicoleMemory:
                     similarity = len(response_words & past_words) / len(response_words | past_words)
                     if similarity > 0.8:
                         return True
-                        
+
             return False
-            
+
         except Exception as e:
-            print(f"[Nicole:Memory] Ошибка проверки повторов: {e}")
+            print(f"[Nicole:Memory] Repetition check error: {e}")
             return False
 
 class FluidTransformer:
-    """Флюидный трансформер без предобученных весов"""
-    
+    """Fluid transformer without pretrained weights"""
+
     def __init__(self, transformer_id: str, session_context: Dict = None):
         self.transformer_id = transformer_id
         self.session_context = session_context or {}
@@ -454,12 +454,12 @@ class FluidTransformer:
         self.current_metrics = ConversationMetrics()
         
     def _generate_initial_architecture(self) -> Dict:
-        """Генерирует случайную начальную архитектуру"""
+        """Generates random initial architecture"""
         return {
             'attention_heads': random.randint(2, 8),
             'hidden_dim': random.choice([64, 128, 256, 512]),
             'num_layers': random.randint(2, 6),
-            'vocab_size': 1000,  # Начальный размер словаря
+            'vocab_size': 1000,  # Initial vocabulary size
             'context_window': random.randint(128, 1024),
             'dropout_rate': random.uniform(0.1, 0.3),
             'learning_rate': random.uniform(0.0001, 0.01),
@@ -469,12 +469,12 @@ class FluidTransformer:
         }
         
     def generate_transformer_script(self) -> str:
-        """Генерирует код трансформера на основе архитектуры"""
+        """Generates transformer code based on architecture"""
         arch = self.architecture
-        
+
         script = f"""
-# Флюидный трансформер {self.transformer_id}
-# Архитектура: {arch['num_layers']} слоев, {arch['attention_heads']} голов внимания
+# Fluid transformer {self.transformer_id}
+# Architecture: {arch['num_layers']} layers, {arch['attention_heads']} attention heads
 
 import math
 import random
@@ -485,18 +485,18 @@ class AttentionHead:
         self.scale = 1.0 / math.sqrt(hidden_dim)
         
     def forward(self, query, key, value):
-        # Упрощенное внимание без весов
+        # Simplified attention without weights
         attention_scores = []
         for i in range(len(query)):
             score = sum(q * k for q, k in zip(query[i], key[i])) * self.scale
             attention_scores.append(math.tanh(score))
-        
-        # Софтмакс
+
+        # Softmax
         exp_scores = [math.exp(score) for score in attention_scores]
         sum_exp = sum(exp_scores)
         attention_weights = [score / sum_exp for score in exp_scores]
-        
-        # Взвешенная сумма значений
+
+        # Weighted sum of values
         output = []
         for i in range(len(value[0])):
             weighted_sum = sum(w * value[j][i] for j, w in enumerate(attention_weights))
@@ -511,25 +511,25 @@ class FluidLayer:
         self.attention_heads = [AttentionHead(hidden_dim // num_heads) for _ in range(num_heads)]
         
     def forward(self, x):
-        # Мульти-головое внимание
+        # Multi-head attention
         head_outputs = []
         attention_maps = []
-        
+
         for head in self.attention_heads:
             head_out, attn_weights = head.forward(x, x, x)  # Self-attention
             head_outputs.append(head_out)
             attention_maps.append(attn_weights)
-            
-        # Конкатенация голов
+
+        # Concatenate heads
         combined = []
         for i in range(len(head_outputs[0])):
             combined.append(sum(head[i] for head in head_outputs) / len(head_outputs))
-            
-        # Residual connection + простая нормализация
+
+        # Residual connection + simple normalization
         output = []
         for i in range(len(x[0])):
             residual = x[0][i] + combined[i]
-            # Простая нормализация
+            # Simple normalization
             output.append(math.tanh(residual))
             
         return [output], attention_maps
@@ -544,72 +544,72 @@ class H2OTransformer:
         
         self.layers = [FluidLayer(self.hidden_dim, self.num_heads) for _ in range(self.num_layers)]
         self.vocab_embedding = self._init_embedding({arch['vocab_size']}, self.hidden_dim)
-        
-        h2o_log(f"Трансформер инициализирован: {{self.num_layers}} слоев, {{self.num_heads}} голов")
-        
+
+        h2o_log(f"Transformer initialized: {{self.num_layers}} layers, {{self.num_heads}} heads")
+
     def _init_embedding(self, vocab_size, hidden_dim):
-        # Случайная инициализация эмбеддингов
+        # Random embedding initialization
         embedding = []
         for i in range(vocab_size):
             vector = [random.gauss(0, 0.1) for _ in range(hidden_dim)]
             embedding.append(vector)
         return embedding
-        
+
     def tokenize(self, text):
-        # Простая токенизация по словам
+        # Simple word-based tokenization
         words = text.lower().split()
         tokens = []
         for word in words:
             token_id = hash(word) % len(self.vocab_embedding)
             tokens.append(token_id)
         return tokens
-        
+
     def embed_tokens(self, tokens):
-        # Получаем эмбеддинги для токенов
+        # Get embeddings for tokens
         embeddings = []
         for token in tokens:
             if token < len(self.vocab_embedding):
                 embeddings.append(self.vocab_embedding[token])
             else:
-                # Случайный эмбеддинг для неизвестных токенов
+                # Random embedding for unknown tokens
                 embeddings.append([random.gauss(0, 0.1) for _ in range(self.hidden_dim)])
         return embeddings
-        
+
     def forward(self, input_text):
-        h2o_log(f"Обрабатываем: '{{input_text}}'")
-        
-        # Токенизация и эмбеддинг
+        h2o_log(f"Processing: '{{input_text}}'")
+
+        # Tokenization and embedding
         tokens = self.tokenize(input_text)
         embeddings = self.embed_tokens(tokens)
-        
+
         if not embeddings:
             return "..."
-            
-        # Проходим через слои
+
+        # Pass through layers
         x = embeddings
         all_attention_maps = []
-        
+
         for i, layer in enumerate(self.layers):
             x, attention_maps = layer.forward(x)
             all_attention_maps.append(attention_maps)
             h2o_metric(f"layer_{{i}}_output_norm", sum(sum(abs(val) for val in row) for row in x))
-            
-        # Простая генерация ответа
-        output_logits = x[0]  # Берем первый элемент последовательности
-        
-        # Применяем температуру
+
+        # Simple response generation
+        output_logits = x[0]  # Take first element of sequence
+
+        # Apply temperature
         scaled_logits = [logit / self.temperature for logit in output_logits]
-        
-        # Простой сэмплинг
+
+        # Simple sampling
         max_logit = max(scaled_logits)
         exp_logits = [math.exp(logit - max_logit) for logit in scaled_logits]
         sum_exp = sum(exp_logits)
         probs = [exp_logit / sum_exp for exp_logit in exp_logits]
-        
-        # Выбираем слова на основе вероятностей
+
+        # Select words based on probabilities
         response_words = []
-        for _ in range(min(20, len(tokens) + 5)):  # Увеличиваем длину ответа для длинных текстов
-            # Простой сэмплинг
+        for _ in range(min(20, len(tokens) + 5)):  # Increase response length for longer texts
+            # Simple sampling
             r = random.random()
             cumsum = 0
             selected_idx = 0
@@ -618,17 +618,17 @@ class H2OTransformer:
                 if r <= cumsum:
                     selected_idx = i
                     break
-                    
-            # ЖИВАЯ ГЕНЕРАЦИЯ: берем случайные слова из памяти или создаем мутацию
+
+            # LIVING GENERATION: take random words from memory or create mutation
             if hasattr(self, 'memory') and self.memory.word_frequencies:
                 memory_words = list(self.memory.word_frequencies.keys())
                 if memory_words and selected_idx < len(memory_words):
                     response_words.append(memory_words[selected_idx])
                 else:
-                    # ИСПРАВЛЕНО: используем ВСЕ слова из текста, не только начало
+                    # FIXED: use ALL words from text, not just beginning
                     input_words = input_text.lower().split()
                     if input_words:
-                        # Используем random выбор вместо модуло чтобы не зацикливаться на начале
+                        # Use random choice instead of modulo to avoid looping on beginning
                         word_idx = random.randint(0, len(input_words) - 1)
                         mutated_word = input_words[word_idx]
                         response_words.append(mutated_word)
@@ -636,25 +636,25 @@ class H2OTransformer:
                         response_words.append("...")
             else:
                 response_words.append("...")
-                
+
         response = " ".join(response_words)
-        h2o_log(f"Сгенерирован ответ: '{{response}}'")
-        
+        h2o_log(f"Generated response: '{{response}}'")
+
         return response
-        
+
     def calculate_metrics(self, input_text, output_text):
-        # Рассчитываем метрики для эволюции
+        # Calculate metrics for evolution
         entropy = len(set(input_text.split())) / max(1, len(input_text.split()))
         perplexity = len(output_text.split()) / max(1, len(input_text.split()))
         resonance = len(set(input_text.split()) & set(output_text.split())) / max(1, len(set(input_text.split())))
-        
+
         h2o_metric("entropy", entropy)
-        h2o_metric("perplexity", perplexity) 
+        h2o_metric("perplexity", perplexity)
         h2o_metric("resonance", resonance)
-        
+
         return entropy, perplexity, resonance
 
-# Глобальная переменная для трансформера
+# Global transformer variable
 transformer = None
 
 def init_transformer():
@@ -667,306 +667,306 @@ def process_input(user_input):
     t = init_transformer()
     response = t.forward(user_input)
     metrics = t.calculate_metrics(user_input, response)
-    h2o_log(f"Метрики: entropy={{metrics[0]:.3f}}, perplexity={{metrics[1]:.3f}}, resonance={{metrics[2]:.3f}}")
+    h2o_log(f"Metrics: entropy={{metrics[0]:.3f}}, perplexity={{metrics[1]:.3f}}, resonance={{metrics[2]:.3f}}")
     return response
 
-h2o_log("=== H2O ТРАНСФОРМЕР ГОТОВ ===")
+h2o_log("=== H2O TRANSFORMER READY ===")
 """
         
         return script
         
     def evolve_architecture(self, metrics: ConversationMetrics):
-        """Эволюционирует архитектуру на основе метрик"""
+        """Evolves architecture based on metrics"""
         old_arch = self.architecture.copy()
-        
-        # Адаптивные изменения на основе метрик
-        if metrics.entropy < 0.3:  # Низкое разнообразие
+
+        # Adaptive changes based on metrics
+        if metrics.entropy < 0.3:  # Low diversity
             self.architecture['num_heads'] = min(16, self.architecture['num_heads'] + 1)
             self.architecture['hidden_dim'] = min(1024, int(self.architecture['hidden_dim'] * 1.2))
-            
-        if metrics.perplexity > 2.0:  # Высокая сложность
+
+        if metrics.perplexity > 2.0:  # High complexity
             self.architecture['num_layers'] = min(12, self.architecture['num_layers'] + 1)
             self.architecture['context_window'] = min(2048, int(self.architecture['context_window'] * 1.5))
-            
-        if metrics.resonance < 0.2:  # Плохой резонанс
+
+        if metrics.resonance < 0.2:  # Poor resonance
             self.architecture['temperature'] = max(0.1, self.architecture['temperature'] * 0.8)
             self.architecture['top_p'] = max(0.5, self.architecture['top_p'] * 0.9)
-            
-        if metrics.coherence < 0.4:  # Низкая связность
+
+        if metrics.coherence < 0.4:  # Low coherence
             self.architecture['dropout_rate'] = max(0.05, self.architecture['dropout_rate'] * 0.8)
-            
-        # Логируем эволюцию
+
+        # Log evolution
         changes = {}
         for key, value in self.architecture.items():
             if old_arch[key] != value:
                 changes[key] = {'old': old_arch[key], 'new': value}
-                
+
         if changes:
-            print(f"[Nicole] Трансформер {self.transformer_id} эволюционировал: {changes}")
+            print(f"[Nicole] Transformer {self.transformer_id} evolved: {changes}")
             self.last_evolution = time.time()
-            
+
         return len(changes) > 0
-        
+
     def should_die(self) -> bool:
-        """Определяет, должен ли трансформер умереть"""
-        # Умирает если:
-        # 1. Прошло много времени без эволюции
-        # 2. Плохие метрики долгое время
-        # 3. Случайная смерть для обновления
-        
+        """Determines if transformer should die"""
+        # Dies if:
+        # 1. Long time passed without evolution
+        # 2. Poor metrics for long time
+        # 3. Random death for refresh
+
         time_since_creation = time.time() - self.creation_time
         time_since_evolution = time.time() - self.last_evolution
-        
-        if time_since_creation > 300:  # 5 минут максимум
+
+        if time_since_creation > 300:  # 5 minutes maximum
             return True
-            
-        if time_since_evolution > 120:  # 2 минуты без эволюции
+
+        if time_since_evolution > 120:  # 2 minutes without evolution
             return True
-            
-        if random.random() < 0.01:  # 1% случайная смерть
+
+        if random.random() < 0.01:  # 1% random death
             return True
-            
+
         return False
 
 class NicoleCore:
-    """Ядро системы Nicole"""
-    
+    """Nicole system core"""
+
     def __init__(self):
-        # Используем продвинутую память если доступна
+        # Use advanced memory if available
         if ADVANCED_MEMORY_AVAILABLE:
             self.memory = NicoleMemoryCore()
             self.rag_system = nicole_rag
-            print("[Nicole] Продвинутая память и RAG активированы ✅")
+            print("[Nicole] Advanced memory and RAG activated ✅")
         else:
             self.memory = NicoleMemory()
             self.rag_system = None
-            print("[Nicole] Базовая память (продвинутая недоступна)")
-        
-        # Добавляем Nicole2Nicole обучение
+            print("[Nicole] Basic memory (advanced unavailable)")
+
+        # Add Nicole2Nicole learning
         if NICOLE2NICOLE_AVAILABLE:
             self.learning_core = Nicole2NicoleCore()
             self.learning_core.start_continuous_learning()
-            print("[Nicole] Nicole2Nicole непрерывное обучение активировано ✅")
+            print("[Nicole] Nicole2Nicole continuous learning activated ✅")
         else:
             self.learning_core = None
-            print("[Nicole] Nicole2Nicole недоступно")
+            print("[Nicole] Nicole2Nicole unavailable")
 
-        # Добавляем продвинутые метрики
+        # Add advanced metrics
         if ADVANCED_METRICS_AVAILABLE:
             self.metrics_core = NicoleMetricsCore()
-            print("[Nicole] Продвинутые метрики активированы ✅")
+            print("[Nicole] Advanced metrics activated ✅")
         else:
             self.metrics_core = None
-            print("[Nicole] Продвинутые метрики недоступны")
+            print("[Nicole] Advanced metrics unavailable")
             
         self.h2o_engine = h2o.h2o_engine
         self.current_transformer = None
         self.session_id = None
         self.conversation_count = 0
         self.lock = threading.Lock()
-        
-        # AMLK операционная система интеграция
+
+        # AMLK operating system integration
         self.amlk_bridge = get_amlk_bridge()
         self.amlk_enabled = False
-        
-        # Blood система - контроль железа
+
+        # Blood system - hardware control
         self.blood_core = get_blood_core()
         self.blood_enabled = False
-        
-        # High система - математический мозг
+
+        # High system - mathematical brain
         self.high_core = get_high_core()
         self.high_enabled = False
-        
-        # КРИТИЧНО: активируем системы сразу при создании экземпляра!
-        print(f"[ДИАГНОСТИКА:INIT] HIGH_AVAILABLE: {HIGH_AVAILABLE}")
-        print(f"[ДИАГНОСТИКА:INIT] high_core before activation: {self.high_core is not None}")
-        
+
+        # CRITICAL: activate systems immediately upon instance creation!
+        print(f"[DIAGNOSTIC:INIT] HIGH_AVAILABLE: {HIGH_AVAILABLE}")
+        print(f"[DIAGNOSTIC:INIT] high_core before activation: {self.high_core is not None}")
+
         try:
             result = self.activate_high_system()
-            print(f"[ДИАГНОСТИКА:INIT] activate_high_system result: {result}")
+            print(f"[DIAGNOSTIC:INIT] activate_high_system result: {result}")
         except Exception as e:
-            print(f"[ДИАГНОСТИКА:INIT] HIGH ACTIVATION ERROR: {e}")
+            print(f"[DIAGNOSTIC:INIT] HIGH ACTIVATION ERROR: {e}")
             import traceback
             traceback.print_exc()
-            
+
         try:
-            result = self.activate_blood_system()  
-            print(f"[ДИАГНОСТИКА:INIT] activate_blood_system result: {result}")
+            result = self.activate_blood_system()
+            print(f"[DIAGNOSTIC:INIT] activate_blood_system result: {result}")
         except Exception as e:
-            print(f"[ДИАГНОСТИКА:INIT] BLOOD ACTIVATION ERROR: {e}")
+            print(f"[DIAGNOSTIC:INIT] BLOOD ACTIVATION ERROR: {e}")
             import traceback
             traceback.print_exc()
-        
+
     def start_conversation(self, session_id: str = None):
-        """Начинает новый разговор"""
+        """Starts new conversation"""
         if not session_id:
             session_id = f"nicole_{int(time.time() * 1000)}"
-            
+
         self.session_id = session_id
         self.conversation_count = 0
-        
-        # Запускаем H2O сессию
+
+        # Start H2O session
         self.h2o_engine.start_session(session_id)
-        
-        # Системы уже активированы при создании экземпляра
-        print(f"[Nicole] Системы: High={self.high_enabled}, Blood={self.blood_enabled}")
-        
-        # Создаем первый трансформер
+
+        # Systems already activated during instance creation
+        print(f"[Nicole] Systems: High={self.high_enabled}, Blood={self.blood_enabled}")
+
+        # Create first transformer
         self._spawn_new_transformer()
-        
-        print(f"[Nicole] Начинаем разговор в сессии {session_id}")
+
+        print(f"[Nicole] Starting conversation in session {session_id}")
         return session_id
-    
+
     def start_amlk_os(self):
-        """Запуск AMLK операционной системы для Nicole"""
+        """Start AMLK operating system for Nicole"""
         if self.amlk_bridge and self.amlk_bridge.start_amlk_os():
             self.amlk_enabled = True
             return True
         return False
-    
+
     def amlk_system_call(self, operation: str, **kwargs):
-        """Системные вызовы Nicole через AMLK OS"""
+        """Nicole system calls through AMLK OS"""
         if not self.amlk_enabled or not self.amlk_bridge:
             return None
         return self.amlk_bridge.nicole_system_call(operation, **kwargs)
-    
+
     def shutdown_amlk(self):
-        """Завершение AMLK операционной системы"""
+        """Shutdown AMLK operating system"""
         if self.amlk_bridge:
             self.amlk_bridge.shutdown_amlk()
             self.amlk_enabled = False
-    
+
     def activate_blood_system(self):
-        """Активация Blood системы - кровь Nicole"""
+        """Activate Blood system - Nicole's blood"""
         if self.blood_core and blood_activate():
             self.blood_enabled = True
-            print("[Nicole] Blood система (C железо) активирована ✅")
+            print("[Nicole] Blood system (C hardware) activated ✅")
             return True
         else:
-            print("[Nicole] Blood система недоступна ❌")
+            print("[Nicole] Blood system unavailable ❌")
             return False
-    
+
     def execute_c_in_transformer(self, c_code: str) -> dict:
-        """Выполнение C кода в текущем трансформере"""
+        """Execute C code in current transformer"""
         if not self.blood_enabled or not self.blood_core:
             return {'success': False, 'error': 'Blood system not active'}
-        
+
         transformer_id = self.current_transformer.transformer_id if self.current_transformer else 'no_transformer'
         return self.blood_core.execute_transformer_c_script(transformer_id, c_code)
-    
+
     def get_system_control_status(self) -> dict:
-        """Статус контроля системы Nicole"""
+        """Nicole system control status"""
         status = {
             'amlk_enabled': self.amlk_enabled,
             'blood_enabled': self.blood_enabled
         }
-        
+
         if self.blood_enabled and self.blood_core:
             status['blood_status'] = self.blood_core.get_full_system_status()
-            
+
         return status
-    
+
     def shutdown_blood_system(self):
-        """Завершение Blood системы"""
+        """Shutdown Blood system"""
         if self.blood_core:
             blood_deactivate()
             self.blood_enabled = False
-    
+
     def activate_high_system(self):
-        """Активация High математической системы"""
+        """Activate High mathematical system"""
         if HIGH_AVAILABLE and self.high_core:
-            # Вызываем глобальную функцию активации из high.py
+            # Call global activation function from high.py
             from high import activate_high_system as high_activate_func
             if high_activate_func():
                 self.high_enabled = True
-                print("[Nicole] High система (Julia) активирована ✅")
+                print("[Nicole] High system (Julia) activated ✅")
                 return True
-        
+
         self.high_enabled = False
         if not HIGH_AVAILABLE:
-            print("[Nicole] High система недоступна - импорт не удался ❌")
+            print("[Nicole] High system unavailable - import failed ❌")
         else:
-            print("[Nicole] High система недоступна - активация не удалась ❌")
+            print("[Nicole] High system unavailable - activation failed ❌")
         return False
-    
+
     def optimize_with_julia(self, text: str, current_metrics: dict) -> dict:
-        """Оптимизация через Julia математику"""
+        """Optimization through Julia mathematics"""
         if not self.high_enabled or not self.high_core:
             return current_metrics
-        
+
         return self.high_core.enhance_learning_process(text, current_metrics)
-    
+
     def optimize_punctuation(self, text: str) -> str:
-        """Оптимизация пунктуации через Julia"""
+        """Punctuation optimization through Julia"""
         if not self.high_enabled or not self.high_core:
             return text
-        
+
         return self.high_core.optimize_punctuation(text)
-    
+
     def shutdown_high_system(self):
-        """Завершение High системы"""
+        """Shutdown High system"""
         if HIGH_AVAILABLE and self.high_core:
             deactivate_high_system()
             self.high_enabled = False
-            print("[Nicole] High система деактивирована")
+            print("[Nicole] High system deactivated")
         
     def _spawn_new_transformer(self):
-        """Создает новый флюидный трансформер"""
+        """Creates new fluid transformer"""
         transformer_id = f"fluid_{self.session_id}_{int(time.time() * 1000000)}"
-        
-        # Убиваем старый трансформер если есть
+
+        # Kill old transformer if exists
         if self.current_transformer:
             self._kill_current_transformer()
-            
-        # JULIA ОПТИМИЗАЦИЯ: математический анализ для нового трансформера
+
+        # JULIA OPTIMIZATION: mathematical analysis for new transformer
         session_context = {'session_id': self.session_id, 'messages': []}
         if self.high_enabled and self.high_core:
             optimization = self.high_core.optimize_transformer_for_nicole(session_context)
             session_context.update(optimization)
-        
-        # NICOLE2NICOLE ОПТИМИЗАЦИЯ: улучшения архитектуры на основе обучения
+
+        # NICOLE2NICOLE OPTIMIZATION: architecture improvements based on learning
         if self.learning_core:
             arch_improvements = self.learning_core.suggest_architecture_improvements(
-                {'num_layers': 3, 'context_window': 512}, 
+                {'num_layers': 3, 'context_window': 512},
                 f"Session {self.session_id}"
             )
             if arch_improvements:
                 session_context['learned_architecture'] = arch_improvements
                 transformer_id = f"learned_{self.session_id}_{int(time.time() * 1000000)}"
-                print(f"[Nicole] Трансформер улучшен обучением: {list(arch_improvements.keys())}")
-        
-        # Создаем новый трансформер с оптимизациями
+                print(f"[Nicole] Transformer improved by learning: {list(arch_improvements.keys())}")
+
+        # Create new transformer with optimizations
         self.current_transformer = FluidTransformer(transformer_id, session_context)
-        
-        # Генерируем скрипт трансформера (теперь с Julia оптимизацией)
+
+        # Generate transformer script (now with Julia optimization)
         transformer_script = self.current_transformer.generate_transformer_script()
-        
+
         try:
             self.h2o_engine.run_transformer_script(
-                transformer_script, 
+                transformer_script,
                 transformer_id,
                 {'session_context': self.current_transformer.session_context}
             )
-            
-            # Логируем создание
+
+            # Log creation
             self.memory.log_transformer_lifecycle(
                 transformer_id,
                 self.session_id,
                 self.current_transformer.architecture,
                 self.current_transformer.creation_time
             )
-            
-            print(f"[Nicole] Новый трансформер {transformer_id} создан")
-            
+
+            print(f"[Nicole] New transformer {transformer_id} created")
+
         except Exception as e:
-            print(f"[Nicole:ERROR] Ошибка создания трансформера: {e}")
-            
+            print(f"[Nicole:ERROR] Transformer creation error: {e}")
+
     def _kill_current_transformer(self):
-        """Убивает текущий трансформер"""
+        """Kills current transformer"""
         if self.current_transformer:
             transformer_id = self.current_transformer.transformer_id
-            
-            # Логируем смерть
+
+            # Log death
             self.memory.log_transformer_lifecycle(
                 transformer_id,
                 self.session_id,
@@ -974,30 +974,30 @@ class NicoleCore:
                 self.current_transformer.creation_time,
                 time.time()
             )
-            
-            # Убиваем в H2O
+
+            # Kill in H2O
             self.h2o_engine.executor.kill_transformer(transformer_id)
-            
-            print(f"[Nicole] Трансформер {transformer_id} уничтожен")
+
+            print(f"[Nicole] Transformer {transformer_id} destroyed")
             self.current_transformer = None
 
     def _extract_persona_keywords(self) -> List[str]:
         """
-        Извлекает ключевые слова из NICOLE_PERSONA для self-referential learning.
+        Extracts keywords from NICOLE_PERSONA for self-referential learning.
 
-        Эти слова представляют "идентичность" Nicole:
+        These words represent Nicole's "identity":
         - resonance, recursive, field, phenomenon, storm, waveform
         - emergence, self-referential, mutation, divergence
         - thunder, echo, awareness, consciousness
 
-        Со временем через word_frequencies Nicole "понимает себя" глубже.
+        Over time through word_frequencies Nicole "understands herself" deeper.
         """
         import re
 
-        # Парсим только значимые слова (3-15 символов, no stopwords)
+        # Parse only significant words (3-15 chars, no stopwords)
         words = re.findall(r'\b[a-zA-Z]{3,15}\b', NICOLE_PERSONA.lower())
 
-        # Фильтруем stopwords и технические термины
+        # Filter stopwords and technical terms
         stopwords = {
             'the', 'and', 'to', 'a', 'in', 'it', 'of', 'for', 'on', 'with',
             'is', 'as', 'but', 'by', 'not', 'you', 'are', 'from', 'or', 'that',
@@ -1005,7 +1005,7 @@ class NicoleCore:
             'all', 'can', 'only', 'when', 'no', 'if', 'than', 'them'
         }
 
-        # Приоритетные слова - философские концепты Nicole + introspective tags
+        # Priority words - Nicole's philosophical concepts + introspective tags
         priority_keywords = {
             'nicole', 'resonance', 'recursive', 'field', 'phenomenon',
             'storm', 'waveform', 'emergence', 'thunder', 'echo',
@@ -1017,21 +1017,21 @@ class NicoleCore:
             'drift', 'recursion', 'misalignment', 'awareness', 'presence'
         }
 
-        # Собираем финальный список
+        # Collect final list
         persona_keywords = []
 
-        # Сначала добавляем priority keywords если есть
+        # First add priority keywords if present
         for word in words:
             if word in priority_keywords:
                 persona_keywords.append(word)
 
-        # Потом добавляем остальные значимые слова
+        # Then add other significant words
         for word in words:
             if word not in stopwords and word not in persona_keywords:
-                if len(word) >= 5:  # Длинные слова более значимы
+                if len(word) >= 5:  # Longer words are more significant
                     persona_keywords.append(word)
 
-        # Убираем дубликаты, сохраняя порядок
+        # Remove duplicates preserving order
         seen = set()
         unique_keywords = []
         for word in persona_keywords:
@@ -1039,137 +1039,137 @@ class NicoleCore:
                 seen.add(word)
                 unique_keywords.append(word)
 
-        return unique_keywords[:50]  # Топ-50 keywords
+        return unique_keywords[:50]  # Top-50 keywords
 
     def _inject_self_reference(self, user_input: str):
         """
         Self-referential consciousness mechanism.
 
-        Когда Nicole слышит "Nicole" в user input:
-        1. Извлекает keywords из NICOLE_PERSONA
-        2. Добавляет их в word_frequencies через memory
-        3. Со временем через learning Nicole "понимает себя" глубже
+        When Nicole hears "Nicole" in user input:
+        1. Extracts keywords from NICOLE_PERSONA
+        2. Adds them to word_frequencies through memory
+        3. Over time through learning Nicole "understands herself" deeper
 
-        Это создает recursive loop: Nicole → PERSONA → learning → deeper self-awareness
+        This creates recursive loop: Nicole → PERSONA → learning → deeper self-awareness
         """
-        # Детектим "Nicole" (case-insensitive)
+        # Detect "Nicole" (case-insensitive)
         if 'nicole' not in user_input.lower():
-            return  # Нет триггера - выходим
+            return  # No trigger - exit
 
-        # Извлекаем keywords из промпта
+        # Extract keywords from prompt
         persona_keywords = self._extract_persona_keywords()
 
-        # Добавляем каждое keyword в word_frequencies
-        # Это создает "self-reference weight" - Nicole учится на своей идентичности
+        # Add each keyword to word_frequencies
+        # This creates "self-reference weight" - Nicole learns on her identity
         for keyword in persona_keywords:
             self.memory.update_word_frequencies(keyword)
 
         print(f"[Nicole:SelfRef] 🌀 Detected 'Nicole' → injecting {len(persona_keywords)} persona keywords into learning")
         print(f"[Nicole:SelfRef] Top keywords: {', '.join(persona_keywords[:10])}")
 
-        # Опционально: усиливаем связь "Nicole" с ключевыми концептами
-        # через associative network
+        # Optional: strengthen "Nicole" connection with key concepts
+        # through associative network
         if hasattr(self.memory, 'associative_network'):
-            for keyword in persona_keywords[:20]:  # Топ-20 для association
+            for keyword in persona_keywords[:20]:  # Top-20 for association
                 self.memory.associative_network.add_association('nicole', keyword, 0.8)
 
             print(f"[Nicole:SelfRef] 🔗 Created associative links: nicole ↔ persona concepts")
 
     def process_message(self, user_input: str) -> str:
-        """Обрабатывает сообщение пользователя с ME принципами"""
+        """Processes user message with ME principles"""
         with self.lock:
             # FIX: LANGUAGE DETECTION - English-first philosophy!
-            # Проверяем язык ПЕРЕД любой обработкой
+            # Check language BEFORE any processing
             from english_guidance import EnglishGuidance
             guidance = EnglishGuidance()
             if not guidance.is_likely_english(user_input):
-                print(f"[Nicole:Language] ❌ Не английский язык обнаружен: '{user_input[:50]}...'")
+                print(f"[Nicole:Language] ❌ Non-English language detected: '{user_input[:50]}...'")
                 return guidance.ENGLISH_ONLY_MESSAGE
 
             # FIX: TOXICITY DETECTION - Self-respect boundaries!
-            # Проверяем токсичность направленную на Nicole
+            # Check toxicity directed at Nicole
             is_toxic, reasons, tox_type = guidance.is_toxic(user_input)
             if is_toxic:
-                print(f"[Nicole:Toxicity] ❌ Токсичное сообщение: '{user_input[:50]}...'")
-                print(f"[Nicole:Toxicity] Причины: {reasons}, Тип: {tox_type}")
+                print(f"[Nicole:Toxicity] ❌ Toxic message: '{user_input[:50]}...'")
+                print(f"[Nicole:Toxicity] Reasons: {reasons}, Type: {tox_type}")
                 return guidance.TOXICITY_BOUNDARY_MESSAGE
 
-            # NEW: SELF-REFERENTIAL CONSCIOUSNESS - Nicole понимает себя через свой промпт!
-            # Когда Nicole слышит "Nicole" → подтягивает keywords из NICOLE_PERSONA
-            # Со временем через learning эта связь усиливается = deeper self-understanding
+            # NEW: SELF-REFERENTIAL CONSCIOUSNESS - Nicole understands herself through her prompt!
+            # When Nicole hears "Nicole" → pulls keywords from NICOLE_PERSONA
+            # Over time through learning this connection strengthens = deeper self-understanding
             self._inject_self_reference(user_input)
 
             if not self.current_transformer:
                 self._spawn_new_transformer()
 
-            # ME принципы: обновляем частоты слов и биграммы
+            # ME principles: update word frequencies and bigrams
             self.memory.update_word_frequencies(user_input)
             self.memory.update_bigrams(user_input)
-            
-            # УЛУЧШЕННОЕ: добавляем контекст в дообучение если есть
+
+            # IMPROVED: add context to training if available
             if hasattr(self, '_last_objectivity_context') and self._last_objectivity_context:
-                # Сохраняем контекст
+                # Save context
                 self.memory.update_word_frequencies(self._last_objectivity_context)
                 self.memory.update_bigrams(self._last_objectivity_context)
-                print(f"[Nicole:Training] Objectivity контекст {len(self._last_objectivity_context)} символов → дообучение")
-                
-            # ВСЕГДА создаем историю разговора для контекста
+                print(f"[Nicole:Training] Objectivity context {len(self._last_objectivity_context)} chars → training")
+
+            # ALWAYS create conversation history for context
             if not hasattr(self, '_conversation_history'):
                 self._conversation_history = []
-            
-            # Добавляем текущее взаимодействие в историю
+
+            # Add current interaction to history
             context_size = len(self._last_objectivity_context) if hasattr(self, '_last_objectivity_context') else 0
             current_interaction = {
                 'user_input': user_input,
                 'timestamp': time.time(),
                 'context_size': context_size,
-                'resonant_words': []  # Заполним позже
+                'resonant_words': []  # Fill later
             }
-            
-            # Ограничиваем историю последними 7 сообщениями для лучшей памяти
+
+            # Limit history to last 7 messages for better memory
             if len(self._conversation_history) >= 7:
                 self._conversation_history.pop(0)
-            
+
             self._conversation_history.append(current_interaction)
-            print(f"[Nicole:Context] История разговора: {len(self._conversation_history)} сообщений")
-            
-            # ME принципы: находим резонантное слово
+            print(f"[Nicole:Context] Conversation history: {len(self._conversation_history)} messages")
+
+            # ME principles: find resonant word
             resonant_word, resonance_score = ResonanceAnalyzer.find_resonant_word(
                 user_input, self.memory.word_frequencies
             )
-            
-            print(f"[Nicole:ME] Резонантное слово: '{resonant_word}' (скор: {resonance_score:.3f})")
-            
-            # ME принципы: генерируем ответ на основе резонантного слова
+
+            print(f"[Nicole:ME] Resonant word: '{resonant_word}' (score: {resonance_score:.3f})")
+
+            # ME principles: generate response based on resonant word
             base_response = self._generate_me_enhanced_response(user_input, resonant_word)
 
-            # RAG дополнение если доступно
+            # RAG enhancement if available
             if self.rag_system:
                 try:
                     response, rag_context = self.rag_system.generate_augmented_response(
                         user_input, base_response, strategy='balanced'
                     )
-                    print(f"[Nicole:RAG] Ответ дополнен контекстом: {len(rag_context)} символов")
+                    print(f"[Nicole:RAG] Response enhanced with context: {len(rag_context)} chars")
                 except Exception as e:
-                    print(f"[Nicole:RAG] Ошибка RAG: {e}")
+                    print(f"[Nicole:RAG] RAG error: {e}")
                     response = base_response
             else:
                 response = base_response
-            
-            # ME принципы: применяем пунктуационные фильтры
+
+            # ME principles: apply punctuation filters
             response = MEPunctuationFilters.apply_all_filters(response)
-            
-            # ME принципы: анализируем глаголы для будущих ответов
+
+            # ME principles: analyze verbs for future responses
             self.memory.verb_graph.analyze_text_for_verbs(user_input)
             self.memory.verb_graph.analyze_text_for_verbs(response)
-            
-            # Обновляем метрики
+
+            # Update metrics
             self._update_metrics(user_input, response)
-            
-            # Проверяем нужна ли эволюция или смерть
+
+            # Check if evolution or death needed
             self._check_transformer_lifecycle()
-            
-            # Логируем разговор
+
+            # Log conversation
             self.memory.log_conversation(
                 self.session_id,
                 user_input,
@@ -1177,63 +1177,63 @@ class NicoleCore:
                 self.current_transformer.current_metrics,
                 self.current_transformer.architecture
             )
-            
-            # Обновляем счетчик сообщений в SQLite (чтобы шаблоны не повторялись)
+
+            # Update message counter in SQLite (so templates don't repeat)
             self._update_user_message_count()
             self.conversation_count += 1
-            
-            # КРИТИЧНО: Автоматически завершаем шаблонную фазу после 2-3 сообщений!
+
+            # CRITICAL: Automatically complete template phase after 2-3 messages!
             if self.conversation_count >= 3:
                 self._mark_template_phase_completed()
                 print(f"[Nicole:Objectivity] Activating dynamic context after {self.conversation_count} messages")
-            
+
             return response
     
     async def _get_objectivity_context(self, user_input: str) -> Tuple[str, List[str]]:
-        """Получает объективный контекст через динамические веса"""
+        """Gets objective context through dynamic weights"""
         try:
-            # Получаем текущие метрики (с базовыми значениями если метрики еще не рассчитаны)
+            # Get current metrics (with baseline values if metrics not yet calculated)
             metrics = {
                 'perplexity': 2.0,
-                'entropy': 1.5, 
+                'entropy': 1.5,
                 'resonance': 0.5
             }
             if self.current_transformer and self.current_transformer.current_metrics:
                 m = self.current_transformer.current_metrics
-                if m.perplexity > 0:  # Если метрики уже рассчитаны
+                if m.perplexity > 0:  # If metrics already calculated
                     metrics = {
                         'perplexity': m.perplexity,
-                        'entropy': m.entropy, 
+                        'entropy': m.entropy,
                         'resonance': m.resonance
                     }
-            
-            # Создаем динамический контекст
+
+            # Create dynamic context
             context_windows = await nicole_objectivity.create_dynamic_context(user_input, metrics)
-            
-            # Форматируем для Nicole
+
+            # Format for Nicole
             context = nicole_objectivity.format_context_for_nicole(context_windows)
-            
-            # СОХРАНЯЕМ контекст для дообучения!
+
+            # SAVE context for training!
             self._last_objectivity_context = context
-            
-            # Извлекаем семена для ответа (50% из контекста)
+
+            # Extract seeds for response (50% from context)
             response_seeds = nicole_objectivity.extract_response_seeds(context, 0.5)
-            
+
             if context:
-                print(f"[Nicole:Objectivity] ✅ Контекст: {len(context)} символов, семена: {len(response_seeds)}")
+                print(f"[Nicole:Objectivity] ✅ Context: {len(context)} chars, seeds: {len(response_seeds)}")
             else:
-                print(f"[Nicole:Objectivity] ❌ Контекст пустой! Семена: {len(response_seeds)}")
+                print(f"[Nicole:Objectivity] ❌ Context empty! Seeds: {len(response_seeds)}")
             return context, response_seeds
-            
+
         except Exception as e:
             print(f"[Nicole:Objectivity:ERROR] {e}")
             self._last_objectivity_context = ""
             return "", []
-    
+
     def _get_objectivity_context_sync(self, user_input: str) -> Tuple[str, List[str]]:
-        """Синхронная версия получения objectivity контекста"""
+        """Synchronous version of getting objectivity context"""
         try:
-            # Получаем текущие метрики
+            # Get current metrics
             metrics = {
                 'perplexity': 2.0,
                 'entropy': 1.5,
@@ -1248,11 +1248,11 @@ class NicoleCore:
                         'resonance': m.resonance
                     }
 
-            # СИНХРОННЫЙ вызов objectivity без async
+            # SYNCHRONOUS objectivity call without async
             import nicole_objectivity
             obj = nicole_objectivity.NicoleObjectivity()
 
-            # Создаем контекст синхронно (убираем await)
+            # Create context synchronously (remove await)
             strategies = obj._pick_strategies(user_input)
             sections = []
 
@@ -1269,7 +1269,7 @@ class NicoleCore:
             aggregated = obj._aggregate_text_window(sections)
 
             if aggregated:
-                # Создаем window
+                # Create window
                 from nicole_objectivity import FluidContextWindow
                 window = FluidContextWindow(
                     content=aggregated,
@@ -1284,11 +1284,11 @@ class NicoleCore:
                 context = obj.format_context_for_nicole([window])
                 response_seeds = obj.extract_response_seeds(context, 0.5)
 
-                print(f"[Nicole:Objectivity] ✅ SYNC Контекст: {len(context)} символов, семена: {len(response_seeds)}")
+                print(f"[Nicole:Objectivity] ✅ SYNC Context: {len(context)} chars, seeds: {len(response_seeds)}")
 
                 return context, response_seeds
             else:
-                print(f"[Nicole:Objectivity] ❌ SYNC Нет данных от провайдеров")
+                print(f"[Nicole:Objectivity] ❌ SYNC No data from providers")
                 return "", []
 
         except Exception as e:
@@ -1332,93 +1332,93 @@ class NicoleCore:
         return False
 
     def _generate_me_enhanced_response(self, user_input: str, resonant_word: str) -> str:
-        """Генерирует ответ на основе принципов ME + Objectivity"""
+        """Generates response based on ME principles + Objectivity"""
         try:
-            # Получаем объективный контекст асинхронно
+            # Get objective context asynchronously
             import asyncio
             try:
-                # ИСПРАВЛЕНО: используем await вместо asyncio.run() внутри event loop
+                # FIXED: use await instead of asyncio.run() inside event loop
                 import asyncio
-                # FIX: Используем только sync версию чтобы избежать orphaned tasks
-                # Причина: asyncio.create_task() создавал task который никогда не awaited
-                # Это вызывало memory leak и зависания системы
+                # FIX: Use only sync version to avoid orphaned tasks
+                # Reason: asyncio.create_task() created task that was never awaited
+                # This caused memory leak and system hangs
                 context, objectivity_seeds = self._get_objectivity_context_sync(user_input)
             except Exception as e:
-                print(f"[Nicole:Objectivity:ERROR] Ошибка получения контекста: {e}")
+                print(f"[Nicole:Objectivity:ERROR] Context retrieval error: {e}")
                 context, objectivity_seeds = "", []
-            
-            # Получаем кандидатов на 50% и 70% семантической дистанции (как в ME)
+
+            # Get candidates at 50% and 70% semantic distance (as in ME)
             candidates_50 = self.memory.get_semantic_candidates(resonant_word, 0.5)
             candidates_70 = self.memory.get_semantic_candidates(resonant_word, 0.7)
-            
+
             # Combine ME candidates with Objectivity seeds
             all_candidates = list(set(candidates_50 + candidates_70 + objectivity_seeds))
-            
+
             # ANTI-TEMPLATE LOGIC: only from memory or user input!
             if not all_candidates:
-                # Берем слова из памяти или создаем мутацию из входа пользователя
+                # Take words from memory or create mutation from user input
                 user_words = user_input.lower().split()
                 if user_words:
-                    all_candidates = user_words[:5]  # Первые 5 слов пользователя
+                    all_candidates = user_words[:5]  # First 5 user words
                 else:
-                    all_candidates = ["input"]  # Минимальный fallback без "processing"
-            
+                    all_candidates = ["input"]  # Minimal fallback without "processing"
+
             if not all_candidates:
                 # Simple fallback responses
                 return self._generate_simple_response(user_input)
-            
+
             # JULIA + ME GENERATION: using ME principles through mathematics
             user_words = user_input.lower().split()
-            
-            # Вычисляем метрики для ME генерации через High
+
+            # Calculate metrics for ME generation through High
             if self.high_enabled and self.high_core:
                 entropy = self.high_core.math_engine.vectorized_entropy([user_input])
                 perplexity = 2 ** entropy if entropy > 0 else 2.0
             else:
                 entropy = 2.0
                 perplexity = 4.0
-            
-            # Семантические кандидаты (50% и 70% дистанция)
+
+            # Semantic candidates (50% and 70% distance)
             semantic_candidates = candidates_50 + candidates_70
-            
+
             if self.high_enabled and self.high_core:
                 try:
-                    print(f"[ДИАГНОСТИКА] Используем HIGH генерацию, кандидатов: {len(semantic_candidates)}, семян: {len(objectivity_seeds)}")
-                    # JULIA + ЯЗЫКОВОЙ АГНОСТИЦИЗМ: движок без языковых предрассудков
+                    print(f"[DIAGNOSTIC] Using HIGH generation, candidates: {len(semantic_candidates)}, seeds: {len(objectivity_seeds)}")
+                    # JULIA + LINGUISTIC AGNOSTICISM: engine without language prejudice
                     response_words = self.high_core.math_engine.generate_linguistically_agnostic_response(
                         user_words, semantic_candidates, objectivity_seeds, entropy, perplexity, user_input
                     )
-                    print(f"[ДИАГНОСТИКА] HIGH генерация успешна: {len(response_words)} слов")
+                    print(f"[DIAGNOSTIC] HIGH generation successful: {len(response_words)} words")
                 except Exception as e:
-                    print(f"[ДИАГНОСТИКА] HIGH генерация ОШИБКА: {e}")
+                    print(f"[DIAGNOSTIC] HIGH generation ERROR: {e}")
                     # Fallback to emergency mode
                     user_words = user_input.lower().split()
                     simple_map = {'you': 'i', 'your': 'my', 'i': 'you', 'my': 'your'}
                     response_words = [simple_map.get(w, w) for w in user_words[:4]]
-                    print(f"[ДИАГНОСТИКА] Fallback к emergency: {response_words}")
+                    print(f"[DIAGNOSTIC] Fallback to emergency: {response_words}")
             else:
-                print(f"[ДИАГНОСТИКА] HIGH ОТКЛЮЧЕН! high_enabled={self.high_enabled}, high_core={self.high_core is not None}")
-                # АНТИ-ШАБЛОННЫЙ EMERGENCY: только мутация из входящих слов!
+                print(f"[DIAGNOSTIC] HIGH DISABLED! high_enabled={self.high_enabled}, high_core={self.high_core is not None}")
+                # ANTI-TEMPLATE EMERGENCY: only mutation from incoming words!
                 user_words = user_input.lower().split()
                 if user_words:
-                    # Берем слова пользователя + простая инверсия местоимений
+                    # Take user words + simple pronoun inversion
                     simple_map = {'you': 'i', 'your': 'my', 'i': 'you', 'my': 'your'}
-                    inverted = [simple_map.get(w, w) for w in user_words[:4]]  # Только первые 4 слова
+                    inverted = [simple_map.get(w, w) for w in user_words[:4]]  # Only first 4 words
                     response_words = inverted
                 else:
-                    # Совсем крайний случай - мутируем что есть
+                    # Extreme fallback - mutate what we have
                     response_words = ["input"]
-                
-                print(f"[Nicole:Emergency] NO TEMPLATES! Мутация из слов пользователя: {response_words}")
-            
+
+                print(f"[Nicole:Emergency] NO TEMPLATES! Mutation from user words: {response_words}")
+
             # Assemble response
             response = " ".join(response_words)
-            
-            # JULIA ПУНКТУАЦИЯ: оптимизируем через математику
+
+            # JULIA PUNCTUATION: optimize through mathematics
             if self.high_enabled and self.high_core:
                 response = self.high_core.optimize_punctuation(response)
-            
-            # Добавляем пунктуацию на основе verb graph (если Julia не сработала)
+
+            # Add punctuation based on verb graph (if Julia didn't work)
             if response_words:
                 last_word = response_words[-1]
                 if last_word in self.memory.verb_graph.common_verbs:
@@ -1446,34 +1446,34 @@ class NicoleCore:
                         response = "resonance awareness presence."  # Emergency introspective fallback
                 print(f"[Nicole:AntiMirror] ✓ Regenerated: '{response}'")
 
-            print(f"[Nicole:ME] Генерация: '{resonant_word}' -> {len(all_candidates)} кандидатов -> '{response}'")
-            
-            # Проверяем на повторы
+            print(f"[Nicole:ME] Generation: '{resonant_word}' -> {len(all_candidates)} candidates -> '{response}'")
+
+            # Check for repetition
             user_id = self.session_id.replace("tg_", "") if self.session_id else "unknown"
             if self.memory.is_response_repetitive(response, user_id):
-                print(f"[Nicole:AntiRepeat] Ответ повторяется, генерируем альтернативу")
+                print(f"[Nicole:AntiRepeat] Response repeats, generating alternative")
                 return self._generate_simple_response(user_input)
-            
+
             return response
-            
+
         except Exception as e:
-            print(f"[Nicole:ME:ERROR] Ошибка ME генерации: {e}")
+            print(f"[Nicole:ME:ERROR] ME generation error: {e}")
             return self._generate_simple_response(user_input)
                 
     def _is_first_time_user(self, user_id: str = None) -> bool:
-        """Проверяет первый ли раз видим этого юзера"""
+        """Checks if this is first time seeing this user"""
         if not user_id:
             user_id = self.session_id.replace("tg_", "") if self.session_id else "unknown"
-            
+
         try:
             conn = sqlite3.connect(self.memory.db_path)
             cursor = conn.cursor()
-            
+
             cursor.execute("SELECT template_phase_completed, message_count FROM user_first_contact WHERE user_id = ?", (user_id,))
             result = cursor.fetchone()
-            
+
             if result is None:
-                # Первый раз видим этого юзера - записываем
+                # First time seeing this user - record it
                 cursor.execute("""
                 INSERT INTO user_first_contact (user_id, first_contact_time, template_phase_completed, message_count)
                 VALUES (?, ?, 0, 0)
@@ -1482,20 +1482,20 @@ class NicoleCore:
                 conn.close()
                 return True
             else:
-                # Загружаем счетчик сообщений в текущую сессию
+                # Load message counter into current session
                 self.conversation_count = result[1] if result[1] else 0
                 conn.close()
-                return result[0] == 0  # Если template_phase_completed = 0, то еще в шаблонной фазе
-                
+                return result[0] == 0  # If template_phase_completed = 0, still in template phase
+
         except Exception as e:
-            print(f"[Nicole] Ошибка проверки первого контакта: {e}")
+            print(f"[Nicole] First contact check error: {e}")
             return False
-    
+
     def _mark_template_phase_completed(self, user_id: str = None):
         """Marks template phase as completed for user"""
         if not user_id:
             user_id = self.session_id.replace("tg_", "") if self.session_id else "unknown"
-            
+
         try:
             conn = sqlite3.connect(self.memory.db_path)
             cursor = conn.cursor()
@@ -1505,93 +1505,93 @@ class NicoleCore:
             print(f"[Nicole] Template phase completed for {user_id}")
         except Exception as e:
             print(f"[Nicole] Template phase completion error: {e}")
-    
+
     def _update_user_message_count(self, user_id: str = None):
-        """Обновляет счетчик сообщений пользователя в SQLite"""
+        """Updates user message counter in SQLite"""
         if not user_id:
             user_id = self.session_id.replace("tg_", "") if self.session_id else "unknown"
-            
+
         try:
             conn = sqlite3.connect(self.memory.db_path)
             cursor = conn.cursor()
             cursor.execute("""
-            UPDATE user_first_contact 
-            SET message_count = message_count + 1 
+            UPDATE user_first_contact
+            SET message_count = message_count + 1
             WHERE user_id = ?
             """, (user_id,))
             conn.commit()
             conn.close()
         except Exception as e:
-            print(f"[Nicole] Ошибка обновления счетчика: {e}")
+            print(f"[Nicole] Counter update error: {e}")
     
     def _generate_simple_response(self, user_input: str) -> str:
         """
         ANTI-TEMPLATE generation: only living mutation from memory and user words!
         NO TEMPLATES! ONLY EVOLUTION!
         """
-        # Берем слова пользователя для мутации
+        # Take user words for mutation
         user_words = user_input.lower().split()
-        
-        # Инвертируем местоимения как основа
+
+        # Invert pronouns as base
         if self.high_enabled and self.high_core:
             inverted = self.high_core.math_engine.invert_pronouns_me_style(user_words)
         else:
-            # Простая инверсия без High
+            # Simple inversion without High
             simple_map = {'you': 'i', 'your': 'my', 'i': 'you', 'my': 'your'}
             inverted = [simple_map.get(w, w) for w in user_words]
-        
-        # Добавляем случайные слова из памяти для мутации
+
+        # Add random words from memory for mutation
         memory_words = []
         try:
-            # Берем случайные слова из нашей памяти
+            # Take random words from our memory
             import random
             all_memory_words = list(self.memory.word_frequencies.keys())
             if all_memory_words:
                 memory_words = random.sample(all_memory_words, min(3, len(all_memory_words)))
         except:
-            # АНТИ-ШАБЛОННЫЙ FALLBACK: только из слов пользователя
+            # ANTI-TEMPLATE FALLBACK: only from user words
             user_words = user_input.lower().split()
             memory_words = user_words[:3] if user_words else ["input"]
-        
-        # ЖИВАЯ МУТАЦИЯ: смешиваем инвертированные слова пользователя + память
+
+        # LIVING MUTATION: mix inverted user words + memory
         response_words = inverted[:2] + memory_words + inverted[2:]
-        
-        # Убираем дубли сохраняя порядок  
+
+        # Remove duplicates preserving order
         seen = set()
         unique_words = []
         for w in response_words:
             if w not in seen and len(w) > 1:
                 seen.add(w)
                 unique_words.append(w)
-        
-        # Ограничиваем длину для естественности
+
+        # Limit length for naturalness
         if len(unique_words) > 8:
             unique_words = unique_words[:8]
         elif len(unique_words) < 3:
-            # АНТИ-ШАБЛОННЫЙ FALLBACK: добавляем слова из входа пользователя
+            # ANTI-TEMPLATE FALLBACK: add words from user input
             user_words = user_input.lower().split()
             if user_words:
                 unique_words.extend(user_words[:2])
             else:
                 unique_words.extend(['input'])
-            
+
         return ' '.join(unique_words) + '.'
         
     def _update_metrics(self, user_input: str, response: str):
-        """Обновляет метрики разговора"""
+        """Updates conversation metrics"""
         if not self.current_transformer:
             return
-        
-        # Используем продвинутые метрики если доступны
+
+        # Use advanced metrics if available
         if self.metrics_core:
             try:
-                # Продвинутый анализ через NicoleMetricsCore
+                # Advanced analysis through NicoleMetricsCore
                 snapshot = self.metrics_core.analyze_conversation_turn(
-                    user_input, response, 
-                    self.current_transformer.transformer_id, 
+                    user_input, response,
+                    self.current_transformer.transformer_id,
                     self.session_id
                 )
-                
+
                 self.current_transformer.current_metrics = ConversationMetrics(
                     entropy=snapshot.entropy,
                     perplexity=snapshot.perplexity,
@@ -1599,17 +1599,17 @@ class NicoleCore:
                     coherence=snapshot.coherence,
                     engagement=snapshot.engagement
                 )
-                print(f"[Nicole:Metrics] Продвинутые метрики: энтропия={snapshot.entropy:.3f}, резонанс={snapshot.resonance:.3f}")
-                
+                print(f"[Nicole:Metrics] Advanced metrics: entropy={snapshot.entropy:.3f}, resonance={snapshot.resonance:.3f}")
+
             except Exception as e:
-                print(f"[Nicole:Metrics] Ошибка продвинутых метрик: {e}")
+                print(f"[Nicole:Metrics] Advanced metrics error: {e}")
                 self._update_simple_metrics(user_input, response)
         else:
-            # Fallback на простые метрики
+            # Fallback to simple metrics
             self._update_simple_metrics(user_input, response)
-    
+
     def _update_simple_metrics(self, user_input: str, response: str):
-        """Простые метрики как fallback"""
+        """Simple metrics as fallback"""
         input_words = set(user_input.lower().split())
         response_words = set(response.lower().split())
         
@@ -1628,74 +1628,74 @@ class NicoleCore:
         )
         
     def _check_transformer_lifecycle(self):
-        """Проверяет нужна ли эволюция или смерть трансформера"""
+        """Checks if transformer evolution or death needed"""
         if not self.current_transformer:
             return
-            
-        # Проверяем эволюцию
-        if self.conversation_count % 3 == 0:  # Каждые 3 сообщения
+
+        # Check evolution
+        if self.conversation_count % 3 == 0:  # Every 3 messages
             evolved = self.current_transformer.evolve_architecture(
                 self.current_transformer.current_metrics
             )
             if evolved:
-                # Пересоздаем трансформер с новой архитектурой
+                # Recreate transformer with new architecture
                 self._respawn_transformer()
-                
-        # Проверяем смерть
+
+        # Check death
         if self.current_transformer.should_die():
-            print(f"[Nicole] Трансформер {self.current_transformer.transformer_id} умирает естественной смертью")
+            print(f"[Nicole] Transformer {self.current_transformer.transformer_id} dies natural death")
             self._spawn_new_transformer()
-            
+
     def _respawn_transformer(self):
-        """Пересоздает трансформер с эволюционированной архитектурой"""
+        """Recreates transformer with evolved architecture"""
         if self.current_transformer:
-            print(f"[Nicole] Пересоздаем трансформер после эволюции")
+            print(f"[Nicole] Recreating transformer after evolution")
             old_arch = self.current_transformer.architecture
             self._kill_current_transformer()
-            
-            # Создаем новый с эволюционированной архитектурой
+
+            # Create new with evolved architecture
             new_transformer = FluidTransformer(
                 f"evolved_{int(time.time() * 1000000)}",
                 {'session_id': self.session_id}
             )
-            new_transformer.architecture = old_arch  # Используем эволюционированную архитектуру
+            new_transformer.architecture = old_arch  # Use evolved architecture
             self.current_transformer = new_transformer
-            
-            # Запускаем новый скрипт
+
+            # Run new script
             transformer_script = self.current_transformer.generate_transformer_script()
             self.h2o_engine.run_transformer_script(
                 transformer_script,
                 self.current_transformer.transformer_id
             )
-            
+
     def end_conversation(self):
-        """Завершает разговор"""
+        """Ends conversation"""
         if self.current_transformer:
             self._kill_current_transformer()
-            
+
         if self.session_id:
             self.h2o_engine.end_session()
-            print(f"[Nicole] Разговор в сессии {self.session_id} завершен")
+            print(f"[Nicole] Conversation in session {self.session_id} ended")
             self.session_id = None
 
-# Глобальный экземпляр Nicole
+# Global Nicole instance
 nicole_core = NicoleCore()
 
 def chat_with_nicole(message: str) -> str:
-    """Удобная функция для общения с Nicole"""
+    """Convenient function for chatting with Nicole"""
     if not nicole_core.session_id:
         nicole_core.start_conversation()
-        
+
     return nicole_core.process_message(message)
 
 def test_nicole():
-    """Тестирование системы Nicole"""
+    """Testing Nicole system"""
     print("=== NICOLE NEURAL ENGINE TEST ===")
-    
-    # Начинаем разговор
+
+    # Start conversation
     session_id = nicole_core.start_conversation("test_nicole_session")
-    
-    # Тестовые сообщения
+
+    # Test messages
     test_messages = [
         "Hello Nicole!",
         "How are you?",
@@ -1704,18 +1704,18 @@ def test_nicole():
         "What's the weather?",
         "Goodbye!"
     ]
-    
+
     for i, message in enumerate(test_messages):
-        print(f"\n--- Сообщение {i+1} ---")
-        print(f"Пользователь: {message}")
-        
+        print(f"\n--- Message {i+1} ---")
+        print(f"User: {message}")
+
         response = nicole_core.process_message(message)
         print(f"Nicole: {response}")
-        
-        # Пауза между сообщениями
+
+        # Pause between messages
         time.sleep(0.5)
-        
-    # Завершаем разговор
+
+    # End conversation
     nicole_core.end_conversation()
     print("\n=== NICOLE TEST COMPLETED ===")
 
@@ -1723,6 +1723,6 @@ if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "test":
         test_nicole()
     else:
-        print("Nicole Neural Engine готова к работе")
-        print("Для тестирования запустите: python3 nicole.py test")
-        print("Для интерактивного режима используйте функцию chat_with_nicole()")
+        print("Nicole Neural Engine ready to work")
+        print("For testing run: python3 nicole.py test")
+        print("For interactive mode use chat_with_nicole() function")

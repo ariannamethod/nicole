@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Тесты Quick Wins оптимизаций Nicole
+Quick Wins Optimization Tests for Nicole
 - Adaptive chaos per user
-- Temporal weighting в RAG
-- Exploration noise в Nicole2Nicole
+- Temporal weighting in RAG
+- Exploration noise in Nicole2Nicole
 """
 
 import time
@@ -11,118 +11,118 @@ from nicole_rag import ChaoticRetriever
 from nicole2nicole import Nicole2NicoleCore
 
 print("="*70)
-print("🧪 ТЕСТ QUICK WINS ОПТИМИЗАЦИЙ")
+print("🧪 QUICK WINS OPTIMIZATION TEST")
 print("="*70)
 
 # ═════════════════════════════════════════════════════════════
-# Тест 1: Adaptive Chaos
+# Test 1: Adaptive Chaos
 # ═════════════════════════════════════════════════════════════
-print("\n🎯 Тест 1: Adaptive Chaos в RAG")
+print("\n🎯 Test 1: Adaptive Chaos in RAG")
 print("-" * 70)
 
 retriever = ChaoticRetriever()
 
-# Базовый chaos
+# Base chaos
 base_chaos = retriever.chaos_factor
-print(f"Базовый chaos factor: {base_chaos}")
+print(f"Base chaos factor: {base_chaos}")
 
-# Симулируем фидбек от 2 юзеров
-print("\n👤 User A (любит креатив):")
+# Simulate feedback from 2 users
+print("\n👤 User A (likes creativity):")
 for i in range(3):
     retriever.adapt_chaos_from_feedback("user_a", feedback_score=0.8)
 
-print(f"Итоговый chaos для User A: {retriever.get_user_chaos_level('user_a'):.3f}")
+print(f"Final chaos for User A: {retriever.get_user_chaos_level('user_a'):.3f}")
 
-print("\n👤 User B (любит точность):")
+print("\n👤 User B (likes precision):")
 for i in range(3):
     retriever.adapt_chaos_from_feedback("user_b", feedback_score=0.2)
 
-print(f"Итоговый chaos для User B: {retriever.get_user_chaos_level('user_b'):.3f}")
+print(f"Final chaos for User B: {retriever.get_user_chaos_level('user_b'):.3f}")
 
-print("\n✅ Adaptive Chaos работает! User A > base > User B")
+print("\n✅ Adaptive Chaos works! User A > base > User B")
 
 # ═════════════════════════════════════════════════════════════
-# Тест 2: Temporal Weighting
+# Test 2: Temporal Weighting
 # ═════════════════════════════════════════════════════════════
-print("\n\n⏰ Тест 2: Temporal Weighting в RAG")
+print("\n\n⏰ Test 2: Temporal Weighting in RAG")
 print("-" * 70)
 
-# Создаём 2 одинаковых текста, но с разными timestamp
-query = "расскажи о сознании"
-content = "сознание это интересная тема для исследования"
+# Create 2 identical texts with different timestamps
+query = "tell me about consciousness"
+content = "consciousness is an interesting topic for research"
 
-# Свежая мемори (сегодня)
+# Fresh memory (today)
 timestamp_fresh = time.time()
 relevance_fresh = retriever._calculate_relevance(query, content, timestamp=timestamp_fresh)
 
-# Старая мемори (30 дней назад)
+# Old memory (30 days ago)
 timestamp_old = time.time() - (30 * 86400)
 relevance_old = retriever._calculate_relevance(query, content, timestamp=timestamp_old)
 
-# Очень старая (60 дней)
+# Very old (60 days)
 timestamp_very_old = time.time() - (60 * 86400)
 relevance_very_old = retriever._calculate_relevance(query, content, timestamp=timestamp_very_old)
 
-print(f"Свежая мемори (0 дней):  relevance = {relevance_fresh:.3f}")
-print(f"Старая мемори (30 дней):  relevance = {relevance_old:.3f}")
-print(f"Очень старая (60 дней):   relevance = {relevance_very_old:.3f}")
+print(f"Fresh memory (0 days):  relevance = {relevance_fresh:.3f}")
+print(f"Old memory (30 days):  relevance = {relevance_old:.3f}")
+print(f"Very old (60 days):   relevance = {relevance_very_old:.3f}")
 
-print("\n✅ Temporal Weighting работает! fresh > old > very_old")
+print("\n✅ Temporal Weighting works! fresh > old > very_old")
 
 # ═════════════════════════════════════════════════════════════
-# Тест 3: Exploration Noise
+# Test 3: Exploration Noise
 # ═════════════════════════════════════════════════════════════
-print("\n\n🎲 Тест 3: Exploration Noise в Nicole2Nicole")
+print("\n\n🎲 Test 3: Exploration Noise in Nicole2Nicole")
 print("-" * 70)
 
 n2n = Nicole2NicoleCore()
 
-# Симулируем архитектуру
+# Simulate architecture
 test_arch = {
     'learning_rate': 0.01,
     'temperature': 0.8,
     'max_length': 100
 }
 
-print("Исходная архитектура:")
+print("Initial architecture:")
 for k, v in test_arch.items():
     print(f"  {k}: {v}")
 
-# Запускаем suggest несколько раз - иногда должно сработать исследование
-print("\nЗапускаем suggest_architecture_improvements 10 раз:")
-print("(ищем exploration noise - должно быть ~1-2 раза)")
+# Run suggest multiple times - exploration should trigger sometimes
+print("\nRunning suggest_architecture_improvements 10 times:")
+print("(looking for exploration noise - should be ~1-2 times)")
 
 exploration_count = 0
 for i in range(10):
     suggested = n2n.suggest_architecture_improvements(test_arch.copy(), "test context")
-    # Если хоть один параметр изменился - было исследование
+    # If any parameter changed - exploration happened
     if any(suggested[k] != test_arch[k] for k in test_arch.keys()):
         exploration_count += 1
 
-print(f"\n✅ Exploration Noise сработал {exploration_count}/10 раз (ожидаем ~1)")
+print(f"\n✅ Exploration Noise triggered {exploration_count}/10 times (expect ~1)")
 
 # ═════════════════════════════════════════════════════════════
-# Финальная статистика
+# Final Statistics
 # ═════════════════════════════════════════════════════════════
 print("\n" + "="*70)
-print("📊 ИТОГИ QUICK WINS")
+print("📊 QUICK WINS SUMMARY")
 print("="*70)
 
 print("""
-✅ Adaptive Chaos: юзеры получают персональный chaos_factor
-   - User A (креатив): chaos ↑
-   - User B (точность): chaos ↓
+✅ Adaptive Chaos: users get personalized chaos_factor
+   - User A (creative): chaos ↑
+   - User B (precise): chaos ↓
 
-✅ Temporal Weighting: свежие мемори важнее старых
-   - age=0 дней: weight=1.0
-   - age=30 дней: weight=0.37
-   - age=60 дней: weight=0.14
+✅ Temporal Weighting: fresh memories matter more
+   - age=0 days: weight=1.0
+   - age=30 days: weight=0.37
+   - age=60 days: weight=0.14
 
-✅ Exploration Noise: 10% шанс исследования
-   - Предотвращает overfitting
-   - Случайное возмущение ±20%
+✅ Exploration Noise: 10% chance of exploration
+   - Prevents overfitting
+   - Random perturbation ±20%
 
-🚀 Все оптимизации работают корректно!
+🚀 All optimizations working correctly!
 """)
 
 print("="*70)

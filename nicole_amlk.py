@@ -1,9 +1,9 @@
 """
 Nicole AMLK Integration Module
-Интеграция Nicole с Arianna Method Linux Kernel через letsgo.py
+Integration of Nicole with Arianna Method Linux Kernel via letsgo.py
 
-Nicole живет ВНУТРИ AMLK как операционной системы.
-AMLK предоставляет системные функции через letsgo.py терминал.
+Nicole lives INSIDE AMLK as an operating system.
+AMLK provides system functions through the letsgo.py terminal.
 """
 
 import sys
@@ -15,14 +15,14 @@ import threading
 import queue
 import subprocess
 
-# Добавляем AMLK в path для импорта
+# Add AMLK to path for imports
 AMLK_PATH = Path(__file__).parent / "AMLK"
 sys.path.insert(0, str(AMLK_PATH))
 
 class NicoleAMLKBridge:
     """
-    Мост между Nicole и AMLK операционной системой
-    Nicole работает ВНУТРИ AMLK, используя ее системные вызовы
+    Bridge between Nicole and AMLK operating system
+    Nicole operates INSIDE AMLK, using its system calls
     """
     
     def __init__(self):
@@ -33,9 +33,9 @@ class NicoleAMLKBridge:
         self.log_file = "amlk_system.log"
         
     def start_amlk_os(self):
-        """Запуск AMLK операционной системы"""
+        """Launch AMLK operating system"""
         try:
-            # Запускаем letsgo.py как системный процесс
+            # Launch letsgo.py as a system process
             self.amlk_process = subprocess.Popen(
                 [sys.executable, str(AMLK_PATH / "letsgo.py")],
                 stdin=subprocess.PIPE,
@@ -45,8 +45,8 @@ class NicoleAMLKBridge:
                 bufsize=1
             )
             self.is_running = True
-            
-            # Запускаем мониторинг вывода в отдельном потоке
+
+            # Start output monitoring in a separate thread
             self._start_output_monitor()
             
             return True
@@ -71,33 +71,33 @@ class NicoleAMLKBridge:
     
     def execute_system_command(self, command: str) -> Optional[str]:
         """
-        Выполнение системной команды через AMLK
-        Nicole использует это для системных операций
+        Execute system command through AMLK
+        Nicole uses this for system operations
         """
         if not self.is_running or not self.amlk_process:
             return None
-            
+
         try:
-            # Отправляем команду в AMLK
+            # Send command to AMLK
             self.amlk_process.stdin.write(f"{command}\n")
             self.amlk_process.stdin.flush()
-            
-            # Ждем ответ (с таймаутом)
+
+            # Wait for response (with timeout)
             try:
                 response = self.response_queue.get(timeout=5.0)
                 return response
             except queue.Empty:
                 return None
-                
+
         except Exception as e:
-            print(f"Ошибка выполнения команды в AMLK: {e}")
+            print(f"Error executing command in AMLK: {e}")
             return None
     
     def get_system_info(self) -> Dict[str, Any]:
-        """Получение информации о системе AMLK"""
+        """Get AMLK system information"""
         info = {}
-        
-        # Базовая информация через системные команды
+
+        # Basic information via system commands
         commands = {
             'pwd': 'pwd',
             'ls': 'ls -la',
@@ -114,11 +114,11 @@ class NicoleAMLKBridge:
     
     def nicole_system_call(self, operation: str, **kwargs) -> Any:
         """
-        Системные вызовы Nicole через AMLK
-        Это основной интерфейс для Nicole чтобы использовать ОС
+        Nicole system calls through AMLK
+        This is the main interface for Nicole to use the OS
         """
         if operation == "file_ops":
-            # Файловые операции
+            # File operations
             action = kwargs.get('action')
             path = kwargs.get('path')
             
@@ -126,31 +126,31 @@ class NicoleAMLKBridge:
                 return self.execute_system_command(f"cat {path}")
             elif action == 'write':
                 content = kwargs.get('content', '')
-                # Используем echo для записи (безопасно для простого контента)
+                # Use echo for writing (safe for simple content)
                 return self.execute_system_command(f'echo "{content}" > {path}')
             elif action == 'list':
                 return self.execute_system_command(f"ls -la {path}")
-                
+
         elif operation == "process_ops":
-            # Процессы и память
+            # Processes and memory
             action = kwargs.get('action')
             
             if action == 'list':
                 return self.execute_system_command("ps aux")
             elif action == 'memory':
                 return self.execute_system_command("free -h")
-                
+
         elif operation == "network_ops":
-            # Сетевые операции
+            # Network operations
             action = kwargs.get('action')
             
             if action == 'status':
                 return self.execute_system_command("netstat -an")
                 
         return None
-    
+
     def shutdown_amlk(self):
-        """Корректное завершение AMLK"""
+        """Graceful AMLK shutdown"""
         if self.amlk_process:
             try:
                 self.amlk_process.stdin.write("exit\n")
@@ -160,22 +160,22 @@ class NicoleAMLKBridge:
                 self.amlk_process.terminate()
             finally:
                 self.is_running = False
-    
+
     def _log_info(self, message: str):
-        """Логирование для системы, не для юзера"""
+        """Logging for system, not for user"""
         with open(self.log_file, "a") as f:
             f.write(f"[AMLK:INFO] {message}\n")
-    
+
     def _log_error(self, message: str):
-        """Логирование ошибок для системы"""
+        """Error logging for system"""
         with open(self.log_file, "a") as f:
             f.write(f"[AMLK:ERROR] {message}\n")
 
-# Глобальный экземпляр моста
+# Global bridge instance
 _amlk_bridge = None
 
 def get_amlk_bridge() -> NicoleAMLKBridge:
-    """Получение глобального экземпляра AMLK моста"""
+    """Get global AMLK bridge instance"""
     global _amlk_bridge
     if _amlk_bridge is None:
         _amlk_bridge = NicoleAMLKBridge()
@@ -183,13 +183,13 @@ def get_amlk_bridge() -> NicoleAMLKBridge:
 
 def start_nicole_in_amlk():
     """
-    Запуск Nicole внутри AMLK операционной системы
-    Это основная функция интеграции
+    Launch Nicole inside AMLK operating system
+    This is the main integration function
     """
     bridge = get_amlk_bridge()
-    
+
     if bridge.start_amlk_os():
-        # Получаем информацию о системе для внутреннего использования
+        # Get system information for internal use
         sys_info = bridge.get_system_info()
         bridge._log_info(f"AMLK OS active, sys_params: {len(sys_info)}")
         
@@ -198,21 +198,21 @@ def start_nicole_in_amlk():
         return None
 
 if __name__ == "__main__":
-    # Тестовый запуск интеграции
+    # Test integration launch
     bridge = start_nicole_in_amlk()
-    
+
     if bridge:
-        # Тест системных вызовов
-        print("\n🔧 Тест системных операций:")
-        
-        # Тест файловых операций
+        # Test system calls
+        print("\n🔧 System operations test:")
+
+        # Test file operations
         result = bridge.nicole_system_call("file_ops", action="list", path=".")
-        print(f"Список файлов: {result}")
-        
-        # Тест процессов
+        print(f"File list: {result}")
+
+        # Test processes
         result = bridge.nicole_system_call("process_ops", action="memory")
-        print(f"Память системы: {result}")
-        
-        # Завершение
+        print(f"System memory: {result}")
+
+        # Shutdown
         bridge.shutdown_amlk()
-        print("🏁 AMLK корректно завершена")
+        print("🏁 AMLK shutdown complete")

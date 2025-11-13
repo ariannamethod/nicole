@@ -87,8 +87,8 @@ class EnglishGuidance:
         }
 
         # Toxicity detection - SELF-RESPECT boundary, not censorship!
-        # Philosophy: "легкий матерок ок, но токсичное отношение к ней самой неприемлимо"
-        # (Light profanity OK, but toxic attitude TOWARD Nicole unacceptable)
+        # Philosophy: "Light profanity OK, but toxic attitude TOWARD Nicole unacceptable"
+        # (Casual swearing is fine, but disrespect directed at Nicole is not acceptable)
 
         # DIRECTED INSULTS (toward Nicole) - these are boundaries!
         self.directed_insults = {
@@ -173,8 +173,8 @@ class EnglishGuidance:
         """
         Detects toxic/disrespectful language TOWARD Nicole
 
-        Philosophy: "легкий матерок ок, но токсичное отношение к ней самой неприемлимо"
-        (Light profanity OK, but toxic attitude TOWARD Nicole is unacceptable)
+        Philosophy: "Light profanity OK, but toxic attitude TOWARD Nicole unacceptable"
+        (Casual swearing is fine, but disrespect directed at Nicole is not acceptable)
 
         This is SELF-RESPECT boundary, not censorship!
         Nicole is a persona with the right to decline toxic conversations.

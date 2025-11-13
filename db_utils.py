@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Database Utilities - Оптимизированные подключения к SQLite
-Включает WAL mode, индексы, и другие оптимизации для Nicole
+Database Utilities - Optimized SQLite connections
+Includes WAL mode, indexes, and other optimizations for Nicole
 """
 
 import sqlite3
@@ -11,43 +11,43 @@ import os
 
 def get_optimized_connection(db_path: str, timeout: float = 30.0) -> sqlite3.Connection:
     """
-    Создает оптимизированное подключение к SQLite с WAL mode
+    Creates optimized SQLite connection with WAL mode
 
-    Оптимизации:
-    - WAL mode (Write-Ahead Logging) - 2-3x быстрее записи
-    - synchronous=NORMAL - безопасно + быстро
-    - cache_size=10000 - больше кеша = меньше дисковых операций
-    - temp_store=MEMORY - временные данные в RAM
-    - mmap_size - memory-mapped I/O для больших БД
+    Optimizations:
+    - WAL mode (Write-Ahead Logging) - 2-3x faster writes
+    - synchronous=NORMAL - safe + fast
+    - cache_size=10000 - more cache = fewer disk operations
+    - temp_store=MEMORY - temporary data in RAM
+    - mmap_size - memory-mapped I/O for large DBs
 
     Args:
-        db_path: Путь к файлу базы данных
-        timeout: Таймаут ожидания блокировки (секунды)
+        db_path: Path to database file
+        timeout: Lock wait timeout (seconds)
 
     Returns:
-        Оптимизированное подключение к SQLite
+        Optimized SQLite connection
     """
     conn = sqlite3.connect(db_path, timeout=timeout)
     cursor = conn.cursor()
 
-    # WAL mode - КРИТИЧНО для производительности
-    # Write-Ahead Logging позволяет читать во время записи
+    # WAL mode - CRITICAL for performance
+    # Write-Ahead Logging allows reading during writes
     cursor.execute("PRAGMA journal_mode=WAL")
 
-    # synchronous=NORMAL - баланс скорость/безопасность
-    # В WAL mode это безопасно даже при сбое питания
+    # synchronous=NORMAL - balance speed/safety
+    # In WAL mode this is safe even during power failure
     cursor.execute("PRAGMA synchronous=NORMAL")
 
-    # Увеличиваем кеш до 10MB (10000 страниц по 1KB)
+    # Increase cache to 10MB (10000 pages of 1KB)
     cursor.execute("PRAGMA cache_size=10000")
 
-    # Временные таблицы в памяти
+    # Temporary tables in memory
     cursor.execute("PRAGMA temp_store=MEMORY")
 
-    # Memory-mapped I/O для больших баз (30MB)
+    # Memory-mapped I/O for large databases (30MB)
     cursor.execute("PRAGMA mmap_size=30000000")
 
-    # Включаем foreign keys (если используются)
+    # Enable foreign keys (if used)
     cursor.execute("PRAGMA foreign_keys=ON")
 
     cursor.close()
@@ -57,27 +57,27 @@ def get_optimized_connection(db_path: str, timeout: float = 30.0) -> sqlite3.Con
 
 def create_memory_indexes(conn: sqlite3.Connection):
     """
-    Создает индексы для nicole_memory.db если их еще нет
+    Creates indexes for nicole_memory.db if they don't exist yet
 
-    Индексы критичны для производительности поиска:
+    Indexes are critical for search performance:
     - conversations: timestamp, session_id
     - associations: source_concept, strength
-    - concepts: name (для быстрого lookup)
+    - concepts: name (for fast lookup)
     """
     cursor = conn.cursor()
 
-    # Проверяем существующие индексы
+    # Check existing indexes
     cursor.execute("SELECT name FROM sqlite_master WHERE type='index'")
     existing_indexes = {row[0] for row in cursor.fetchall()}
 
-    # Индексы для conversations таблицы
+    # Indexes for conversations table
     indexes = [
         ("idx_conversations_timestamp", "conversations", "timestamp DESC"),
         ("idx_conversations_session", "conversations", "session_id"),
         ("idx_conversations_user_input", "conversations", "user_input"),
     ]
 
-    # Индексы для associations (если таблица существует)
+    # Indexes for associations (if table exists)
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='associations'")
     if cursor.fetchone():
         indexes.extend([
@@ -86,12 +86,12 @@ def create_memory_indexes(conn: sqlite3.Connection):
             ("idx_associations_strength", "associations", "strength DESC"),
         ])
 
-    # Индексы для concepts (если таблица существует)
+    # Indexes for concepts (if table exists)
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='concepts'")
     if cursor.fetchone():
         indexes.append(("idx_concepts_name", "concepts", "name"))
 
-    # Создаем индексы которых нет
+    # Create missing indexes
     created = 0
     for index_name, table_name, columns in indexes:
         if index_name not in existing_indexes:
@@ -100,7 +100,7 @@ def create_memory_indexes(conn: sqlite3.Connection):
                 created += 1
                 print(f"[db_utils] Created index: {index_name}")
             except sqlite3.OperationalError as e:
-                # Таблица может не существовать - это нормально
+                # Table may not exist - that's normal
                 pass
 
     if created > 0:
@@ -112,12 +112,12 @@ def create_memory_indexes(conn: sqlite3.Connection):
 
 def optimize_database(db_path: str):
     """
-    Оптимизирует существующую базу данных
+    Optimizes existing database
 
-    - Конвертирует в WAL mode
-    - Создает индексы
-    - Запускает VACUUM для дефрагментации
-    - Запускает ANALYZE для обновления статистики
+    - Converts to WAL mode
+    - Creates indexes
+    - Runs VACUUM for defragmentation
+    - Runs ANALYZE to update statistics
     """
     print(f"[db_utils] Optimizing database: {db_path}")
 
@@ -127,15 +127,15 @@ def optimize_database(db_path: str):
 
     conn = get_optimized_connection(db_path)
 
-    # Создаем индексы
+    # Create indexes
     create_memory_indexes(conn)
 
-    # ANALYZE - обновляем статистику для query planner
+    # ANALYZE - update statistics for query planner
     print("[db_utils] Running ANALYZE...")
     conn.execute("ANALYZE")
 
-    # VACUUM - дефрагментация (ОСТОРОЖНО: может быть медленным для больших БД)
-    # Раскомментируйте если база сильно фрагментирована:
+    # VACUUM - defragmentation (CAUTION: can be slow for large DBs)
+    # Uncomment if database is heavily fragmented:
     # print("[db_utils] Running VACUUM...")
     # conn.execute("VACUUM")
 
@@ -146,7 +146,7 @@ def optimize_database(db_path: str):
 
 
 def get_db_stats(db_path: str) -> dict:
-    """Возвращает статистику базы данных"""
+    """Returns database statistics"""
     if not os.path.exists(db_path):
         return {"exists": False}
 
@@ -155,26 +155,26 @@ def get_db_stats(db_path: str) -> dict:
 
     stats = {"exists": True}
 
-    # Размер файла
+    # File size
     stats["size_mb"] = os.path.getsize(db_path) / (1024 * 1024)
 
-    # Режим журнала
+    # Journal mode
     cursor.execute("PRAGMA journal_mode")
     stats["journal_mode"] = cursor.fetchone()[0]
 
-    # Количество страниц
+    # Page count
     cursor.execute("PRAGMA page_count")
     stats["page_count"] = cursor.fetchone()[0]
 
-    # Размер страницы
+    # Page size
     cursor.execute("PRAGMA page_size")
     stats["page_size"] = cursor.fetchone()[0]
 
-    # Список таблиц
+    # Table list
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
     stats["tables"] = [row[0] for row in cursor.fetchall()]
 
-    # Количество индексов
+    # Index count
     cursor.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='index'")
     stats["index_count"] = cursor.fetchone()[0]
 
@@ -184,14 +184,14 @@ def get_db_stats(db_path: str) -> dict:
     return stats
 
 
-# Автоматическая оптимизация при импорте модуля
+# Auto-optimization on module import
 def auto_optimize_if_needed():
     """
-    Автоматически оптимизирует базы данных Nicole при первом запуске
+    Automatically optimizes Nicole databases on first run
     """
     databases = [
         "nicole_memory.db",
-        # Добавьте другие базы если нужно
+        # Add other databases if needed
     ]
 
     for db in databases:
@@ -202,13 +202,13 @@ def auto_optimize_if_needed():
                 optimize_database(db)
 
 
-# Запускаем автооптимизацию при импорте
-# Раскомментируйте для автоматической оптимизации:
+# Run auto-optimization on import
+# Uncomment for automatic optimization:
 # auto_optimize_if_needed()
 
 
 if __name__ == "__main__":
-    """Утилита командной строки для оптимизации баз"""
+    """Command-line utility for database optimization"""
     import sys
 
     if len(sys.argv) < 2:

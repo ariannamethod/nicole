@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Скрипт миграции существующих баз данных Nicole в WAL mode
-Запускаем один раз для оптимизации всех баз
+Script for migrating existing Nicole databases to WAL mode
+Run once to optimize all databases
 """
 
 import os
@@ -13,13 +13,13 @@ def main():
     print("Nicole Database Migration - WAL Mode + Indexes")
     print("=" * 60)
 
-    # Список баз данных Nicole
+    # List of Nicole databases
     databases = [
         "nicole_memory.db",
-        # Добавьте другие базы если используются
+        # Add other databases if used
     ]
 
-    # Находим существующие базы
+    # Find existing databases
     existing_dbs = [db for db in databases if os.path.exists(db)]
 
     if not existing_dbs:
@@ -28,7 +28,7 @@ def main():
 
     print(f"\nFound {len(existing_dbs)} database(s) to migrate:\n")
 
-    # Показываем текущее состояние
+    # Show current state
     for db in existing_dbs:
         stats = get_db_stats(db)
         print(f"📊 {db}:")
@@ -38,7 +38,7 @@ def main():
         print(f"   Tables: {len(stats['tables'])}")
         print()
 
-    # Спрашиваем подтверждение
+    # Ask for confirmation
     if len(sys.argv) < 2 or sys.argv[1] != "--yes":
         response = input("Proceed with migration? (yes/no): ").strip().lower()
         if response != "yes":
@@ -49,7 +49,7 @@ def main():
     print("Starting migration...")
     print("=" * 60 + "\n")
 
-    # Мигрируем каждую базу
+    # Migrate each database
     for db in existing_dbs:
         print(f"\n🔄 Migrating {db}...")
         try:
@@ -62,7 +62,7 @@ def main():
     print("Migration Complete!")
     print("=" * 60 + "\n")
 
-    # Показываем новое состояние
+    # Show new state
     print("After migration:\n")
     for db in existing_dbs:
         stats = get_db_stats(db)

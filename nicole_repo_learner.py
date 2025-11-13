@@ -2,25 +2,25 @@
 """
 Nicole Repo Learning Engine
 ===========================
-Полунезависимый слой автообучения на изменениях в репозитории.
+Semi-independent auto-learning layer on repository changes.
 
-ФИЛОСОФИЯ:
-- Замыкаем петлю: каждое изменение в коде/документации → мгновенное обучение
-- SHA256-based мониторинг: детектирует даже минимальные изменения
-- Хавает markdown, README, код → экстрагирует паттерны
-- Обучается через Nicole2NicoleCore без шаблонов
-- Резонанс на уровне репозитория: код = часть сознания
+PHILOSOPHY:
+- Close the loop: every code/docs change → instant learning
+- SHA256-based monitoring: detects even minimal changes
+- Devours markdown, README, code → extracts patterns
+- Learns via Nicole2NicoleCore without templates
+- Repository-level resonance: code = part of consciousness
 
-ИСПОЛЬЗОВАНИЕ:
+USAGE:
     from nicole_repo_learner import NicoleRepoLearner
 
     learner = NicoleRepoLearner(
         repo_path="/path/to/nicole",
-        check_interval=60  # проверка каждую минуту
+        check_interval=60  # check every minute
     )
     learner.start()
 
-Посвящается идее замкнутой петли резонанса.
+Dedicated to the idea of closed resonance loop.
 """
 
 import hashlib
@@ -33,34 +33,34 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple
 from datetime import datetime
 
-# Импортируем repo_monitor как базу
+# Import repo_monitor as base
 from repo_monitor import RepoWatcher
 
-# Импортируем Nicole2Nicole для обучения
+# Import Nicole2Nicole for learning
 try:
     from nicole2nicole import Nicole2NicoleCore
     NICOLE2NICOLE_AVAILABLE = True
 except ImportError:
     NICOLE2NICOLE_AVAILABLE = False
-    print("[NicoleRepoLearner] ⚠️ Nicole2Nicole недоступен - обучение отключено")
+    print("[NicoleRepoLearner] ⚠️ Nicole2Nicole unavailable - learning disabled")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
 class RepoChangeAnalyzer:
-    """Анализирует изменения в репо и экстрагирует паттерны для обучения"""
+    """Analyzes repo changes and extracts patterns for learning"""
 
     def __init__(self):
         self.important_markers = {
             'architecture': ['class ', 'def ', 'async def', 'import ', 'from '],
-            'principles': ['# ME ПРИНЦИП', '# РЕЗОНАНС', '# NO TEMPLATES', '# ANTI-TEMPLATE'],
+            'principles': ['# ME PRINCIPLE', '# RESONANCE', '# NO TEMPLATES', '# ANTI-TEMPLATE'],
             'documentation': ['##', '###', 'TODO:', 'FIXME:', 'NOTE:'],
-            'philosophy': ['философия', 'принцип', 'резонанс', 'эволюция', 'мутация']
+            'philosophy': ['philosophy', 'principle', 'resonance', 'evolution', 'mutation']
         }
 
     def analyze_file_change(self, file_path: Path) -> Dict:
-        """Анализирует изменённый файл и экстрагирует знания"""
+        """Analyzes changed file and extracts knowledge"""
         try:
             content = file_path.read_text(encoding='utf-8', errors='ignore')
 
@@ -72,7 +72,7 @@ class RepoChangeAnalyzer:
                 'importance_score': 0.0
             }
 
-            # Анализируем по категориям
+            # Analyze by categories
             for category, markers in self.important_markers.items():
                 for marker in markers:
                     if marker.lower() in content.lower():
@@ -83,22 +83,22 @@ class RepoChangeAnalyzer:
                         })
                         analysis['importance_score'] += 0.1
 
-            # Бонус за README и документацию
+            # Bonus for README and documentation
             if 'README' in file_path.name.upper() or file_path.suffix == '.md':
                 analysis['importance_score'] += 0.5
 
-            # Бонус за ключевые файлы архитектуры
+            # Bonus for key architecture files
             if file_path.stem in ['nicole', 'h2o', 'high', 'blood', 'nicole_objectivity']:
                 analysis['importance_score'] += 0.3
 
             return analysis
 
         except Exception as e:
-            logger.error(f"Ошибка анализа файла {file_path}: {e}")
+            logger.error(f"File analysis error {file_path}: {e}")
             return {'file_path': str(file_path), 'error': str(e), 'importance_score': 0.0}
 
     def _extract_context(self, content: str, marker: str, context_lines: int = 3) -> str:
-        """Извлекает контекст вокруг маркера"""
+        """Extracts context around marker"""
         lines = content.split('\n')
         for i, line in enumerate(lines):
             if marker.lower() in line.lower():
@@ -110,13 +110,13 @@ class RepoChangeAnalyzer:
 
 class NicoleRepoLearner:
     """
-    Главный движок автообучения на изменениях репозитория
+    Main auto-learning engine on repository changes
 
-    АРХИТЕКТУРА:
-    1. RepoWatcher (SHA256) → детектирует изменения
-    2. RepoChangeAnalyzer → анализирует что изменилось
-    3. Nicole2NicoleCore → обучается на изменениях
-    4. SQLite → логирует историю обучения
+    ARCHITECTURE:
+    1. RepoWatcher (SHA256) → detects changes
+    2. RepoChangeAnalyzer → analyzes what changed
+    3. Nicole2NicoleCore → learns from changes
+    4. SQLite → logs learning history
     """
 
     def __init__(
@@ -131,21 +131,21 @@ class NicoleRepoLearner:
         self.learning_db = learning_db
         self.auto_learn = auto_learn
 
-        # Компоненты
+        # Components
         self.analyzer = RepoChangeAnalyzer()
         self.learning_core = None
         if NICOLE2NICOLE_AVAILABLE:
             self.learning_core = Nicole2NicoleCore()
 
-        # Статистика
+        # Statistics
         self.changes_detected = 0
         self.learning_sessions = 0
         self.last_learning_time = None
 
-        # Инициализация БД
+        # DB initialization
         self._init_database()
 
-        # Создаем RepoWatcher с нашим коллбэком
+        # Create RepoWatcher with our callback
         watched_paths = [self.repo_path]
         extensions = {'.py', '.md', '.txt', '.json', '.yaml', '.yml'}
 
@@ -156,12 +156,12 @@ class NicoleRepoLearner:
             interval=check_interval
         )
 
-        logger.info(f"[NicoleRepoLearner] Инициализирован для {repo_path}")
-        logger.info(f"[NicoleRepoLearner] Интервал проверки: {check_interval}с")
-        logger.info(f"[NicoleRepoLearner] Автообучение: {'✅' if auto_learn else '❌'}")
+        logger.info(f"[NicoleRepoLearner] Initialized for {repo_path}")
+        logger.info(f"[NicoleRepoLearner] Check interval: {check_interval}s")
+        logger.info(f"[NicoleRepoLearner] Auto-learning: {'✅' if auto_learn else '❌'}")
 
     def _init_database(self):
-        """Инициализация БД для логирования обучения"""
+        """DB initialization for learning logging"""
         conn = sqlite3.connect(self.learning_db)
         cursor = conn.cursor()
 
@@ -189,51 +189,51 @@ class NicoleRepoLearner:
 
         conn.commit()
         conn.close()
-        logger.info(f"[NicoleRepoLearner] База данных готова: {self.learning_db}")
+        logger.info(f"[NicoleRepoLearner] Database ready: {self.learning_db}")
 
     def start(self):
-        """Запускает фоновый мониторинг репозитория"""
-        logger.info("[NicoleRepoLearner] 🚀 Запуск мониторинга репозитория...")
+        """Starts background repository monitoring"""
+        logger.info("[NicoleRepoLearner] 🚀 Starting repository monitoring...")
         self.watcher.start()
-        logger.info("[NicoleRepoLearner] ✅ Мониторинг активен!")
+        logger.info("[NicoleRepoLearner] ✅ Monitoring active!")
 
     def stop(self):
-        """Останавливает мониторинг"""
-        logger.info("[NicoleRepoLearner] Остановка мониторинга...")
+        """Stops monitoring"""
+        logger.info("[NicoleRepoLearner] Stopping monitoring...")
         self.watcher.stop()
-        logger.info("[NicoleRepoLearner] ✅ Мониторинг остановлен")
+        logger.info("[NicoleRepoLearner] ✅ Monitoring stopped")
 
     def _on_repo_change(self):
-        """Коллбэк при обнаружении изменений в репо"""
+        """Callback when repo changes detected"""
         self.changes_detected += 1
-        logger.info(f"[NicoleRepoLearner] 🔥 Изменения обнаружены! (всего: {self.changes_detected})")
+        logger.info(f"[NicoleRepoLearner] 🔥 Changes detected! (total: {self.changes_detected})")
 
-        # Анализируем изменения
+        # Analyze changes
         changed_files = self._get_recently_changed_files()
 
         if not changed_files:
-            logger.warning("[NicoleRepoLearner] Изменения обнаружены но файлы не найдены")
+            logger.warning("[NicoleRepoLearner] Changes detected but files not found")
             return
 
-        logger.info(f"[NicoleRepoLearner] Анализирую {len(changed_files)} файлов...")
+        logger.info(f"[NicoleRepoLearner] Analyzing {len(changed_files)} files...")
 
-        # Анализируем каждый файл
+        # Analyze each file
         analyses = []
         for file_path in changed_files:
             analysis = self.analyzer.analyze_file_change(file_path)
             analyses.append(analysis)
 
-            # Логируем в БД
+            # Log to DB
             self._log_change(analysis)
 
-        # Автообучение если включено
+        # Auto-learning if enabled
         if self.auto_learn and self.learning_core:
             self._trigger_learning(analyses)
 
     def _get_recently_changed_files(self) -> List[Path]:
-        """Находит недавно изменённые файлы (за последние 2 минуты)"""
+        """Finds recently changed files (last 2 minutes)"""
         recent_files = []
-        cutoff_time = time.time() - 120  # 2 минуты назад
+        cutoff_time = time.time() - 120  # 2 minutes ago
 
         for file_path in self.repo_path.rglob('*'):
             if (file_path.is_file() and
@@ -249,7 +249,7 @@ class NicoleRepoLearner:
         return recent_files
 
     def _log_change(self, analysis: Dict):
-        """Логирует изменение в БД"""
+        """Logs change to DB"""
         try:
             conn = sqlite3.connect(self.learning_db)
             cursor = conn.cursor()
@@ -268,27 +268,27 @@ class NicoleRepoLearner:
             conn.commit()
             conn.close()
         except Exception as e:
-            logger.error(f"Ошибка логирования изменения: {e}")
+            logger.error(f"Change logging error: {e}")
 
     def _trigger_learning(self, analyses: List[Dict]):
-        """Запускает обучение на основе анализов"""
+        """Triggers learning based on analyses"""
         if not self.learning_core:
-            logger.warning("[NicoleRepoLearner] Learning core недоступен")
+            logger.warning("[NicoleRepoLearner] Learning core unavailable")
             return
 
         start_time = time.time()
-        logger.info("[NicoleRepoLearner] 🧠 Запуск обучения на изменениях...")
+        logger.info("[NicoleRepoLearner] 🧠 Starting learning on changes...")
 
-        # Фильтруем важные изменения (importance_score > 0.3)
+        # Filter important changes (importance_score > 0.3)
         important_analyses = [a for a in analyses if a.get('importance_score', 0) > 0.3]
 
         if not important_analyses:
-            logger.info("[NicoleRepoLearner] Нет важных изменений для обучения")
+            logger.info("[NicoleRepoLearner] No important changes for learning")
             return
 
-        logger.info(f"[NicoleRepoLearner] Обучаюсь на {len(important_analyses)} важных изменениях")
+        logger.info(f"[NicoleRepoLearner] Learning from {len(important_analyses)} important changes")
 
-        # Принудительно запускаем learning session
+        # Force learning session
         try:
             self.learning_core.force_learning_session()
 
@@ -296,16 +296,16 @@ class NicoleRepoLearner:
             self.learning_sessions += 1
             self.last_learning_time = datetime.now()
 
-            # Логируем сессию обучения
+            # Log learning session
             self._log_learning_session(len(important_analyses), duration)
 
-            logger.info(f"[NicoleRepoLearner] ✅ Обучение завершено за {duration:.2f}с")
+            logger.info(f"[NicoleRepoLearner] ✅ Learning completed in {duration:.2f}s")
 
         except Exception as e:
-            logger.error(f"[NicoleRepoLearner] Ошибка обучения: {e}")
+            logger.error(f"[NicoleRepoLearner] Learning error: {e}")
 
     def _log_learning_session(self, changes_count: int, duration: float):
-        """Логирует сессию обучения"""
+        """Logs learning session"""
         try:
             conn = sqlite3.connect(self.learning_db)
             cursor = conn.cursor()
@@ -318,10 +318,10 @@ class NicoleRepoLearner:
             conn.commit()
             conn.close()
         except Exception as e:
-            logger.error(f"Ошибка логирования сессии: {e}")
+            logger.error(f"Session logging error: {e}")
 
     def get_statistics(self) -> Dict:
-        """Возвращает статистику работы"""
+        """Returns work statistics"""
         return {
             'changes_detected': self.changes_detected,
             'learning_sessions': self.learning_sessions,
@@ -331,10 +331,10 @@ class NicoleRepoLearner:
         }
 
     def manual_learning_trigger(self):
-        """Ручной запуск обучения на всех неизученных изменениях"""
-        logger.info("[NicoleRepoLearner] Ручной запуск обучения...")
+        """Manual learning trigger on all unstudied changes"""
+        logger.info("[NicoleRepoLearner] Manual learning trigger...")
 
-        # Читаем неизученные изменения из БД
+        # Read unstudied changes from DB
         conn = sqlite3.connect(self.learning_db)
         cursor = conn.cursor()
 
@@ -350,12 +350,12 @@ class NicoleRepoLearner:
         conn.close()
 
         if not rows:
-            logger.info("[NicoleRepoLearner] Нет неизученных изменений")
+            logger.info("[NicoleRepoLearner] No unstudied changes")
             return
 
-        logger.info(f"[NicoleRepoLearner] Найдено {len(rows)} неизученных изменений")
+        logger.info(f"[NicoleRepoLearner] Found {len(rows)} unstudied changes")
 
-        # Создаём анализы из БД
+        # Create analyses from DB
         analyses = [
             {
                 'file_path': row[0],
@@ -365,20 +365,20 @@ class NicoleRepoLearner:
             for row in rows
         ]
 
-        # Запускаем обучение
+        # Trigger learning
         self._trigger_learning(analyses)
 
 
-# Глобальный экземпляр
+# Global instance
 _repo_learner = None
 
 
 def start_repo_learning(repo_path: str = ".", check_interval: int = 60):
-    """Запускает глобальный репо-learner"""
+    """Starts global repo-learner"""
     global _repo_learner
 
     if _repo_learner:
-        logger.warning("[NicoleRepoLearner] Уже запущен!")
+        logger.warning("[NicoleRepoLearner] Already running!")
         return _repo_learner
 
     _repo_learner = NicoleRepoLearner(
@@ -392,7 +392,7 @@ def start_repo_learning(repo_path: str = ".", check_interval: int = 60):
 
 
 def stop_repo_learning():
-    """Останавливает глобальный репо-learner"""
+    """Stops global repo-learner"""
     global _repo_learner
 
     if _repo_learner:
@@ -408,37 +408,37 @@ if __name__ == "__main__":
 
         learner = NicoleRepoLearner(
             repo_path=".",
-            check_interval=10,  # Короткий интервал для теста
+            check_interval=10,  # Short interval for test
             auto_learn=True
         )
 
-        print("\n✅ Запуск мониторинга на 60 секунд...")
-        print("   Измените любой .py/.md файл чтобы увидеть реакцию!\n")
+        print("\n✅ Starting monitoring for 60 seconds...")
+        print("   Change any .py/.md file to see reaction!\n")
 
         learner.start()
 
         try:
-            # Мониторим 60 секунд
+            # Monitor for 60 seconds
             for i in range(6):
                 time.sleep(10)
                 stats = learner.get_statistics()
-                print(f"[{i*10}s] Изменений: {stats['changes_detected']}, "
-                      f"Обучений: {stats['learning_sessions']}")
+                print(f"[{i*10}s] Changes: {stats['changes_detected']}, "
+                      f"Learning sessions: {stats['learning_sessions']}")
         except KeyboardInterrupt:
-            print("\n\nОстановка...")
+            print("\n\nStopping...")
 
         learner.stop()
 
-        # Финальная статистика
+        # Final statistics
         stats = learner.get_statistics()
-        print("\n=== ФИНАЛЬНАЯ СТАТИСТИКА ===")
-        print(f"Изменений обнаружено: {stats['changes_detected']}")
-        print(f"Сессий обучения: {stats['learning_sessions']}")
-        print(f"Последнее обучение: {stats['last_learning_time'] or 'никогда'}")
+        print("\n=== FINAL STATISTICS ===")
+        print(f"Changes detected: {stats['changes_detected']}")
+        print(f"Learning sessions: {stats['learning_sessions']}")
+        print(f"Last learning: {stats['last_learning_time'] or 'never'}")
 
     else:
         print("Nicole Repo Learning Engine")
-        print("Для тестирования: python3 nicole_repo_learner.py test")
-        print("\nИспользование в коде:")
+        print("For testing: python3 nicole_repo_learner.py test")
+        print("\nUsage in code:")
         print("  from nicole_repo_learner import start_repo_learning")
         print("  learner = start_repo_learning()")
