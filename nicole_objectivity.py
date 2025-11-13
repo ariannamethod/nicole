@@ -306,17 +306,55 @@ class NicoleObjectivity:
         return f"=== {header} ===\n{w.content}\n=== END OBJECTIVITY ===\n"
 
     def extract_response_seeds(self, context: str, influence: float) -> List[str]:
-        """Семена для ответа из контекста (язык-агностично)."""
+        """
+        Семена для ответа из контекста (язык-агностично).
+
+        FIXED: Proper word cleaning for Reddit/internet content
+        - Split underscores into separate words
+        - Filter overly long words (Reddit slugs)
+        - Remove technical Reddit terms
+        """
         if not context:
             return []
-        words = re.findall(r"\w{3,}", context.lower(), flags=re.UNICODE)
+
+        # FIX: Replace underscores with spaces BEFORE parsing
+        # This splits "cutting_a_couple_of_chives" into separate words
+        cleaned_context = context.replace('_', ' ')
+
+        # Parse words (min 3 chars)
+        words = re.findall(r"\w{3,}", cleaned_context.lower(), flags=re.UNICODE)
         words = [w for w in words if any(ch.isalpha() for ch in w)]
-        if not words:
+
+        # FIX: Filter out Reddit technical noise and overly long words
+        reddit_noise = {
+            'moderators', 'moderator', 'discussion', 'comments', 'comment',
+            'subreddit', 'reddit', 'thread', 'post', 'permalink', 'removed',
+            'deleted', 'originally', 'punishment', 'condemning', 'revealed',
+            'manually', 'removing', 'separate', 'involved', 'finished',
+            # Common subreddit names
+            'kitchenconfidential', 'agedlikemilk', 'conservative',
+            'askreddit', 'todayilearned', 'politics', 'worldnews'
+        }
+
+        # Filter: no noise, max length 15 chars, min length 3
+        filtered = []
+        for w in words:
+            if w in reddit_noise:
+                continue
+            if len(w) > 15:  # Skip overly long slugs
+                continue
+            if len(w) < 3:
+                continue
+            filtered.append(w)
+
+        if not filtered:
             return []
-        seed_count = max(1, int(len(words) * max(0.0, min(1.0, influence))))
-        if seed_count >= len(words):
-            return list(dict.fromkeys(words))
-        return random.sample(words, seed_count)
+
+        # Sample seeds based on influence
+        seed_count = max(1, int(len(filtered) * max(0.0, min(1.0, influence))))
+        if seed_count >= len(filtered):
+            return list(dict.fromkeys(filtered))
+        return random.sample(filtered, seed_count)
 
     # ---------- Internals ----------
 

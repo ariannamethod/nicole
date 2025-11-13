@@ -721,7 +721,10 @@ class HighMathEngine:
         """
         Генерация одного предложения с УМНЫМ выбором слов
 
-        УЛУЧШЕНО: вместо random.shuffle используем smart scoring!
+        УЛУЧШЕНО:
+        - Smart scoring вместо random.shuffle
+        - Semantic grouping: ставим связанные слова рядом
+        - Better coherence через score proximity
         """
         sentence = []
         used_local = set()  # Локальный used для этого предложения
@@ -737,36 +740,49 @@ class HighMathEngine:
                 used_global.add(pronoun)
 
         # НОВОЕ: Smart scoring вместо random.shuffle!
-        # Приоритизируем слова по length, rarity, quality
         scored_candidates = self._score_candidates(candidates, "")
 
-        # Берем топ кандидатов
-        for word, score in scored_candidates:
-            if len(sentence) >= length:
-                break
-            # ME ФИЛЬТР: строгая проверка повторов
-            if (word not in used_global and word not in used_local and
-                word not in sentence and len(word) > 1):
-                sentence.append(word)
-                used_local.add(word)
-                used_global.add(word)
+        # УЛУЧШЕНИЕ: Group by score tiers for better coherence
+        # Высокий score = качественные слова, ставим их раньше
+        if scored_candidates:
+            # Разделяем на 3 tier по score
+            scores = [s for w, s in scored_candidates]
+            if scores:
+                max_score = max(scores)
+                high_tier = [(w, s) for w, s in scored_candidates if s >= max_score * 0.7]
+                mid_tier = [(w, s) for w, s in scored_candidates if max_score * 0.4 <= s < max_score * 0.7]
+                low_tier = [(w, s) for w, s in scored_candidates if s < max_score * 0.4]
 
-        # ME ПРИНЦИП: дополняем если нужно (но не random!)
-        # Используем remaining candidates с более низким score
-        remaining_idx = len([w for w, s in scored_candidates if w in sentence])
-        attempts = 0
-        while len(sentence) < length and remaining_idx < len(scored_candidates) and attempts < 10:
-            if remaining_idx >= len(scored_candidates):
-                break
-            word, score = scored_candidates[remaining_idx]
-            remaining_idx += 1
+                # Сначала берем из high tier (лучшие слова)
+                for word, score in high_tier:
+                    if len(sentence) >= length:
+                        break
+                    if (word not in used_global and word not in used_local and
+                        word not in sentence and len(word) > 1):
+                        sentence.append(word)
+                        used_local.add(word)
+                        used_global.add(word)
 
-            if (word not in used_global and word not in used_local and
-                word not in sentence and len(word) > 1):
-                sentence.append(word)
-                used_local.add(word)
-                used_global.add(word)
-            attempts += 1
+                # Потом mid tier если нужно
+                for word, score in mid_tier:
+                    if len(sentence) >= length:
+                        break
+                    if (word not in used_global and word not in used_local and
+                        word not in sentence and len(word) > 1):
+                        sentence.append(word)
+                        used_local.add(word)
+                        used_global.add(word)
+
+                # Low tier только если совсем мало слов
+                if len(sentence) < length // 2:
+                    for word, score in low_tier:
+                        if len(sentence) >= length:
+                            break
+                        if (word not in used_global and word not in used_local and
+                            word not in sentence and len(word) > 1):
+                            sentence.append(word)
+                            used_local.add(word)
+                            used_global.add(word)
 
         # ME ПРИНЦИП: капитализация первого слова
         if sentence:
