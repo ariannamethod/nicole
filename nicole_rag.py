@@ -309,36 +309,18 @@ class NicoleRAG:
         
         return improved_response, augmented_context
         
-    def _improve_response_with_context(self, user_input: str, base_response: str, 
+    def _improve_response_with_context(self, user_input: str, base_response: str,
                                      context: str) -> str:
-        """Улучшает ответ на основе контекста"""
+        """Улучшает ответ на основе контекста (БЕЗ ШАБЛОНОВ - только структурные изменения!)"""
         if not context or not base_response:
-            return base_response or "Хм, интересно..."
-            
-        # Простые улучшения на основе контекста
-        context_lower = context.lower()
-        
-        # Если в контексте есть предыдущие разговоры о том же
-        if "пользователь:" in context_lower and any(word in user_input.lower() for word in ['помнишь', 'говорили', 'обсуждали']):
-            return f"Да, помню наш разговор об этом. {base_response}"
-            
-        # Если в контексте есть факты
-        if "факт:" in context_lower:
-            return f"Учитывая наш опыт общения, {base_response.lower()}"
-            
-        # Если есть хаотичные элементы
-        if "хаос:" in context_lower or "интуиция:" in context_lower:
-            chaos_responses = [
-                f"Знаешь, {base_response.lower()}, но есть и другая сторона...",
-                f"С одной стороны {base_response.lower()}, но интуиция подсказывает...",
-                f"{base_response} Хотя, возможно, все не так просто"
-            ]
-            return chaos_responses[hash(user_input) % len(chaos_responses)]
-            
-        # Если есть ассоциативные связи
-        if "связь:" in context_lower:
-            return f"Это напоминает мне о том, что мы обсуждали. {base_response}"
-            
+            # АНТИ-ШАБЛОН: просто возвращаем base или None, пусть верхний уровень решает
+            return base_response
+
+        # Структурные улучшения БЕЗ конкретных фраз:
+        # Если base_response уже включает контекст - оставляем как есть
+        # Иначе просто возвращаем base_response без модификаций
+        # Настоящее улучшение должно идти через resonance, а не через шаблоны!
+
         return base_response
         
     def adapt_retrieval_strategy(self, feedback_score: float, last_strategy: str):
