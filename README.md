@@ -66,7 +66,7 @@ Thus the high compiler serves as Nicole's mathematical cortex, closing the loop 
 
 The overall system is modular, with each component focusing on a narrow responsibility to preserve clarity and encourage tinkering.
 
-H2O serves as the lightweight compiler that translates dynamically generated Python snippets into executable modules for the evolving transformer.
+**H2O** serves as the lightweight compiler that translates dynamically generated Python snippets into executable modules for the evolving transformer.
 
 **Nicole** Core orchestrates the fluid transformer, building layer graphs, parameter tensors, and attention mechanics only for the lifespan of the conversation.
 
@@ -444,7 +444,7 @@ Nicole replays dialogue logs after each session, distilling them into structured
 
 She also mirrors repository activity: every change becomes grist for the analysis mill, and useful patterns are promoted into guidance scripts. It's like having an infinite post-it wall, except all the notes are auto-tagged and timestamped.
 
-And, because you asked for an idiot joke: Nicole fine-tunes faster than I can say "wait, who left gradient descent running on the coffee machine? oh right, that idiot was me." She learns; I buy a new coffee machine.
+And, because I like idiot jokes: Nicole fine-tunes faster than I can say "wait, who left gradient descent running on the coffee machine? oh right, that idiot was me." She learns; I buy a new coffee machine.
 
 ---
 
