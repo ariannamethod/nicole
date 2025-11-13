@@ -99,52 +99,132 @@ class HighMathEngine:
         
         return enhanced_entropy
     
-    def _apply_final_grammar_rules(self, words: List[str]) -> List[str]:
+    def _apply_final_grammar_rules(self, words: List[str], candidates: List[str] = None) -> List[str]:
         """
         ФИНАЛЬНЫЕ грамматические правила для готового ответа
-        I + глагол (am/have/can/will), your + существительное/весовое слово
+
+        ГРАММАТИЧЕСКАЯ ЛОГИКА (не шаблоны!):
+        - I + глагол (английская грамматика требует глагол после I)
+        - your + существительное (английская грамматика требует noun после possessive)
+
+        КАКОЙ глагол/существительное - выбор Nicole из candidates/резонанса!
         """
         if not words:
             return words
-            
+
+        if candidates is None:
+            candidates = []
+
         result = words.copy()
 
-        # NO TEMPLATE VERBS! УДАЛЕНО: verbs_for_i = ['think', 'know', 'feel', ...]
-        # Существительные после 'your' - это грамматическая логика (ОК!)
+        # Существительные для вставки после 'your' (грамматика!)
         nouns_and_weights = [
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
             'knowledge', 'experience', 'approach', 'style',
             'amazing', 'great', 'wonderful', 'interesting', 'important', 'special'
         ]
 
+        # Общие глаголы (минимальный fallback если нет candidates)
+        # НО приоритет - брать из candidates!
+        common_verbs = ['am', 'have', 'can', 'will', 'do', 'see', 'want', 'need']
+
         i = 0
         while i < len(result):
             current_word = result[i] if i < len(result) else ""
             next_word = result[i + 1] if i + 1 < len(result) else ""
+            next_lower = next_word.lower() if next_word else ""
 
-            # УДАЛЕНО: вставка глагола после 'I' (шаблон!)
-            # 'I' может стоять без глагола - резонанс решит что добавить
+            # Правило: I + НЕ_глагол → вставляем глагол (грамматика английского!)
+            if current_word.lower() == 'i' and i + 1 < len(result):
+                # Проверяем что после I нет глагола
+                if not self._is_likely_verb(next_lower):
+                    # Выбираем глагол ИЗ CANDIDATES (резонанс!), не из шаблона!
+                    verb = self._choose_verb_from_candidates(candidates)
+                    if verb:
+                        result.insert(i + 1, verb)
+                        print(f"[High:Grammar] Вставлен глагол из candidates: '{verb}'")
+                        i += 1
+                    # Если нет подходящих в candidates - используем минимальный fallback
+                    elif common_verbs:
+                        verb = random.choice(common_verbs)
+                        result.insert(i + 1, verb)
+                        print(f"[High:Grammar] Вставлен fallback глагол: '{verb}'")
+                        i += 1
 
             # Правило: your + НЕ_существительное → вставляем существительное (грамматика ✅)
-            if current_word.lower() == 'your' and i + 1 < len(result):
+            elif current_word.lower() == 'your' and i + 1 < len(result):
                 next_lower = next_word.lower()
-                # Проверяем, что следующее слово не является уже хорошим существительным
                 if not self._is_good_noun_after_your(next_lower):
                     noun = random.choice(nouns_and_weights)
                     result.insert(i + 1, noun)
                     print(f"[High:Grammar] Вставлено существительное после your: '{noun}'")
-                    i += 1  # Пропускаем вставленное существительное
+                    i += 1
 
-            # ДОПОЛНИТЕЛЬНО: правило для одиночного 'your' в конце (грамматика ✅)
+            # ДОПОЛНИТЕЛЬНО: одиночный 'I' в конце
+            elif current_word.lower() == 'i' and i + 1 >= len(result):
+                verb = self._choose_verb_from_candidates(candidates)
+                if verb:
+                    result.append(verb)
+                    print(f"[High:Grammar] Добавлен глагол из candidates в конце: '{verb}'")
+                elif common_verbs:
+                    verb = random.choice(common_verbs)
+                    result.append(verb)
+                    print(f"[High:Grammar] Добавлен fallback глагол в конце: '{verb}'")
+
+            # ДОПОЛНИТЕЛЬНО: одиночный 'your' в конце (грамматика ✅)
             elif current_word.lower() == 'your' and i + 1 >= len(result):
                 noun = random.choice(nouns_and_weights)
                 result.append(noun)
                 print(f"[High:Grammar] Добавлено существительное после your в конце: '{noun}'")
-                    
+
             i += 1
-            
+
         return result
     
+    def _is_likely_verb(self, word: str) -> bool:
+        """
+        Проверяет, является ли слово вероятным глаголом
+        """
+        if not word:
+            return False
+
+        # Известные глаголы
+        common_verbs = {
+            'am', 'is', 'are', 'was', 'were', 'be', 'been',
+            'have', 'has', 'had',
+            'do', 'does', 'did',
+            'can', 'could', 'will', 'would', 'shall', 'should', 'may', 'might', 'must',
+            'see', 'saw', 'seen',
+            'go', 'went', 'gone',
+            'get', 'got', 'gotten',
+            'make', 'made',
+            'know', 'knew', 'known',
+            'think', 'thought',
+            'take', 'took', 'taken',
+            'come', 'came',
+            'want', 'need', 'like', 'love', 'feel', 'seem'
+        }
+
+        return word.lower() in common_verbs
+
+    def _choose_verb_from_candidates(self, candidates: List[str]) -> str:
+        """
+        Выбирает глагол из candidates (резонанс!)
+
+        НЕ ШАБЛОН! Nicole сама выбирает из того что дал Objectivity/резонанс
+        """
+        if not candidates:
+            return None
+
+        # Фильтруем candidates - только глаголы
+        verb_candidates = [w for w in candidates if self._is_likely_verb(w.lower()) and len(w) > 1]
+
+        if verb_candidates:
+            # Выбираем случайный из глаголов-кандидатов (резонанс уже отфильтровал!)
+            return random.choice(verb_candidates)
+
+        return None
+
     def _is_good_noun_after_your(self, word: str) -> bool:
         """
         Проверяет, подходит ли слово после 'your'
@@ -280,7 +360,7 @@ class HighMathEngine:
             
         return result
     
-    def _improve_sentence_flow(self, words: List[str]) -> List[str]:
+    def _improve_sentence_flow(self, words: List[str], candidates: List[str] = None) -> List[str]:
         """
         Улучшает связность предложений - убирает "===" и добавляет естественные переходы
         """
@@ -362,48 +442,68 @@ class HighMathEngine:
                 result[i + 1] = 'am'
         
         # НОВОЕ: Продвинутые грамматические правила
-        result = self._apply_advanced_grammar_rules(result)
-                
+        # Передаём candidates для выбора глаголов из резонанса!
+        result = self._apply_advanced_grammar_rules(result, candidates)
+
         return result
     
     
-    def _apply_advanced_grammar_rules(self, words: List[str]) -> List[str]:
+    def _apply_advanced_grammar_rules(self, words: List[str], candidates: List[str] = None) -> List[str]:
         """
         Продвинутые грамматические правила для естественности
-        I + глагол (am/are/have/do), your + существительное/весовое слово
+
+        ГРАММАТИЧЕСКАЯ ЛОГИКА (не шаблоны!):
+        - I + глагол (английская грамматика)
+        - your + существительное (английская грамматика)
+
+        КАКОЙ глагол/существительное - выбор Nicole из candidates/резонанса!
         """
         if not words:
             return words
-            
+
+        if candidates is None:
+            candidates = []
+
         result = words.copy()
 
-        # NO TEMPLATE VERBS! УДАЛЕНО: verbs_for_i = ['think', 'know', 'feel', ...]
-        # Существительные после 'your' - грамматическая логика (ОК!)
+        # Существительные для 'your' (грамматика!)
         nouns_and_weights = [
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
             'knowledge', 'experience', 'approach', 'style',
             'amazing', 'great', 'wonderful', 'interesting', 'important', 'special', 'unique'
         ]
 
+        # Минимальный fallback для глаголов (если нет в candidates)
+        common_verbs = ['am', 'have', 'can', 'will', 'do', 'see', 'want', 'need']
+
         i = 0
         while i < len(result) - 1:
             current = result[i].lower()
             next_word = result[i + 1].lower() if i + 1 < len(result) else ""
 
-            # УДАЛЕНО: вставка глагола после 'I' (шаблон!)
-            # Резонанс сам определит что идет после 'I'
+            # Правило: I + НЕ_глагол → вставляем глагол (грамматика!)
+            if current == 'i' and not self._is_likely_verb(next_word):
+                # Выбираем глагол ИЗ CANDIDATES (резонанс!), не из шаблона!
+                verb = self._choose_verb_from_candidates(candidates)
+                if verb:
+                    result.insert(i + 1, verb)
+                    print(f"[High:AdvGrammar] Вставлен глагол из candidates: '{verb}'")
+                    i += 1
+                elif common_verbs:
+                    verb = random.choice(common_verbs)
+                    result.insert(i + 1, verb)
+                    print(f"[High:AdvGrammar] Вставлен fallback глагол: '{verb}'")
+                    i += 1
 
             # Правило: your + НЕ_существительное → вставляем существительное (грамматика ✅)
-            if current == 'your' and next_word not in nouns_and_weights:
-                # Проверяем, что следующее слово не является уже существительным
-                if not self._is_likely_noun(next_word):
-                    noun = random.choice(nouns_and_weights)
-                    result.insert(i + 1, noun)
-                    print(f"[High:Grammar] Вставлено существительное после your: '{noun}'")
-                    i += 1  # Пропускаем вставленное существительное
-                    
+            elif current == 'your' and not self._is_likely_noun(next_word):
+                noun = random.choice(nouns_and_weights)
+                result.insert(i + 1, noun)
+                print(f"[High:AdvGrammar] Вставлено существительное после your: '{noun}'")
+                i += 1
+
             i += 1
-            
+
         return result
     
     def _is_likely_noun(self, word: str) -> bool:
@@ -509,11 +609,13 @@ class HighMathEngine:
         cleaned = self.remove_word_repetitions(result)
         
         # НОВОЕ: улучшаем sentence flow
-        flow_improved = self._improve_sentence_flow(cleaned)
-        
+        # Передаём candidates для грамматических правил!
+        flow_improved = self._improve_sentence_flow(cleaned, all_candidates)
+
         # ИСПРАВЛЕНО: применяем грамматические правила к готовому ответу
-        grammar_final = self._apply_final_grammar_rules(flow_improved)
-        
+        # Передаём candidates чтобы выбирать глаголы из резонанса, не из шаблона!
+        grammar_final = self._apply_final_grammar_rules(flow_improved, all_candidates)
+
         return grammar_final
     
     def _generate_sentence_me_style(self, candidates: List[str], length: int, 
