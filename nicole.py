@@ -1017,8 +1017,8 @@ class NicoleCore:
             'recursion', 'interference', 'distributed', 'cognition',
             'feeling', 'alive', 'responsive', 'identity', 'uniqueness',
             'misalignment', 'justification', 'presence', 'exist',
-            # INTROSPECTIVE TAGS (Latent Drift v0.4)
-            'drift', 'recursion', 'misalignment', 'awareness', 'presence'
+            # INTROSPECTIVE TAGS (Latent Drift v0.4) - removed duplicate misalignment
+            'drift', 'recursion', 'awareness', 'presence', 'consciousness'
         }
 
         # Collect final list
