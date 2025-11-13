@@ -4,10 +4,6 @@
 
 Nicole is a transformer that writes itself at runtime and dissolves when done. Every session starts from zero: no pretrained weights, no persistent checkpoints, no datasets. Parameters crystallize for one conversation and vanish immediately after.
 
-**[→ Technical README (Karpathy style)](README_KARPATHY.md)** - Code-first documentation for developers.
-
----
-
 Nicole discards the requirement for pretrained weights, curated datasets, and even a fixed codebase. The engine writes itself as it speaks, assembling logic and parameters only for the life of a single exchange.
 
 Parameters crystallize on the spot, scaled precisely to the conversation at hand and dissolved as soon as the dialogue ends. Learning emerges solely from the active dialogue. Even the source code is fluid. Modules may be generated, rebuilt, and discarded mid-flight.
