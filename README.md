@@ -72,11 +72,11 @@ H2O serves as the lightweight compiler that translates dynamically generated Pyt
 
 **Nicole2Nicole** observes interaction logs and derives heuristics that influence future architectural proposals without storing traditional weights.
 
-Nicole Memory implements a semantic store that indexes tokens, n-grams, and symbolic associations rather than dense vector embeddings.
+**Nicole Memory** implements a semantic store that indexes tokens, n-grams, and symbolic associations rather than dense vector embeddings.
 
-Nicole RAG performs retrieval using stochastic exploration of the log database, injecting unpredictable context into generation.
+**Nicole RAG** performs retrieval using stochastic exploration of the log database, injecting unpredictable context into generation.
 
-Nicole Metrics computes real-time statistics such as entropy, resonance, and perplexity to steer architectural adaptation.
+**Nicole Metrics** computes real-time statistics such as entropy, resonance, and perplexity to steer architectural adaptation.
 
 
 ## Table of contents
