@@ -50,6 +50,15 @@ except ImportError as e:
     REPO_LEARNING_AVAILABLE = False
     print(f"[TELEGRAM] Repo learning NOT imported: {e}")
 
+# NEW: Enable subjectivity for autonomous learning
+try:
+    from nicole_subjectivity import get_subjectivity_engine
+    SUBJECTIVITY_AVAILABLE = True
+    print("[TELEGRAM] Subjectivity imported successfully")
+except ImportError as e:
+    SUBJECTIVITY_AVAILABLE = False
+    print(f"[TELEGRAM] Subjectivity NOT imported: {e}")
+
 # Load environment variables
 try:
     from load_env import load_env
@@ -140,6 +149,24 @@ class RealTelegramBot:
             print("[RealTelegramBot] ⚠️ Repo learning unavailable")
             self.repo_learner = None
 
+        # NEW: Start subjectivity for autonomous learning (ripples on water)
+        if SUBJECTIVITY_AVAILABLE:
+            try:
+                print("[RealTelegramBot] 🌊 Initializing subjectivity engine...")
+                # Pass memory instance to subjectivity for learning
+                self.subjectivity = get_subjectivity_engine(memory=nicole.nicole_core.memory)
+
+                # Start autonomous learning: ripples expand every hour
+                self.subjectivity.start_autonomous_learning(interval_seconds=3600)
+                print("[RealTelegramBot] ✅ Subjectivity activated! Ripples expand hourly.")
+
+            except Exception as e:
+                print(f"[RealTelegramBot] ⚠️ Failed to start subjectivity: {e}")
+                self.subjectivity = None
+        else:
+            print("[RealTelegramBot] ⚠️ Subjectivity unavailable")
+            self.subjectivity = None
+
     def _initial_markdown_learning(self):
         """Initial training on all existing markdown files"""
         try:
@@ -222,7 +249,7 @@ Just write me messages - I will learn and adapt!"""
         try:
             chat_id = str(update.effective_chat.id)
             user_input = update.message.text
-            
+
             # Log message
             self.message_history.append({
                 'chat_id': chat_id,
@@ -230,7 +257,7 @@ Just write me messages - I will learn and adapt!"""
                 'timestamp': time.time(),
                 'type': 'user_message'
             })
-            
+
             # FIXED: DO NOT restart session on every message!
             if chat_id not in self.chat_sessions:
                 # Create session ONLY ONCE for new chat
@@ -242,11 +269,19 @@ Just write me messages - I will learn and adapt!"""
                 # Session already created - DON'T TOUCH IT!
                 print(f"[RealTelegramBot] Using existing session {nicole.nicole_core.session_id}")
 
+            # NEW: Set new epicenter for subjectivity (ripples on water)
+            if hasattr(self, 'subjectivity') and self.subjectivity:
+                try:
+                    self.subjectivity.set_new_epicenter(user_input)
+                    print(f"[Subjectivity] 🌊 New epicenter set, ripples will expand hourly")
+                except Exception as e:
+                    print(f"[Subjectivity] Warning: Failed to set epicenter: {e}")
+
             # DIAGNOSTICS: check system state before processing
             print(f"[DIAGNOSTICS] High enabled: {nicole.nicole_core.high_enabled}")
             print(f"[DIAGNOSTICS] High is_active: {nicole.nicole_core.high_core.is_active if nicole.nicole_core.high_core else 'None'}")
             print(f"[DIAGNOSTICS] Message length: {len(user_input)} characters")
-            
+
             # Process through Nicole with ME principles
             response = nicole.nicole_core.process_message(user_input)
 

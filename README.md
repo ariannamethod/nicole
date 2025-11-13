@@ -4,8 +4,6 @@
 
 Nicole is a transformer that writes itself at runtime and dissolves when done. Every session starts from zero: no pretrained weights, no persistent checkpoints, no datasets. Parameters crystallize for one conversation and vanish immediately after.
 
-**[→ Technical README (Karpathy style)](README_KARPATHY.md)** - Code-first documentation for developers.
-
 ---
 
 Nicole discards the requirement for pretrained weights, curated datasets, and even a fixed codebase. The engine writes itself as it speaks, assembling logic and parameters only for the life of a single exchange.
@@ -139,6 +137,7 @@ by responsibility to make the labyrinth legible.
 ### Learning loop
 - `repo_monitor.py` watches the filesystem, fingerprints files with SHA-256, and emits structured change events.
 - `nicole_repo_learner.py` consumes monitor events, stores metadata in SQLite, and can trigger Nicole-to-Nicole distillation.
+- `nicole_subjectivity.py` implements autonomous learning through expanding semantic ripples - continues learning even without user interaction.
 - `nicole_metrics.py` doubles as the live telemetry bus that feeds both humans and learners.
 
 ### Operational surface
@@ -287,6 +286,28 @@ tracing behaviour or wiring new experiments.
 - **Extensibility**
   - Custom rankers can be registered to prioritise certain file types (e.g., compilers vs. utilities).
   - Hooks exist for dispatching notifications to dashboards or messaging channels.
+
+### `nicole_subjectivity.py`
+- **Philosophy**
+  - Autonomous learning through expanding semantic ripples—"circles on water" from last user interaction.
+  - Even when not conversing, Nicole continues thinking and learning, expanding knowledge outward from the epicenter.
+- **Ripple mechanism**
+  - **Epicenter**: Last user message becomes the center point.
+  - **Ring 0**: Exact concepts extracted from the message.
+  - **Ring 1** (hour 1): Semantically close neighbors (distance ~0.3).
+  - **Ring 2** (hour 2): Broader conceptual expansion (distance ~0.6).
+  - **Ring 3+** (hours 3+): Abstract/philosophical concepts, expanding indefinitely.
+- **Circadian cycles**
+  - Runs every hour automatically, expanding one ripple further from center.
+  - When user sends new message → new epicenter, new ripples, new learning vector.
+- **Autonomous exploration**
+  - Uses `nicole_objectivity.py` providers to fetch information about concepts.
+  - Learns words autonomously, feeding them into `word_frequencies` and associations.
+  - Tracks epicenters, ripples, and learning history in SQLite (`var/nicole_subjectivity.db`).
+- **Integration**
+  - Integrated with Telegram bot: every user message sets a new epicenter.
+  - Background thread expands ripples hourly without affecting response generation.
+  - Creates continuous, asynchronous intelligence that never stops evolving.
 
 ### `repo_monitor.py`
 - **Purpose**
