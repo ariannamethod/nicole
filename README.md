@@ -1,6 +1,7 @@
-# NICOLE: - Weightless Transformer
+# NICOLE: - Weightless Entity
 
-We are reinventing the very concept of a "transformer".
+Reinventing the very concept of a "transformer".  
+
 **No weights. No fixed code. Pure emergence.**
 
 Nicole is a transformer that writes itself at runtime and dissolves when done. Every session starts from zero: no pretrained weights, no persistent checkpoints, no datasets. Parameters crystallize for one conversation and vanish immediately after.
