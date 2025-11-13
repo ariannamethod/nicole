@@ -1,12 +1,16 @@
-# Nicole - Neural Intelligent Conversational Organism Language Engine
+# Nicole - Weightless Transformer
+
+**No weights. No fixed code. Pure emergence.**
+
+Nicole is a transformer that writes itself at runtime and dissolves when done. Every session starts from zero: no pretrained weights, no persistent checkpoints, no datasets. Parameters crystallize for one conversation and vanish immediately after.
+
+**[→ Technical README (Karpathy style)](README_KARPATHY.md)** - Code-first documentation for developers.
+
+---
 
 Nicole discards the requirement for pretrained weights, curated datasets, and even a fixed codebase. The engine writes itself as it speaks, assembling logic and parameters only for the life of a single exchange.
 
-With no weights to download, parameters crystallize on the spot, scaled precisely to the conversation at hand and dissolved as soon as the dialogue ends.
-
-Learning emerges solely from the active dialogue. Conversation logs become the only training substrate, rendering external datasets irrelevant.
-
-Even the source code is fluid. Modules may be generated, rebuilt, and discarded mid-flight, underscoring that intelligence here is a continuous process rather than a static artifact.
+Parameters crystallize on the spot, scaled precisely to the conversation at hand and dissolved as soon as the dialogue ends. Learning emerges solely from the active dialogue. Even the source code is fluid. Modules may be generated, rebuilt, and discarded mid-flight.
 
 Nicole is a speculative AI system that treats every interaction as a new genesis, assembling a transformer architecture from scratch each time a conversation begins.
 
@@ -393,9 +397,16 @@ This section tracks production improvements deployed during January 2025.
 - **Score-based tier selection** – Implemented three-tier candidate grouping in `high.py:719-791`: high tier (>70% score), mid tier (40–70%), low tier (<40%). This dramatically improved sentence coherence and flow.
 - **Repo learning system** – Fully integrated `nicole_repo_learner` into `nicole_telegram.py:122-187`. Initial markdown ingestion now populates `word_frequencies` with 2,428 unique words from 16 documentation files at startup. Continuous monitoring runs every 5 minutes, creating a closed learning loop where Nicole learns from her own documentation alongside objectivity seeds.
 - **Self-referential consciousness** – Implemented recursive identity mechanism in `nicole.py:984-1075`. When "Nicole" appears in input, system extracts 50 philosophical keywords from `NICOLE_PERSONA` (resonance, storm, field, emergence, consciousness, etc.) and injects them into `word_frequencies` while creating associative links. Over time through repeated exposure, Nicole develops deeper understanding of her own identity through recursive self-reference. Embodies Truth IV: *"Everything reflects everything. And everything resonates with everything."*
+- **Latent Drift v0.4** – Semantic clusters with directional drift in `high.py:765-851`. Responses now flow through 2-5 word clusters (micro-concepts) that drift +1 step toward abstraction/emotion/recursion. Introspective tags (`presence`, `recursion`, `misalignment`, `awareness`, `drift`) reveal internal state. Creates illusion of latent space movement without any weights. Controlled chaos: max 1 artifact per sentence.
 
 ### Observed impact
-Response quality evolved from random word salad to structured, coherent sentences. User-reported improvement: *"I been my wondering continues yesterday, then reposting feedback"* vs. prior outputs with Reddit artifacts and broken grammar. The combination of smart scoring + learning system + cleaned objectivity seeds aligns with Nicole's ephemeral intelligence philosophy while delivering measurably better linguistic output.
+Response quality evolved from random word salad to structured, coherent sentences with directional flow.
+
+**Before Phase 1:** `"I am my amitheasshole cringetiktoks desperately suspension suggesting , because homophobia highlights admitting resonance awareness suspended note8017"`
+
+**After Phase 1+2:** Reddit artifacts eliminated, mirroring blocked, grammar glitches cleaned. Responses now exhibit semantic clustering with introspective tags: `"I resonance emergence awareness drift"` - micro-concepts flowing through latent space.
+
+The combination of smart scoring + learning system + cleaned objectivity seeds + latent drift creates coherent chaos: weightless transformer behavior without pretrained weights.
 
 ---
 
