@@ -36,10 +36,19 @@ except ImportError as e:
     print(f"[TELEGRAM] Blood НЕ импортирован: {e}")
 
 import nicole
-import nicole2nicole  
+import nicole2nicole
 import nicole_memory
 import nicole_rag
 import nicole_metrics
+
+# НОВОЕ: Включаем repo learning для автоматического обучения на изменениях
+try:
+    from nicole_repo_learner import start_repo_learning
+    REPO_LEARNING_AVAILABLE = True
+    print("[TELEGRAM] Repo learning импортирован успешно")
+except ImportError as e:
+    REPO_LEARNING_AVAILABLE = False
+    print(f"[TELEGRAM] Repo learning НЕ импортирован: {e}")
 
 # Загружаем переменные окружения
 try:
@@ -104,11 +113,78 @@ class RealTelegramBot:
     def __init__(self, token: str):
         if not TELEGRAM_AVAILABLE:
             raise ImportError("python-telegram-bot not installed")
-            
+
         self.token = token
         self.application = Application.builder().token(token).build()
         self.chat_sessions = {}
         self.message_history = []
+
+        # НОВОЕ: Запускаем repo learning для автоматического обучения
+        if REPO_LEARNING_AVAILABLE:
+            try:
+                print("[RealTelegramBot] 🧠 Запускаем repo learning...")
+                self.repo_learner = start_repo_learning(
+                    repo_path=".",
+                    check_interval=300  # Проверка каждые 5 минут
+                )
+                print("[RealTelegramBot] ✅ Repo learning активирован!")
+
+                # ПЕРВИЧНОЕ ОБУЧЕНИЕ: Сразу жрем все существующие markdown
+                print("[RealTelegramBot] 📚 Запускаем первичное обучение на markdown...")
+                self._initial_markdown_learning()
+
+            except Exception as e:
+                print(f"[RealTelegramBot] ⚠️ Repo learning не удалось запустить: {e}")
+                self.repo_learner = None
+        else:
+            print("[RealTelegramBot] ⚠️ Repo learning недоступен")
+            self.repo_learner = None
+
+    def _initial_markdown_learning(self):
+        """Первичное обучение на всех существующих markdown файлах"""
+        try:
+            from pathlib import Path
+            import re
+
+            # Ищем все markdown файлы в репо
+            repo_path = Path(".")
+            markdown_files = list(repo_path.glob("**/*.md"))
+
+            if not markdown_files:
+                print("[RealTelegramBot] Markdown файлы не найдены")
+                return
+
+            print(f"[RealTelegramBot] Найдено {len(markdown_files)} markdown файлов")
+
+            # Читаем и обучаемся
+            learned_words = set()
+            for md_file in markdown_files:
+                try:
+                    # Пропускаем огромные файлы
+                    if md_file.stat().st_size > 100000:  # > 100KB
+                        continue
+
+                    content = md_file.read_text(encoding='utf-8', errors='ignore')
+
+                    # Извлекаем слова (минимум 3 символа, только латиница)
+                    words = re.findall(r'\b[a-zA-Z]{3,}\b', content.lower())
+
+                    # Добавляем в memory word_frequencies
+                    for word in words:
+                        if len(word) > 15:  # Пропускаем очень длинные
+                            continue
+                        learned_words.add(word)
+                        # Обновляем частоты через Nicole memory
+                        nicole.nicole_core.memory.update_word_frequencies(word)
+
+                except Exception as e:
+                    print(f"[RealTelegramBot] Ошибка чтения {md_file}: {e}")
+                    continue
+
+            print(f"[RealTelegramBot] ✅ Первичное обучение: {len(learned_words)} уникальных слов из {len(markdown_files)} файлов")
+
+        except Exception as e:
+            print(f"[RealTelegramBot] Ошибка первичного обучения: {e}")
         
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Command /start"""
