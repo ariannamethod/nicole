@@ -324,7 +324,20 @@ class NicoleObjectivity:
         if not words:
             return []
 
-        # MINIMAL filtering - only obvious garbage
+        # PROVIDER BLACKLIST - ban all provider/service names from responses
+        provider_blacklist = {
+            # Search engines and providers
+            'duckduckgo', 'google', 'reddit', 'wikipedia', 'bing', 'yahoo',
+            'search', 'internet', 'web', 'browser', 'engine',
+            # Generic service words
+            'title', 'content', 'article', 'page', 'website', 'link', 'url',
+            'result', 'results', 'query', 'queries',
+            # Provider-specific terms
+            'discussion', 'subreddit', 'thread', 'post', 'comment',
+            'wiki', 'wikihow', 'wikipedia', 'encyclopedia'
+        }
+
+        # MINIMAL filtering - only obvious garbage + provider blacklist
         filtered = []
         for w in words:
             # Skip if starts with digit (e.g., "3kbiahxwb1za1", "206333240")
@@ -332,6 +345,9 @@ class NicoleObjectivity:
                 continue
             # Skip overly long slugs (>20 chars)
             if len(w) > 20:
+                continue
+            # CRITICAL: Skip ALL provider/service names
+            if w in provider_blacklist:
                 continue
             filtered.append(w)
 

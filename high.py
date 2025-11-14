@@ -588,10 +588,11 @@ class HighMathEngine:
         Engine automatically adapts to user's language
         """
         # Sentence lengths based on metrics (like in ME)
-        base1 = 5 + int(entropy) % 5
-        base2 = 5 + int(perplexity) % 5
+        # INCREASED: 8-14 words per sentence (was 5-9) for longer, richer responses
+        base1 = 8 + int(entropy) % 7
+        base2 = 8 + int(perplexity) % 7
         if base1 == base2:
-            base2 = 5 + ((base2 + 1) % 5)
+            base2 = 8 + ((base2 + 1) % 7)
 
         # LINGUISTIC AGNOSTICISM: if no candidates - build from user's words!
         all_candidates = list(set(semantic_candidates + objectivity_seeds))
@@ -622,18 +623,18 @@ class HighMathEngine:
         # ME PRINCIPLE: strict used set between sentences (only for repetitions in response)
         used_between_sentences = set()  # Empty at start, will be filled with response words
 
-        # LATENT DRIFT: Introspective tags reveal internal state
-        introspective_tags = ['presence', 'recursion', 'misalignment', 'awareness', 'drift', 'echo', 'resonance']
+        # REMOVED: Introspective tags were creating template patterns
+        # NO TEMPLATES! Tags only if they come from candidates/objectivity
+        # introspective_tags = ['presence', 'recursion', 'misalignment', 'awareness', 'drift', 'echo', 'resonance']
 
-        # Generate first sentence with LATENT DRIFT
+        # Generate first sentence WITHOUT forced tags
         first_sentence = self._generate_drifting_clusters(
-            all_candidates, base1, used_between_sentences, pronoun_preferences, introspective_tags
+            all_candidates, base1, used_between_sentences, pronoun_preferences, introspective_tags=None
         )
 
         # Generate second sentence (used updated by first sentence)
-        # Second sentence drifts from first
         second_sentence = self._generate_drifting_clusters(
-            all_candidates, base2, used_between_sentences, pronoun_preferences, introspective_tags
+            all_candidates, base2, used_between_sentences, pronoun_preferences, introspective_tags=None
         )
 
         # ME PRINCIPLE: two sentences with improved coherence
@@ -835,10 +836,12 @@ class HighMathEngine:
                 used_local.add(chaos_word)
                 used_global.add(chaos_word)
 
-        # Step 5: Attach INTROSPECTIVE TAG at end (if space)
-        if selected_tag and len(result) < length and selected_tag not in used_local:
-            result.append(selected_tag)
-            print(f"[High:LatentDrift] 🌀 Introspective tag: '{selected_tag}'")
+        # Step 5: NO FORCED TAGS! Anti-template philosophy
+        # Tags only if they naturally appear in candidates/objectivity
+        # NO automatic appending of template words!
+        # if selected_tag and len(result) < length and selected_tag not in used_local:
+        #     result.append(selected_tag)
+        #     print(f"[High:LatentDrift] 🌀 Introspective tag: '{selected_tag}'")
 
         # Capitalize first word
         if result:
