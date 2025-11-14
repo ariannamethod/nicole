@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 """
 Nicole Objectivity - Dynamic Context Window Generator (H2O-native, language-agnostic)
-Провайдеры исполняются в H2O и складывают результат в globals. Снаружи — сборка одного текстового окна.
+Providers execute in H2O and put result in globals. Outside — assembly of single text window.
 
-Принципы:
-- Никаких ссылок, только текст.
-- Без шаблонов вообще.
-- Тихий фолбэк: если источник молчит — пропускаем.
-- Контекст пишется в training_buffer.jsonl.
-- Влияние контекста на ответ: influence_coeff = 0.5.
-- Язык-агностично: никаких ru/en эвристик; Wikipedia через Wikidata sitelinks.
+Principles:
+- No links, only text.
+- No templates at all.
+- Silent fallback: if source is silent — skip.
+- Context is written to training_buffer.jsonl.
+- Context influence on answer: influence_coeff = 0.5.
+- Language-agnostic: no ru/en heuristics; Wikipedia via Wikidata sitelinks.
 
-Зависимости: стандартная библиотека + локальный h2o.py
+Dependencies: standard library + local h2o.py
 """
 
 import re
@@ -26,7 +26,7 @@ from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 import random
 
-# Локальные модули
+# Local modules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import h2o
 
@@ -35,15 +35,15 @@ USER_AGENT = "nicole-objectivity/1.0 (+github.com/ariannamethod/nicole)"
 TRAIN_BUFFER_PATH = "training_buffer.jsonl"
 MEMORY_DB = "nicole_memory.db"
 
-DEFAULT_INFLUENCE_COEFF = 0.5  # доля влияния контента на ответ
+DEFAULT_INFLUENCE_COEFF = 0.5  # content influence proportion on answer
 
 
-# ============== ОПТИМИЗАЦИЯ: Кеширование ==============
+# ============== OPTIMIZATION: Caching ==============
 
 class ObjectivityCache:
     """
-    Простой in-memory кеш для Objectivity контекста
-    TTL = 5 минут (контекст из интернета не меняется так быстро)
+    Simple in-memory cache for Objectivity context
+    TTL = 5 minutes (internet content doesn't change so fast)
     """
 
     def __init__(self, ttl_seconds: int = 300):
@@ -53,11 +53,11 @@ class ObjectivityCache:
         self.misses = 0
 
     def _hash_query(self, query: str) -> str:
-        """Хешируем query для cache key"""
+        """Hash query for cache key"""
         return hashlib.md5(query.lower().strip().encode()).hexdigest()
 
     def get(self, query: str) -> Optional[str]:
-        """Получаем контекст из кеша если не истек TTL"""
+        """Get context from cache if TTL hasn't expired"""
         query_hash = self._hash_query(query)
 
         if query_hash in self.cache:
@@ -76,11 +76,11 @@ class ObjectivityCache:
         return None
 
     def set(self, query: str, content: str):
-        """Сохраняем контекст в кеш"""
+        """Save context to cache"""
         query_hash = self._hash_query(query)
         self.cache[query_hash] = (content, datetime.now())
 
-        # Простая очистка: если > 100 записей, удаляем 20 старейших
+        # Simple cleanup: if > 100 entries, remove 20 oldest
         if len(self.cache) > 100:
             sorted_items = sorted(
                 self.cache.items(),
@@ -90,7 +90,7 @@ class ObjectivityCache:
                 del self.cache[old_key]
 
     def stats(self) -> Dict:
-        """Статистика кеша"""
+        """Cache statistics"""
         total = self.hits + self.misses
         hit_rate = (self.hits / total * 100) if total > 0 else 0
 
@@ -101,36 +101,36 @@ class ObjectivityCache:
             "entries": len(self.cache),
         }
 
-# ============== БЕЗОПАСНОСТЬ: Sanitization ==============
+# ============== SECURITY: Sanitization ==============
 
 def sanitize_external_content(content: str, max_length: int = 4096) -> str:
     """
-    Очищает контент от провайдеров от потенциально опасного содержимого
+    Cleans content from providers of potentially dangerous content
 
-    Защита от:
-    - HTML/JS инъекций
-    - Чрезмерно длинного контента
-    - Управляющих символов
+    Protection from:
+    - HTML/JS injections
+    - Excessively long content
+    - Control characters
     """
     if not content:
         return ""
 
-    # 1. Убираем HTML теги (простая защита)
+    # 1. Remove HTML tags (simple protection)
     content = re.sub(r'<script.*?</script>', '', content, flags=re.DOTALL | re.IGNORECASE)
     content = re.sub(r'<style.*?</style>', '', content, flags=re.DOTALL | re.IGNORECASE)
-    content = re.sub(r'<[^>]+>', '', content)  # Все остальные теги
+    content = re.sub(r'<[^>]+>', '', content)  # All other tags
 
-    # 2. Убираем опасные паттерны
+    # 2. Remove dangerous patterns
     content = re.sub(r'javascript:', '', content, flags=re.IGNORECASE)
     content = re.sub(r'eval\s*\(', '', content, flags=re.IGNORECASE)
     content = re.sub(r'on\w+\s*=', '', content, flags=re.IGNORECASE)  # onclick=, onerror=, etc
 
-    # 3. Убираем лишние пробелы и управляющие символы
+    # 3. Remove extra spaces and control characters
     content = re.sub(r'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]', '', content)  # Control chars
     content = re.sub(r'\s+', ' ', content)  # Multiple spaces -> single space
     content = content.strip()
 
-    # 4. Ограничиваем длину (4KB по умолчанию)
+    # 4. Limit length (4KB by default)
     if len(content) > max_length:
         content = content[:max_length] + "..."
         print(f"[Objectivity:Sanitize] Content truncated to {max_length} bytes")
@@ -143,7 +143,7 @@ def sanitize_external_content(content: str, max_length: int = 4096) -> str:
 @dataclass
 class FluidContextWindow:
     content: str
-    source_type: str           # 'objectivity' (единое окно)
+    source_type: str           # 'objectivity' (single window)
     resonance_score: float
     entropy_boost: float
     tokens_count: int
@@ -161,7 +161,7 @@ class NicoleObjectivity:
         self.influence_coeff = float(influence_coeff)
         self.h2o_engine = h2o.h2o_engine
 
-        # ОПТИМИЗАЦИЯ: Кеш для контекста (5 минут TTL)
+        # OPTIMIZATION: Cache for context (5 minutes TTL)
         self.cache = ObjectivityCache(ttl_seconds=cache_ttl_seconds)
 
         self._ensure_memory_schema()
@@ -184,7 +184,7 @@ class NicoleObjectivity:
               transformer_config TEXT
             )
             """)
-            # Совместимость с прошлыми ревизиями
+            # Compatibility with past revisions
             try:
                 cur.execute("ALTER TABLE conversations ADD COLUMN session_id TEXT")
             except sqlite3.OperationalError:
@@ -222,13 +222,13 @@ class NicoleObjectivity:
 
     async def create_dynamic_context(self, user_message: str, metrics: Dict) -> List[FluidContextWindow]:
         """
-        Формируем единое текстовое окно (или ничего, если контента нет).
-        ОПТИМИЗАЦИЯ: Проверяем кеш перед вызовом провайдеров
+        Form single text window (or nothing if no content).
+        OPTIMIZATION: Check cache before calling providers
         """
-        # Проверяем кеш (5-минутный TTL)
+        # Check cache (5-minute TTL)
         cached_content = self.cache.get(user_message)
         if cached_content:
-            # Возвращаем из кеша
+            # Return from cache
             window = FluidContextWindow(
                 content=cached_content,
                 source_type="objectivity_cached",
@@ -247,32 +247,32 @@ class NicoleObjectivity:
 
         sections: List[str] = []
 
-        # УБРАНО: Wikipedia провайдер полностью удален
+        # REMOVED: Wikipedia provider completely removed
 
         if 'internet' in strategies:
             internet_text = self._provider_internet_h2o(user_message)
             if internet_text:
-                # БЕЗОПАСНОСТЬ: Sanitize контент от провайдера
+                # SECURITY: Sanitize content from provider
                 internet_text = sanitize_external_content(internet_text, self.max_context_kb)
                 sections.append(internet_text)
 
         if 'reddit' in strategies:
             reddit_text = self._provider_reddit_h2o(user_message)
             if reddit_text:
-                # БЕЗОПАСНОСТЬ: Sanitize контент от провайдера
+                # SECURITY: Sanitize content from provider
                 reddit_text = sanitize_external_content(reddit_text, self.max_context_kb)
                 sections.append(reddit_text)
 
         if 'memory' in strategies:
             mem_text = self._provider_memory_h2o(user_message)
             if mem_text:
-                # Memory уже безопасен (наши данные), но все равно sanitize
+                # Memory already safe (our data), but sanitize anyway
                 mem_text = sanitize_external_content(mem_text, self.max_context_kb)
                 sections.append(mem_text)
 
         aggregated = self._aggregate_text_window(sections)
 
-        # Сохраняем в кеш для будущих запросов
+        # Save to cache for future queries
         if aggregated:
             self.cache.set(user_message, aggregated)
 
@@ -307,7 +307,7 @@ class NicoleObjectivity:
 
     def extract_response_seeds(self, context: str, influence: float) -> List[str]:
         """
-        Семена для ответа из контекста (язык-агностично).
+        Response seeds from context (language-agnostic).
 
         FIXED v2: Enhanced Reddit artifact filtering
         - Split underscores into separate words
@@ -380,20 +380,20 @@ class NicoleObjectivity:
     # ---------- Internals ----------
 
     def _pick_strategies(self, message: str) -> List[str]:
-        # ИСПРАВЛЕНО: убираем Wikipedia для служебных слов, добавляем интернет-поиск
+        # FIXED: remove Wikipedia for service words, add internet search
         strategies: List[str] = []
         
-        # ГРУБЫЙ ИНТЕРНЕТ ПОИСК: всегда используем интернет вместо Wikipedia
+        # ROUGH INTERNET SEARCH: always use internet instead of Wikipedia
         strategies.append('internet')
             
-        # Reddit для технических тем
+        # Reddit for technical topics
         if re.search(r'\b(python|javascript|neural|ai|quantum|blockchain|programming|algorithm|database|code|tech)\b', message, re.I):
             strategies.append('reddit')
             
-        # Память всегда полезна
+        # Memory is always useful
         strategies.append('memory')
 
-        # Дедуп и ограничение
+        # Dedup and limit
         seen = set()
         ordered = []
         for s in strategies:
@@ -406,7 +406,7 @@ class NicoleObjectivity:
         text = "\n\n".join(s for s in sections if s)
         if not text.strip():
             return ""
-        # Ограничение размера окна
+        # Window size limit
         while len(text.encode('utf-8')) > self.max_context_kb:
             parts = text.split("\n\n")
             if len(parts) <= 1:
@@ -450,20 +450,20 @@ class NicoleObjectivity:
 
     def _provider_wikipedia_h2o(self, message: str) -> str:
         """
-        Wikipedia через Wikidata (язык-агностично):
-        - По термам ищем Q-id
-        - Берём sitelinks; пробуем список языков по приоритету, иначе первый доступный *wiki
-        - Тянем REST /page/summary на выбранном языке
-        - Возвращаем только текст (title + extract), без ссылок
+        Wikipedia via Wikidata (language-agnostic):
+        - Search for Q-id by terms
+        - Get sitelinks; try language list by priority, otherwise first available *wiki
+        - Pull REST /page/summary in selected language
+        - Return only text (title + extract), without links
         """
-        # НОВОЕ: приоритет заглавным словам (имена собственные)
+        # NEW: priority to capitalized words (proper nouns)
         capitalized_terms = re.findall(r'\b[A-Z][a-z]+\b', message)
         regular_terms = self._extract_terms(message)[:3] or [message.strip()[:64]]
         
         if capitalized_terms:
-            # Заглавные слова идут первыми!
+            # Capitalized words go first!
             terms = capitalized_terms[:2] + [t for t in regular_terms if t not in capitalized_terms][:2]
-            print(f"[Objectivity:Wikipedia] Приоритет заглавным: {capitalized_terms}")
+            print(f"[Objectivity:Wikipedia] Priority to capitalized: {capitalized_terms}")
         else:
             terms = regular_terms
         script_id = f"wiki_{int(time.time()*1000)}"
@@ -506,7 +506,7 @@ def _wikidata_entity(qid):
         return None
 
 def _pick_sitelink(sitelinks):
-    # Сначала по приоритету, затем любой *wiki
+    # First by priority, then any *wiki
     for lang in LANG_PRIORITY:
         key = f"{{lang}}wiki"
         if key in sitelinks:
@@ -572,7 +572,7 @@ h2o_metric("wikipedia_results_count", len(out))
 
     def _provider_reddit_h2o(self, message: str) -> str:
         """
-        Reddit: без ссылок, только заголовки/текст (срез).
+        Reddit: no links, only titles/text (slice).
         """
         query = message.strip()[:128]
         script_id = f"reddit_{int(time.time()*1000)}"
@@ -631,12 +631,12 @@ h2o_metric("reddit_results_count", len(objectivity_results_reddit))
 
     def _provider_internet_h2o(self, message: str) -> str:
         """
-        Internet search: КОМБО Reddit + Google scraping для живой речи
-        Reddit для сленга и живых ответов, Google для фактов
+        Internet search: COMBO Reddit + Google scraping for lively speech
+        Reddit for slang and lively answers, Google for facts
         """
-        # Формируем контекстный запрос
+        # Form contextual query
         if re.search(r'\b(how|what|why|when|where|who)\b', message, re.I):
-            # Для вопросов делаем "how to answer" или "what does X mean"
+            # For questions do "how to answer" or "what does X mean"
             if 'how are you' in message.lower():
                 query = "how to respond to how are you conversation"
                 reddit_query = "how are you responses reddit"
@@ -650,12 +650,12 @@ h2o_metric("reddit_results_count", len(objectivity_results_reddit))
                 query = f"answer to {message.strip()}"
                 reddit_query = f"{message.strip()} reddit"
         else:
-            # Для обычных сообщений ищем по ключевым словам
+            # For regular messages search by keywords
             words = re.findall(r'\b[a-zA-Z]{3,}\b', message)
             query = ' '.join(words[:4]) if words else message.strip()
             reddit_query = f"{query} reddit"
         
-        query = query[:100]  # Ограничиваем длину
+        query = query[:100]  # Limit length
         reddit_query = reddit_query[:100]
         script_id = f"internet_{int(time.time()*1000)}"
         
@@ -671,9 +671,9 @@ def _search():
     reddit_query = {json.dumps(reddit_query)}
     results = []
     
-    # СТРАТЕГИЯ 1: Reddit для живой речи и сленга
+    # STRATEGY 1: Reddit for lively speech and slang
     try:
-        # Поиск через Reddit JSON API (без авторизации)
+        # Search via Reddit JSON API (without authorization)
         reddit_url = f"https://www.reddit.com/search.json?q={{quote(reddit_query)}}&sort=relevance&limit=5"
         r = requests.get(reddit_url, headers={{"User-Agent": UA}}, timeout=8)
         
@@ -695,27 +695,27 @@ def _search():
     except Exception:
         pass
     
-    # СТРАТЕГИЯ 2: Простой Google scraping как fallback
+    # STRATEGY 2: Simple Google scraping as fallback
     if len(results) < 2:
         try:
-            # Простой поиск через Google (осторожно с rate limits)
+            # Simple search via Google (careful with rate limits)
             google_url = f"https://www.google.com/search?q={{quote(query)}}&num=3"
             headers = {{
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
             }}
             
-            # FUCK IT - ДЕЛАЕМ ЗАПРОС К GOOGLE! Пусть банят если что!
+            # FUCK IT - MAKE REQUEST TO GOOGLE! Let them ban if they want!
             try:
                 r = requests.get(google_url, headers=headers, timeout=10)
                 if r.status_code == 200:
-                    # Простой парсинг Google результатов
+                    # Simple parsing of Google results
                     import re
-                    # Ищем заголовки результатов
+                    # Search for result titles
                     titles = re.findall(r'<h3[^>]*>([^<]+)</h3>', r.text)
-                    # Ищем описания
+                    # Search for descriptions
                     descriptions = re.findall(r'<span[^>]*>([^<]{50,200})</span>', r.text)
                     
-                    for i, title in enumerate(titles[:2]):  # Первые 2 результата
+                    for i, title in enumerate(titles[:2]):  # First 2 results
                         desc = descriptions[i] if i < len(descriptions) else ""
                         if title and len(title) > 5:
                             content = f"{{title}}"
@@ -725,7 +725,7 @@ def _search():
             except Exception:
                 pass
             
-            # Fallback образцы только если Google не сработал
+            # Fallback samples only if Google didn't work
             if not results and "how are you" in query.lower():
                 samples = [
                     "I'm doing great, thanks for asking! How about you?",
@@ -770,8 +770,8 @@ h2o_metric("internet_results_count", len(objectivity_results_internet))
 
     def _provider_memory_h2o(self, message: str) -> str:
         """
-        Memory через sqlite в H2O: FTS5 при наличии, иначе LIKE.
-        Возвращаем компактные срезы, без служебщины.
+        Memory via sqlite in H2O: FTS5 if available, otherwise LIKE.
+        Return compact slices, without service info.
         """
         qwords = re.findall(r"\w{3,}", message.lower())[:4]
         query = " ".join(qwords) if qwords else message.strip()[:64]
@@ -840,7 +840,7 @@ objectivity_results_memory = _fetch_memory()
             self.h2o_engine.run_transformer_script(code, script_id)
             g = self.h2o_engine.executor.active_transformers.get(script_id, {}).get("globals", {})
             raw = g.get("objectivity_results_memory") or []
-            print(f"[Objectivity:Memory] H2O результат: {len(raw)} записей")
+            print(f"[Objectivity:Memory] H2O result: {len(raw)} records")
         except Exception as e:
             print(f"[Objectivity:Memory:ERROR] H2O script failed: {e}")
             raw = []
@@ -859,10 +859,10 @@ objectivity_results_memory = _fetch_memory()
         terms = []
         terms += re.findall(r'\b[A-ZА-Я][a-zа-я]+\b', message)
         terms += re.findall(r'\b[A-ZА-Я]{2,}\b', message)
-        # простые локации
+        # simple locations
         locs = re.findall(r'\b(Berlin|London|Moscow|Paris|Tokyo|New York|Берлин|Лондон|Москва|Париж)\b', message, flags=re.I)
         terms += locs
-        # уникализируем, сохраняем порядок
+        # deduplicate, preserve order
         seen = set()
         out = []
         for t in terms:
@@ -871,17 +871,17 @@ objectivity_results_memory = _fetch_memory()
                 out.append(t)
         return out
 
-# Глобальный экземпляр
+# Global instance
 nicole_objectivity = NicoleObjectivity()
 
-# Простой тест
+# Simple test
 if __name__ == "__main__":
     import asyncio
     async def _t():
         cases = [
             ("Tell me about Berlin and Python internals", {}),
-            ("Привет", {}),
-            ("Как работает память модели?", {}),
+            ("Hello", {}),
+            ("How does the model memory work?", {}),
         ]
         for m, mt in cases:
             ws = await nicole_objectivity.create_dynamic_context(m, mt)
