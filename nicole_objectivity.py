@@ -694,11 +694,8 @@ h2o_metric("reddit_results_count", len(objectivity_results_reddit))
             print(f"[Perplexity] Detected leading '=' in API key (Railway artifact), removing...")
             api_key = api_key[1:]  # Remove leading =
 
-        # DEBUG: Log what we actually got from environment
-        print(f"[Perplexity:PreH2O] API key after cleanup: repr={repr(api_key[:30])}, len={len(api_key)}")
-
         if not api_key or not api_key.startswith('pplx-'):
-            print(f"[Perplexity:PreH2O] WARNING: Invalid API key format! Should start with 'pplx-'")
+            print(f"[Perplexity:PreH2O] WARNING: Invalid API key format!")
 
         code = f"""
 import requests
@@ -715,7 +712,7 @@ if not PERPLEXITY_API_KEY:
     print("[Perplexity] No API key found in environment")
     objectivity_results_perplexity = []
 else:
-    print(f"[Perplexity] Using API key: {{PERPLEXITY_API_KEY[:20]}}...")
+    print("[Perplexity] API key loaded, sending request...")
     query = {json.dumps(query)}
     print(f"[Perplexity] Query: {{query}}")
 
