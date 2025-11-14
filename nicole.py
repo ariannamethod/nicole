@@ -1272,10 +1272,17 @@ class NicoleCore:
             strategies = obj._pick_strategies(user_input)
             sections = []
 
-            if 'internet' in strategies:
-                internet_text = obj._provider_internet_h2o(user_input)
-                if internet_text:
-                    sections.append(internet_text)
+            # Perplexity PRIMARY, DuckDuckGo fallback
+            if 'perplexity' in strategies:
+                perplexity_text = obj._provider_perplexity_h2o(user_input)
+                if perplexity_text:
+                    sections.append(perplexity_text)
+                else:
+                    # FALLBACK: DuckDuckGo if Perplexity fails
+                    print("[Nicole:Objectivity] ❌ SYNC Perplexity failed, using DuckDuckGo")
+                    internet_text = obj._provider_internet_h2o(user_input)
+                    if internet_text:
+                        sections.append(internet_text)
 
             if 'memory' in strategies:
                 mem_text = obj._provider_memory_h2o(user_input)

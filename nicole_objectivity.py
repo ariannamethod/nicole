@@ -247,14 +247,20 @@ class NicoleObjectivity:
 
         sections: List[str] = []
 
-        # REMOVED: Wikipedia provider completely removed
-
-        if 'internet' in strategies:
-            internet_text = self._provider_internet_h2o(user_message)
-            if internet_text:
+        # Perplexity Search API: PRIMARY provider
+        if 'perplexity' in strategies:
+            perplexity_text = self._provider_perplexity_h2o(user_message)
+            if perplexity_text:
                 # SECURITY: Sanitize content from provider
-                internet_text = sanitize_external_content(internet_text, self.max_context_kb)
-                sections.append(internet_text)
+                perplexity_text = sanitize_external_content(perplexity_text, self.max_context_kb)
+                sections.append(perplexity_text)
+            else:
+                # FALLBACK: DuckDuckGo if Perplexity fails
+                print("[Objectivity] Perplexity failed, falling back to DuckDuckGo")
+                internet_text = self._provider_internet_h2o(user_message)
+                if internet_text:
+                    internet_text = sanitize_external_content(internet_text, self.max_context_kb)
+                    sections.append(internet_text)
 
         if 'reddit' in strategies:
             reddit_text = self._provider_reddit_h2o(user_message)
@@ -385,6 +391,18 @@ class NicoleObjectivity:
                 if digit_count >= 2 or (digit_count >= 1 and vowel_ratio < 0.3):
                     continue
 
+            # SMART FILTER 5: Skip technical terms with underscores (e.g., "currency_code", "access_time")
+            # BUT allow words starting with underscore from Filter 1 pattern
+            if '_' in w and not w.startswith('_'):
+                continue
+
+            # SMART FILTER 6: Skip glued lowercase usernames 12+ chars (e.g., "nicolecrossmusic", "qualitysee")
+            # Pattern: all lowercase, no spaces, very long, likely concatenated username/handle
+            if len(w) >= 12 and w.islower() and w.isalpha():
+                # Check if it looks like concatenated words (no clear word boundaries)
+                # Simple heuristic: if it's 12+ chars and all lowercase, likely a username/glued words
+                continue
+
             filtered.append(w)
 
         if not filtered:
@@ -399,16 +417,16 @@ class NicoleObjectivity:
     # ---------- Internals ----------
 
     def _pick_strategies(self, message: str) -> List[str]:
-        # FIXED: remove Wikipedia for service words, add internet search
+        # Perplexity Search API PRIMARY, DuckDuckGo fallback
         strategies: List[str] = []
-        
-        # ROUGH INTERNET SEARCH: always use internet instead of Wikipedia
-        strategies.append('internet')
-            
+
+        # PERPLEXITY SEARCH: clean, structured results (PRIMARY)
+        strategies.append('perplexity')
+
         # Reddit for technical topics
         if re.search(r'\b(python|javascript|neural|ai|quantum|blockchain|programming|algorithm|database|code|tech)\b', message, re.I):
             strategies.append('reddit')
-            
+
         # Memory is always useful
         strategies.append('memory')
 
@@ -645,6 +663,97 @@ h2o_metric("reddit_results_count", len(objectivity_results_reddit))
             if content:
                 header = f"Reddit: {title}" if title else "Reddit"
                 lines.append(f"{header}\n{content}")
+
+        return "\n\n".join(lines) if lines else ""
+
+    def _provider_perplexity_h2o(self, message: str) -> str:
+        """
+        Perplexity Search API - PRIMARY PROVIDER
+        Clean, structured search results with snippets
+        """
+        # Form query
+        if re.search(r'\b(how|what|why|when|where|who)\b', message, re.I):
+            if 'how are you' in message.lower():
+                query = "how to respond to how are you conversation"
+            else:
+                query = message.strip()
+        else:
+            words = re.findall(r'\b[a-zA-Z]{3,}\b', message)
+            query = ' '.join(words[:5]) if words else message.strip()
+
+        query = query[:150]
+        script_id = f"perplexity_{int(time.time()*1000)}"
+
+        code = f"""
+import requests, json, os
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+PERPLEXITY_API_KEY = os.environ.get("PERPLEXITY_API_KEY")
+if not PERPLEXITY_API_KEY:
+    objectivity_results_perplexity = []
+else:
+    query = {json.dumps(query)}
+
+    url = "https://api.perplexity.ai/search"
+    headers = {{
+        "Authorization": f"Bearer {{PERPLEXITY_API_KEY}}",
+        "Content-Type": "application/json"
+    }}
+
+    params = {{
+        "query": query,
+        "max_results": 5
+    }}
+
+    try:
+        # Use verify=False to bypass SSL cert issues in some environments
+        r = requests.post(url, headers=headers, json=params, verify=False, timeout=20)
+
+        if r.status_code == 200:
+            data = r.json()
+            results = data.get("results", [])
+
+            parsed = []
+            for result in results[:5]:
+                title = result.get("title", "").strip()
+                snippet = result.get("snippet", "").strip()
+
+                if snippet and len(snippet) > 20:
+                    content = f"{{title}}\\n{{snippet[:800]}}"
+                    parsed.append({{
+                        "title": "Perplexity Search",
+                        "content": content
+                    }})
+
+            objectivity_results_perplexity = parsed
+
+        else:
+            print(f"[Perplexity] HTTP {{r.status_code}}: {{r.text[:200]}}")
+            objectivity_results_perplexity = []
+
+    except Exception as e:
+        print(f"[Perplexity:Error] {{e}}")
+        objectivity_results_perplexity = []
+
+h2o_metric("perplexity_search_count", len(objectivity_results_perplexity))
+"""
+
+        try:
+            self.h2o_engine.run_transformer_script(code, script_id)
+            g = self.h2o_engine.executor.active_transformers.get(script_id, {}).get("globals", {})
+            raw = g.get("objectivity_results_perplexity") or []
+            print(f"[Objectivity:Perplexity] Results: {len(raw)}")
+        except Exception as e:
+            print(f"[Objectivity:Perplexity:ERROR] {e}")
+            raw = []
+
+        lines = []
+        for item in raw:
+            content = item.get("content", "").strip()
+            if content:
+                content = sanitize_external_content(content, 2048)
+                lines.append(content)
 
         return "\n\n".join(lines) if lines else ""
 
