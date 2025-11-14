@@ -32,12 +32,12 @@ import re
 
 # Import Nicole components
 try:
-    from nicole_memory import NicoleMemory
-    from nicole_objectivity import get_objectivity_context
-except ImportError:
-    print("[Subjectivity] Warning: Could not import Nicole components")
+    from nicole_memory import NicoleMemoryCore as NicoleMemory
+    from nicole_objectivity import nicole_objectivity
+except ImportError as e:
+    print(f"[Subjectivity] Warning: Could not import Nicole components: {e}")
     NicoleMemory = None
-    get_objectivity_context = None
+    nicole_objectivity = None
 
 
 class SubjectivityRipple:
@@ -281,16 +281,25 @@ class NicoleSubjectivity:
         Autonomously explore a concept using objectivity providers
         This is Nicole thinking on her own, expanding knowledge
         """
-        if not get_objectivity_context:
+        if not nicole_objectivity:
             return {'words': [], 'source': 'none'}
 
         try:
-            # Use objectivity to fetch information about concept
-            # But interpret it through subjective lens (Nicole's current understanding)
-            context = get_objectivity_context(concept, providers=['internet', 'memory'])
+            # Use nicole_objectivity to fetch information
+            import asyncio
 
-            if not context:
+            # Create query
+            query = f"explain {concept} briefly"
+
+            # Fetch context windows
+            windows = asyncio.run(
+                nicole_objectivity.create_dynamic_context(query, {})
+            )
+
+            if not windows or not windows[0].content:
                 return {'words': [], 'source': 'none'}
+
+            context = windows[0].content
 
             # Extract words from fetched context
             words = re.findall(r'\b[a-z]{4,}\b', context.lower())
