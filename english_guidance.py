@@ -280,10 +280,25 @@ class EnglishGuidance:
                 return True  # Only symbols/numbers - assume English for now
 
         # 5. SPECIAL CASE: Short phrases (1-3 words)
-        # If all Latin alphabet and no non-English scripts → assume English!
+        # For short phrases: relaxed check - allow minority non-English words
         if len(words) <= 3:
-            # Already passed non-Latin script checks above, so if we got here it's likely English
-            return True
+            # Extended English check: common words + greetings + basic verbs
+            extended_english = self.english_common_words | {
+                'hello', 'hi', 'hey', 'yo', 'ok', 'okay', 'yes', 'no', 'yeah', 'nope',
+                'thanks', 'thank', 'please', 'sorry', 'bye', 'goodbye', 'welcome',
+                'nicole', 'speaking', 'viva', 'la'  # Allow "viva la" as common phrase
+            }
+
+            english_count = sum(1 for word in words if word in extended_english)
+
+            # For 1-2 words: need at least 50% English (1 out of 2)
+            if len(words) <= 2:
+                return english_count >= len(words) * 0.5
+
+            # For 3 words: need at least 33% English (1 out of 3)
+            # "viva la nicole" = 3/3 = 100% → PASS!
+            # "bonjour comment allez" = 0/3 = 0% → FAIL
+            return english_count / len(words) >= 0.33
 
         # 6. Check ratio of common English words for longer phrases
         english_count = sum(1 for word in words if word in self.english_common_words)
