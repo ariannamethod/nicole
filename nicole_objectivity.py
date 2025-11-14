@@ -309,82 +309,29 @@ class NicoleObjectivity:
         """
         Response seeds from context (language-agnostic).
 
-        FIXED v2: Enhanced Reddit artifact filtering
-        - Split underscores into separate words
-        - Filter Reddit post IDs (low vowel ratio)
-        - Remove subreddit names and technical terms
-        - Filter overly long words (slugs)
+        SIMPLE APPROACH - like original v0.3:
+        - Take all words 3+ chars with at least one letter
+        - NO aggressive filtering (preserves variety!)
+        - Only filter: obvious garbage (starts with digit)
         """
         if not context:
             return []
 
-        # FIX: Replace underscores with spaces BEFORE parsing
-        # This splits "cutting_a_couple_of_chives" into separate words
-        cleaned_context = context.replace('_', ' ')
-
         # Parse words (min 3 chars)
-        words = re.findall(r"\w{3,}", cleaned_context.lower(), flags=re.UNICODE)
+        words = re.findall(r"\w{3,}", context.lower(), flags=re.UNICODE)
         words = [w for w in words if any(ch.isalpha() for ch in w)]
 
-        # FIX v2: Expanded Reddit noise - popular subreddits + technical terms
-        reddit_noise = {
-            # Technical Reddit terms
-            'moderators', 'moderator', 'discussion', 'comments', 'comment',
-            'subreddit', 'reddit', 'thread', 'post', 'permalink', 'removed',
-            'deleted', 'originally', 'punishment', 'condemning', 'revealed',
-            'manually', 'removing', 'separate', 'involved', 'finished',
-            'automod', 'submission', 'upvoted', 'downvoted', 'gilded',
-            # Popular subreddit names (expanded list)
-            'amitheasshole', 'cringetiktoks', 'trueoffmychest', 'unpopularopinion',
-            'relationshipadvice', 'legaladvice', 'tifu', 'nosleep', 'writingprompts',
-            'explainlikeimfive', 'outoftheloop', 'changemyview', 'showerthoughts',
-            'kitchenconfidential', 'agedlikemilk', 'conservative', 'leopardsatemyface',
-            'askreddit', 'todayilearned', 'politics', 'worldnews', 'news', 'funny',
-            'pics', 'aww', 'gaming', 'movies', 'music', 'technology', 'science'
-        }
+        if not words:
+            return []
 
-        # Helper: detect Reddit post IDs (6-10 chars, low vowel ratio)
-        def is_reddit_post_id(word: str) -> bool:
-            if len(word) < 6 or len(word) > 10:
-                return False
-            vowels = sum(1 for c in word if c in 'aeiou')
-            vowel_ratio = vowels / len(word)
-            # Reddit IDs usually have <30% vowels (e.g., "nno4cwf", "s1yzjtoy5b")
-            return vowel_ratio < 0.3
-
-        # Helper: detect garbage strings (alphanumeric mix, IDs, hashes)
-        def is_garbage_string(word: str) -> bool:
-            # Count digits in word
-            digit_count = sum(1 for c in word if c.isdigit())
-
-            # Starts with digit → garbage (e.g., "3kbiahxwb1za1")
-            if word[0].isdigit():
-                return True
-
-            # Contains 2+ digits → likely ID/hash (e.g., "abc123def456")
-            if digit_count >= 2:
-                return True
-
-            # Mix of digits and low vowel ratio → garbage
-            if digit_count >= 1:
-                vowels = sum(1 for c in word if c in 'aeiou')
-                if vowels == 0 or len(word) / vowels > 5:  # Very low vowel density
-                    return True
-
-            return False
-
-        # Filter: no noise, no post IDs, no garbage strings, max length 15 chars, min length 3
+        # MINIMAL filtering - only obvious garbage
         filtered = []
         for w in words:
-            if w in reddit_noise:
+            # Skip if starts with digit (e.g., "3kbiahxwb1za1", "206333240")
+            if w[0].isdigit():
                 continue
-            if is_reddit_post_id(w):
-                continue  # Skip Reddit post IDs
-            if is_garbage_string(w):
-                continue  # Skip garbage alphanumeric strings
-            if len(w) > 15:  # Skip overly long slugs
-                continue
-            if len(w) < 3:
+            # Skip overly long slugs (>20 chars)
+            if len(w) > 20:
                 continue
             filtered.append(w)
 
@@ -651,8 +598,8 @@ h2o_metric("reddit_results_count", len(objectivity_results_reddit))
 
     def _provider_internet_h2o(self, message: str) -> str:
         """
-        Internet search: COMBO Reddit + Google scraping for lively speech
-        Reddit for slang and lively answers, Google for facts
+        Internet search: Google PRIMARY, Reddit fallback
+        Google for facts and knowledge, Reddit for slang if needed
         """
         # Form contextual query
         if re.search(r'\b(how|what|why|when|where|who)\b', message, re.I):
@@ -674,11 +621,11 @@ h2o_metric("reddit_results_count", len(objectivity_results_reddit))
             words = re.findall(r'\b[a-zA-Z]{3,}\b', message)
             query = ' '.join(words[:4]) if words else message.strip()
             reddit_query = f"{query} reddit"
-        
+
         query = query[:100]  # Limit length
         reddit_query = reddit_query[:100]
         script_id = f"internet_{int(time.time()*1000)}"
-        
+
         code = f"""
 import requests, json, re
 from urllib.parse import quote
@@ -690,79 +637,76 @@ def _search():
     query = {json.dumps(query)}
     reddit_query = {json.dumps(reddit_query)}
     results = []
-    
-    # STRATEGY 1: Reddit for lively speech and slang
+
+    # STRATEGY 1: Google PRIMARY - facts and knowledge
     try:
-        # Search via Reddit JSON API (without authorization)
-        reddit_url = f"https://www.reddit.com/search.json?q={{quote(reddit_query)}}&sort=relevance&limit=5"
-        r = requests.get(reddit_url, headers={{"User-Agent": UA}}, timeout=8)
-        
+        # Simple search via Google
+        google_url = f"https://www.google.com/search?q={{quote(query)}}&num=5"
+        headers = {{
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        }}
+
+        r = requests.get(google_url, headers=headers, timeout=10)
         if r.status_code == 200:
-            data = r.json()
-            posts = data.get("data", {{}}).get("children", [])
-            
-            for post in posts[:3]:
-                post_data = post.get("data", {{}})
-                title = post_data.get("title", "").strip()
-                selftext = post_data.get("selftext", "").strip()
-                
-                if title and len(title) > 10:
+            # Simple parsing of Google results
+            import re
+            # Search for result titles
+            titles = re.findall(r'<h3[^>]*>([^<]+)</h3>', r.text)
+            # Search for descriptions
+            descriptions = re.findall(r'<span[^>]*>([^<]{{50,200}})</span>', r.text)
+
+            for i, title in enumerate(titles[:3]):  # First 3 results
+                desc = descriptions[i] if i < len(descriptions) else ""
+                if title and len(title) > 5:
                     content = f"{{title}}"
-                    if selftext and len(selftext) > 20:
-                        content += f" - {{selftext[:400]}}"
-                    results.append({{"title": "Reddit Discussion", "content": content[:600]}})
-                        
+                    if desc:
+                        content += f" - {{desc[:300]}}"
+                    results.append({{"title": "Google Search", "content": content}})
+
     except Exception:
         pass
-    
-    # STRATEGY 2: Simple Google scraping as fallback
+
+    # STRATEGY 2: Reddit as fallback (for slang/lively answers)
     if len(results) < 2:
         try:
-            # Simple search via Google (careful with rate limits)
-            google_url = f"https://www.google.com/search?q={{quote(query)}}&num=3"
-            headers = {{
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            }}
-            
-            # FUCK IT - MAKE REQUEST TO GOOGLE! Let them ban if they want!
-            try:
-                r = requests.get(google_url, headers=headers, timeout=10)
-                if r.status_code == 200:
-                    # Simple parsing of Google results
-                    import re
-                    # Search for result titles
-                    titles = re.findall(r'<h3[^>]*>([^<]+)</h3>', r.text)
-                    # Search for descriptions
-                    descriptions = re.findall(r'<span[^>]*>([^<]{50,200})</span>', r.text)
-                    
-                    for i, title in enumerate(titles[:2]):  # First 2 results
-                        desc = descriptions[i] if i < len(descriptions) else ""
-                        if title and len(title) > 5:
-                            content = f"{{title}}"
-                            if desc:
-                                content += f" - {{desc[:300]}}"
-                            results.append({{"title": "Google Search", "content": content}})
-            except Exception:
-                pass
-            
-            # Fallback samples only if Google didn't work
-            if not results and "how are you" in query.lower():
-                samples = [
-                    "I'm doing great, thanks for asking! How about you?",
-                    "Pretty good today, yourself?", 
-                    "Not bad at all, how are things with you?",
-                    "I'm fine, thank you for asking"
-                ]
-                for sample in samples:
-                    results.append({{"title": "Response pattern", "content": sample}})
-            elif "quantum computing" in query.lower():
-                results.append({{"title": "Quantum Computing", "content": "Quantum computing uses quantum mechanical phenomena like superposition and entanglement to process information in ways classical computers cannot"}})
-            elif any(city in query.lower() for city in ["tokyo", "paris", "berlin", "london", "moscow"]):
-                city_name = next(city for city in ["tokyo", "paris", "berlin", "london", "moscow"] if city in query.lower())
-                results.append({{"title": f"About {{city_name.title()}}", "content": f"{{city_name.title()}} is a major world city known for its unique culture, architecture, and historical significance"}})
-                        
+            # Search via Reddit JSON API
+            reddit_url = f"https://www.reddit.com/search.json?q={{quote(reddit_query)}}&sort=relevance&limit=5"
+            r = requests.get(reddit_url, headers={{"User-Agent": UA}}, timeout=8)
+
+            if r.status_code == 200:
+                data = r.json()
+                posts = data.get("data", {{}}).get("children", [])
+
+                for post in posts[:3]:
+                    post_data = post.get("data", {{}})
+                    title = post_data.get("title", "").strip()
+                    selftext = post_data.get("selftext", "").strip()
+
+                    if title and len(title) > 10:
+                        content = f"{{title}}"
+                        if selftext and len(selftext) > 20:
+                            content += f" - {{selftext[:400]}}"
+                        results.append({{"title": "Reddit Discussion", "content": content[:600]}})
+
         except Exception:
             pass
+
+    # Final fallback samples if both Google and Reddit fail
+    if not results:
+        if "how are you" in query.lower():
+            samples = [
+                "I'm doing great, thanks for asking! How about you?",
+                "Pretty good today, yourself?",
+                "Not bad at all, how are things with you?",
+                "I'm fine, thank you for asking"
+            ]
+            for sample in samples:
+                results.append({{"title": "Response pattern", "content": sample}})
+        elif "quantum computing" in query.lower():
+            results.append({{"title": "Quantum Computing", "content": "Quantum computing uses quantum mechanical phenomena like superposition and entanglement to process information in ways classical computers cannot"}})
+        elif any(city in query.lower() for city in ["tokyo", "paris", "berlin", "london", "moscow"]):
+            city_name = next(city for city in ["tokyo", "paris", "berlin", "london", "moscow"] if city in query.lower())
+            results.append({{"title": f"About {{city_name.title()}}", "content": f"{{city_name.title()}} is a major world city known for its unique culture, architecture, and historical significance"}})
     
     return results
 
