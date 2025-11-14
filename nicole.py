@@ -1216,8 +1216,8 @@ class NicoleCore:
             # SAVE context for training!
             self._last_objectivity_context = context
 
-            # Extract seeds for response (50% from context)
-            response_seeds = nicole_objectivity.extract_response_seeds(context, 0.5)
+            # Extract seeds for response (80% from context - increased for two sentences)
+            response_seeds = nicole_objectivity.extract_response_seeds(context, 0.8)
 
             if context:
                 print(f"[Nicole:Objectivity] ✅ Context: {len(context)} chars, seeds: {len(response_seeds)}")
@@ -1282,7 +1282,9 @@ class NicoleCore:
                     title="OBJECTIVITY"
                 )
                 context = obj.format_context_for_nicole([window])
-                response_seeds = obj.extract_response_seeds(context, 0.5)
+                # INCREASED: influence 0.8 (was 0.5) to get more seeds for two sentences
+                # Two sentences need 16-28 words, 50% was too limiting
+                response_seeds = obj.extract_response_seeds(context, 0.8)
 
                 print(f"[Nicole:Objectivity] ✅ SYNC Context: {len(context)} chars, seeds: {len(response_seeds)}")
 

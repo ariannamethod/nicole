@@ -587,12 +587,11 @@ class HighMathEngine:
         Subjectivity + ME principles through Julia mathematics
         Engine automatically adapts to user's language
         """
-        # Sentence lengths based on metrics (like in ME)
-        # INCREASED: 8-14 words per sentence (was 5-9) for longer, richer responses
-        base1 = 8 + int(entropy) % 7
-        base2 = 8 + int(perplexity) % 7
-        if base1 == base2:
-            base2 = 8 + ((base2 + 1) % 7)
+        # Sentence length based on metrics (like in ME)
+        # CHANGED: Generate ONE longer sentence instead of two short ones
+        # This avoids the problem of second sentence being only 1-2 words
+        combined_length = 12 + int(entropy) % 8 + int(perplexity) % 6
+        # Result: 12-25 words in a single coherent sentence
 
         # LINGUISTIC AGNOSTICISM: if no candidates - build from user's words!
         all_candidates = list(set(semantic_candidates + objectivity_seeds))
@@ -623,31 +622,15 @@ class HighMathEngine:
         # ME PRINCIPLE: strict used set between sentences (only for repetitions in response)
         used_between_sentences = set()  # Empty at start, will be filled with response words
 
-        # REMOVED: Introspective tags were creating template patterns
-        # NO TEMPLATES! Tags only if they come from candidates/objectivity
-        # introspective_tags = ['presence', 'recursion', 'misalignment', 'awareness', 'drift', 'echo', 'resonance']
+        # CHANGED: Generate ONE longer sentence instead of two short ones
+        # This avoids "one word after comma" problem
+        used_in_response = set()
 
-        # Generate first sentence WITHOUT forced tags
-        first_sentence = self._generate_drifting_clusters(
-            all_candidates, base1, used_between_sentences, pronoun_preferences, introspective_tags=None
+        result = self._generate_drifting_clusters(
+            all_candidates, combined_length, used_in_response, pronoun_preferences, introspective_tags=None
         )
 
-        # Generate second sentence (used updated by first sentence)
-        second_sentence = self._generate_drifting_clusters(
-            all_candidates, base2, used_between_sentences, pronoun_preferences, introspective_tags=None
-        )
-
-        # ME PRINCIPLE: two sentences with improved coherence
-        # Add connecting words between sentences
-        connectors = ["and", "but", "also", "then", "while", "because", "so", "yet"]
-        connector = random.choice(connectors) if len(first_sentence) > 2 and len(second_sentence) > 2 else ""
-
-        if connector:
-            result = first_sentence + [",", connector] + second_sentence
-        else:
-            result = first_sentence + ["."] + second_sentence
-
-        # Remove repetitions within final response
+        # Remove repetitions within response
         cleaned = self.remove_word_repetitions(result)
 
         # NEW: improve sentence flow
@@ -839,9 +822,19 @@ class HighMathEngine:
         # Step 5: NO FORCED TAGS! Anti-template philosophy
         # Tags only if they naturally appear in candidates/objectivity
         # NO automatic appending of template words!
-        # if selected_tag and len(result) < length and selected_tag not in used_local:
-        #     result.append(selected_tag)
-        #     print(f"[High:LatentDrift] 🌀 Introspective tag: '{selected_tag}'")
+
+        # Step 6: FILL TO TARGET LENGTH - keep adding words until we reach target
+        # This fixes the problem of responses being too short (8 words instead of 15-20)
+        if len(result) < length:
+            # Iterate through ALL tiers again to fill remaining space
+            all_tiers = high_tier + mid_tier + low_tier
+            for word, score in all_tiers:
+                if len(result) >= length:
+                    break
+                if word not in used_global and word not in used_local and len(word) > 1:
+                    result.append(word)
+                    used_local.add(word)
+                    used_global.add(word)
 
         # Capitalize first word
         if result:
