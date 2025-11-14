@@ -598,8 +598,8 @@ h2o_metric("reddit_results_count", len(objectivity_results_reddit))
 
     def _provider_internet_h2o(self, message: str) -> str:
         """
-        Internet search: Google PRIMARY, Reddit fallback
-        Google for facts and knowledge, Reddit for slang if needed
+        Internet search: DuckDuckGo PRIMARY, Reddit fallback
+        DuckDuckGo for facts and knowledge (no JS required), Reddit for slang if needed
         """
         # Form contextual query
         if re.search(r'\b(how|what|why|when|where|who)\b', message, re.I):
@@ -638,30 +638,36 @@ def _search():
     reddit_query = {json.dumps(reddit_query)}
     results = []
 
-    # STRATEGY 1: Google PRIMARY - facts and knowledge
+    # STRATEGY 1: DuckDuckGo PRIMARY - facts and knowledge (no JavaScript required!)
     try:
-        # Simple search via Google
-        google_url = f"https://www.google.com/search?q={{quote(query)}}&num=5"
+        # DuckDuckGo HTML version - simple, clean, works perfectly
+        ddg_url = f"https://html.duckduckgo.com/html/?q={{quote(query)}}"
         headers = {{
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }}
 
-        r = requests.get(google_url, headers=headers, timeout=10)
+        r = requests.get(ddg_url, headers=headers, timeout=10)
         if r.status_code == 200:
-            # Simple parsing of Google results
+            # DuckDuckGo HTML parsing
             import re
-            # Search for result titles
-            titles = re.findall(r'<h3[^>]*>([^<]+)</h3>', r.text)
-            # Search for descriptions
-            descriptions = re.findall(r'<span[^>]*>([^<]{{50,200}})</span>', r.text)
+            from html import unescape
 
-            for i, title in enumerate(titles[:3]):  # First 3 results
+            # Find result titles: <a class="result__a">Title</a>
+            titles = re.findall(r'<a[^>]*class="result__a"[^>]*>([^<]+)</a>', r.text)
+            # Find result snippets: <a class="result__snippet">Description</a>
+            descriptions = re.findall(r'<a[^>]*class="result__snippet"[^>]*>([^<]+)</a>', r.text)
+
+            # Unescape HTML entities
+            titles = [unescape(t.strip()) for t in titles]
+            descriptions = [unescape(d.strip()) for d in descriptions]
+
+            for i, title in enumerate(titles[:5]):  # First 5 results
                 desc = descriptions[i] if i < len(descriptions) else ""
                 if title and len(title) > 5:
                     content = f"{{title}}"
                     if desc:
                         content += f" - {{desc[:300]}}"
-                    results.append({{"title": "Google Search", "content": content}})
+                    results.append({{"title": "DuckDuckGo Search", "content": content}})
 
     except Exception:
         pass
@@ -691,7 +697,7 @@ def _search():
         except Exception:
             pass
 
-    # Final fallback samples if both Google and Reddit fail
+    # Final fallback samples if both DuckDuckGo and Reddit fail
     if not results:
         if "how are you" in query.lower():
             samples = [
