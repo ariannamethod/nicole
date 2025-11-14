@@ -739,7 +739,7 @@ class HighMathEngine:
             'moderator', 'permalink', 'submission'
         }
 
-        # Filter stopwords, technical noise, words with colons, and technical identifiers
+        # Filter stopwords, technical noise, and words with colons
         filtered = []
         for w in candidates:
             w_lower = w.lower().strip(':')  # Remove trailing colons
@@ -748,18 +748,17 @@ class HighMathEngine:
             if w_lower in stopwords or len(w) < 3 or ':' in w:
                 continue
 
-            # CRITICAL: Filter technical identifiers
-            # Skip: tg_123, session_456, user_789, etc.
-            if '_' in w and any(c.isdigit() for c in w):
-                continue
+            # CRITICAL: Filter ONLY obvious technical identifiers (NOT aggressive!)
+            # Skip: tg_123456, session_789012 (underscore + 4+ digits)
+            if '_' in w:
+                parts = w.split('_')
+                # Only filter if has underscore AND part is pure digits 4+ chars
+                has_long_digit_part = any(p.isdigit() and len(p) >= 4 for p in parts)
+                if has_long_digit_part:
+                    continue  # Skip tg_123456, user_789012
 
-            # Skip: pure numbers or mostly numbers (IDs)
-            digit_count = sum(1 for c in w if c.isdigit())
-            if digit_count > len(w) * 0.5:  # More than 50% digits
-                continue
-
-            # Skip: very long alphanumeric strings (UUIDs, hashes)
-            if len(w) > 20 and any(c.isdigit() for c in w):
+            # Skip: pure numbers ONLY (not words with digits)
+            if w.isdigit():
                 continue
 
             filtered.append(w)
