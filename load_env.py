@@ -32,7 +32,12 @@ def load_env(env_file=".env"):
                         value = value[1:-1]
                     elif value.startswith("'") and value.endswith("'"):
                         value = value[1:-1]
-                        
+
+                    # Fix: If value starts with '=', remove it (handles KEY==value format)
+                    # This can happen if .env file has double equals or Railway auto-generates it
+                    if value.startswith('='):
+                        value = value[1:]
+
                     os.environ[key] = value
                     print(f"✅ {key} = {value[:10]}..." if len(value) > 10 else f"✅ {key} = {value}")
                     
