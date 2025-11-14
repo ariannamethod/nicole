@@ -593,7 +593,8 @@ class HighMathEngine:
         base1 = 10 + int(entropy) % 5
         base2 = 10 + int(perplexity) % 5
         if base1 == base2:
-            base2 = 10 + ((base2 + 1) % 5)
+            # FIX: Copilot found bug - use perplexity+1 to avoid collision
+            base2 = 10 + ((int(perplexity) + 1) % 5)
         # Result: two sentences, 10-14 words each, 20-28 total
 
         # LINGUISTIC AGNOSTICISM: if no candidates - build from user's words!
@@ -626,7 +627,7 @@ class HighMathEngine:
         used_between_sentences = set()  # Empty at start, will be filled with response words
 
         # TWO LONG SENTENCES with semantic drift and controlled overlap
-        # Track words used in FIRST sentence only (allow 10-20% overlap in second)
+        # Track words used in FIRST sentence only (allow 25% overlap in second)
         used_in_first = set()
 
         # FIRST SENTENCE: High-quality concepts + some mid-tier
@@ -635,7 +636,7 @@ class HighMathEngine:
         )
 
         # SECOND SENTENCE: Mid/low-tier concepts (semantic drift away from first)
-        # Allow 20-25% word overlap for natural flow and variety
+        # Allow 25% word overlap for natural flow and variety
         second_sentence = self._generate_semantic_sentence(
             all_candidates, base2, used_in_first, pronoun_preferences, tier_focus='drift',
             allow_overlap=0.25  # 25% overlap allowed (increased for variety)
@@ -776,7 +777,7 @@ class HighMathEngine:
             pronouns: Inverted pronouns (I/you priority)
             tier_focus: 'high' for first sentence (high/mid tiers),
                        'drift' for second (mid/low tiers - semantic drift)
-            allow_overlap: Fraction of words allowed to repeat (0.15 = 15%)
+            allow_overlap: Fraction of words allowed to repeat (0.25 = 25%)
 
         Returns:
             List of words forming the sentence

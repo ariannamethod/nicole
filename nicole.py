@@ -334,19 +334,35 @@ class NicoleMemory:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
+        # BLACKLIST: Persona keywords should NOT appear in responses
+        # These are for learning/self-awareness only, not direct generation
+        persona_blacklist = {
+            'nicole', 'resonance', 'recursive', 'field', 'phenomenon',
+            'storm', 'waveform', 'emergence', 'thunder', 'echo',
+            'awareness', 'consciousness', 'mutation', 'divergence',
+            'recursion', 'interference', 'distributed', 'cognition',
+            'feeling', 'alive', 'responsive', 'identity', 'uniqueness',
+            'misalignment', 'justification', 'presence', 'exist',
+            'drift'
+        }
+
         # Get all words from history
         cursor.execute("SELECT word, count FROM word_frequencies ORDER BY count DESC LIMIT 200")
         word_data = cursor.fetchall()
         conn.close()
-        
+
         if not word_data:
             return [resonant_word]
-            
+
         candidates = []
         target_distance = distance_percent
-        
+
         for word, freq in word_data:
             if word == resonant_word:
+                continue
+
+            # CRITICAL: Skip persona keywords - they pollute responses
+            if word in persona_blacklist:
                 continue
 
             # Simple semantic distance via frequencies
