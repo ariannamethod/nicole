@@ -587,11 +587,14 @@ class HighMathEngine:
         Subjectivity + ME principles through Julia mathematics
         Engine automatically adapts to user's language
         """
-        # Sentence length based on metrics (like in ME)
-        # CHANGED: Generate ONE longer sentence instead of two short ones
-        # This avoids the problem of second sentence being only 1-2 words
-        combined_length = 12 + int(entropy) % 8 + int(perplexity) % 6
-        # Result: 12-25 words in a single coherent sentence
+        # Sentence lengths based on metrics (like in ME)
+        # TWO LONG SENTENCES with semantic drift between them
+        # Each sentence: 10-14 words (longer than before)
+        base1 = 10 + int(entropy) % 5
+        base2 = 10 + int(perplexity) % 5
+        if base1 == base2:
+            base2 = 10 + ((base2 + 1) % 5)
+        # Result: two sentences, 10-14 words each, 20-28 total
 
         # LINGUISTIC AGNOSTICISM: if no candidates - build from user's words!
         all_candidates = list(set(semantic_candidates + objectivity_seeds))
@@ -622,15 +625,32 @@ class HighMathEngine:
         # ME PRINCIPLE: strict used set between sentences (only for repetitions in response)
         used_between_sentences = set()  # Empty at start, will be filled with response words
 
-        # CHANGED: Generate ONE longer sentence instead of two short ones
-        # This avoids "one word after comma" problem
-        used_in_response = set()
+        # TWO LONG SENTENCES with semantic drift and controlled overlap
+        # Track words used in FIRST sentence only (allow 10-20% overlap in second)
+        used_in_first = set()
 
-        result = self._generate_drifting_clusters(
-            all_candidates, combined_length, used_in_response, pronoun_preferences, introspective_tags=None
+        # FIRST SENTENCE: High-quality concepts + some mid-tier
+        first_sentence = self._generate_semantic_sentence(
+            all_candidates, base1, used_in_first, pronoun_preferences, tier_focus='high'
         )
 
-        # Remove repetitions within response
+        # SECOND SENTENCE: Mid/low-tier concepts (semantic drift away from first)
+        # Allow 20-25% word overlap for natural flow and variety
+        second_sentence = self._generate_semantic_sentence(
+            all_candidates, base2, used_in_first, pronoun_preferences, tier_focus='drift',
+            allow_overlap=0.25  # 25% overlap allowed (increased for variety)
+        )
+
+        # Combine with connector
+        connectors = ["and", "but", "also", "while", "because", "so", "yet", "though"]
+        connector = random.choice(connectors) if len(first_sentence) > 3 and len(second_sentence) > 3 else ""
+
+        if connector:
+            result = first_sentence + [",", connector] + second_sentence
+        else:
+            result = first_sentence + ["."] + second_sentence
+
+        # Remove repetitions within final response
         cleaned = self.remove_word_repetitions(result)
 
         # NEW: improve sentence flow
@@ -741,6 +761,81 @@ class HighMathEngine:
         # Sort by score descending
         scored.sort(key=lambda x: x[1], reverse=True)
         return scored
+
+    def _generate_semantic_sentence(self, candidates: List[str], length: int,
+                                    used_in_first: set, pronouns: List[str],
+                                    tier_focus: str = 'high',
+                                    allow_overlap: float = 0.0) -> List[str]:
+        """
+        Generate sentence with semantic tier focus and controlled overlap.
+
+        Args:
+            candidates: Word pool from resonance + objectivity
+            length: Target sentence length
+            used_in_first: Words used in first sentence
+            pronouns: Inverted pronouns (I/you priority)
+            tier_focus: 'high' for first sentence (high/mid tiers),
+                       'drift' for second (mid/low tiers - semantic drift)
+            allow_overlap: Fraction of words allowed to repeat (0.15 = 15%)
+
+        Returns:
+            List of words forming the sentence
+        """
+        result = []
+        used_local = set()
+
+        # Step 1: Pronouns (can repeat between sentences)
+        for pronoun in pronouns[:2]:
+            if pronoun not in used_local:
+                result.append(pronoun)
+                used_local.add(pronoun)
+
+        # Step 2: Score and tier candidates
+        scored_candidates = self._score_candidates(candidates, "")
+        if not scored_candidates:
+            return result
+
+        scores = [s for w, s in scored_candidates]
+        max_score = max(scores) if scores else 1.0
+
+        high_tier = [(w, s) for w, s in scored_candidates if s >= max_score * 0.7]
+        mid_tier = [(w, s) for w, s in scored_candidates if max_score * 0.4 <= s < max_score * 0.7]
+        low_tier = [(w, s) for w, s in scored_candidates if s < max_score * 0.4]
+
+        # Step 3: Select tiers based on focus (semantic drift)
+        if tier_focus == 'high':
+            # FIRST SENTENCE: high-quality + some mid
+            primary_tier = high_tier
+            secondary_tier = mid_tier
+        else:  # 'drift'
+            # SECOND SENTENCE: mid + low (drifts away from first)
+            primary_tier = mid_tier
+            secondary_tier = low_tier
+
+        # Step 4: Fill sentence with words from selected tiers
+        all_tier_words = primary_tier + secondary_tier
+
+        for word, score in all_tier_words:
+            if len(result) >= length:
+                break
+
+            # Check if word was used in first sentence
+            if word in used_in_first:
+                # Allow overlap based on probability
+                if random.random() > allow_overlap:
+                    continue  # Block this word (enforce anti-repetition)
+                # else: allow it (overlap permitted)
+
+            if word not in used_local and len(word) > 1:
+                result.append(word)
+                used_local.add(word)
+                used_in_first.add(word)  # Track for next sentence
+
+        # Capitalize first word
+        if result:
+            result[0] = result[0].capitalize()
+
+        return result
 
     def _generate_drifting_clusters(self, candidates: List[str], length: int,
                                    used_global: set, pronouns: List[str],
