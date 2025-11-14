@@ -768,7 +768,6 @@ class NicoleCore:
         self.session_id = None
         self.conversation_count = 0
         self.lock = threading.Lock()
-        self._last_response = ""  # Track previous response for anti-repeat logic
 
         # AMLK operating system integration
         self.amlk_bridge = get_amlk_bridge()
@@ -1385,7 +1384,7 @@ class NicoleCore:
                     print(f"[DIAGNOSTIC] Using HIGH generation, candidates: {len(semantic_candidates)}, seeds: {len(objectivity_seeds)}")
                     # JULIA + LINGUISTIC AGNOSTICISM: engine without language prejudice
                     response_words = self.high_core.math_engine.generate_linguistically_agnostic_response(
-                        user_words, semantic_candidates, objectivity_seeds, entropy, perplexity, user_input, self._last_response
+                        user_words, semantic_candidates, objectivity_seeds, entropy, perplexity, user_input
                     )
                     print(f"[DIAGNOSTIC] HIGH generation successful: {len(response_words)} words")
                 except Exception as e:
@@ -1453,8 +1452,6 @@ class NicoleCore:
                 print(f"[Nicole:AntiRepeat] Response repeats, generating alternative")
                 return self._generate_simple_response(user_input)
 
-            # Save response for anti-repeat tag logic
-            self._last_response = response
             return response
 
         except Exception as e:

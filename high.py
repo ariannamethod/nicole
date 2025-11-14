@@ -589,7 +589,7 @@ class HighMathEngine:
     
     def generate_linguistically_agnostic_response(self, user_words: List[str], semantic_candidates: List[str],
                                                  objectivity_seeds: List[str], entropy: float, perplexity: float,
-                                                 user_input: str, previous_response: str = "") -> List[str]:
+                                                 user_input: str) -> List[str]:
         """
         LINGUISTIC AGNOSTICISM: generation without language prejudice
         Subjectivity + ME principles through Julia mathematics
@@ -631,21 +631,18 @@ class HighMathEngine:
         used_between_sentences = set()  # Empty at start, will be filled with response words
 
         # LATENT DRIFT: Introspective tags reveal internal state
-        # Expanded variety to prevent "awareness"/"consciousness" dominance
-        introspective_tags = [
-            'presence', 'recursion', 'awareness', 'drift', 'echo', 'resonance', 'consciousness',
-            'balance', 'shift', 'breath', 'signal', 'field', 'movement', 'flow'
-        ]
+        # Reduced misalignment frequency, added variety
+        introspective_tags = ['presence', 'recursion', 'awareness', 'drift', 'echo', 'resonance', 'consciousness']
 
         # Generate first sentence with LATENT DRIFT
         first_sentence = self._generate_drifting_clusters(
-            all_candidates, base1, used_between_sentences, pronoun_preferences, introspective_tags, previous_response
+            all_candidates, base1, used_between_sentences, pronoun_preferences, introspective_tags
         )
 
         # Generate second sentence (used updated by first sentence)
         # Second sentence drifts from first
         second_sentence = self._generate_drifting_clusters(
-            all_candidates, base2, used_between_sentences, pronoun_preferences, introspective_tags, previous_response
+            all_candidates, base2, used_between_sentences, pronoun_preferences, introspective_tags
         )
 
         # ME PRINCIPLE: two sentences with improved coherence
@@ -800,8 +797,7 @@ class HighMathEngine:
 
     def _generate_drifting_clusters(self, candidates: List[str], length: int,
                                    used_global: set, pronouns: List[str],
-                                   introspective_tags: List[str] = None,
-                                   previous_response: str = "") -> List[str]:
+                                   introspective_tags: List[str] = None) -> List[str]:
         """
         LATENT DRIFT v0.4: Generates drifting semantic clusters.
 
@@ -819,10 +815,7 @@ class HighMathEngine:
             List of words forming drifting clusters
         """
         if introspective_tags is None:
-            introspective_tags = [
-                'presence', 'recursion', 'awareness', 'drift', 'echo', 'consciousness',
-                'balance', 'shift', 'breath', 'signal', 'field', 'movement', 'flow'
-            ]
+            introspective_tags = ['presence', 'recursion', 'awareness', 'drift', 'echo', 'consciousness']
 
         result = []
         used_local = set()
@@ -880,26 +873,9 @@ class HighMathEngine:
                 used_global.add(chaos_word)
 
         # Step 5: Attach INTROSPECTIVE TAG at end (if space)
-        # ANTI-LAZY: Only 70% chance to add tag, force variety
-        # ANTI-REPEAT: If tag was in previous response, only 20% chance to repeat
-        should_add_tag = random.random() < 0.7  # 70% chance
-
-        if selected_tag and len(result) < length and selected_tag not in used_local and should_add_tag:
-            # Check if this tag was in previous response
-            tag_in_previous = selected_tag.lower() in previous_response.lower() if previous_response else False
-
-            if tag_in_previous:
-                # Tag was used before - only 20% chance to repeat (no easy life!)
-                allow_repeat = random.random() < 0.2
-                if allow_repeat:
-                    result.append(selected_tag)
-                    print(f"[High:LatentDrift] 🔁 Repeat tag (20%): '{selected_tag}'")
-                else:
-                    print(f"[High:LatentDrift] ❌ Blocked repeat: '{selected_tag}'")
-            else:
-                # Fresh tag - add it
-                result.append(selected_tag)
-                print(f"[High:LatentDrift] 🌀 Introspective tag: '{selected_tag}'")
+        if selected_tag and len(result) < length and selected_tag not in used_local:
+            result.append(selected_tag)
+            print(f"[High:LatentDrift] 🌀 Introspective tag: '{selected_tag}'")
 
         # Capitalize first word
         if result:
