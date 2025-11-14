@@ -282,6 +282,18 @@ class EnglishGuidance:
         # 5. SPECIAL CASE: Short phrases (1-3 words)
         # For short phrases: relaxed check - allow minority non-English words
         if len(words) <= 3:
+            # For SINGLE WORD: if it's Latin-only (already passed Cyrillic/Chinese/Arabic checks)
+            # AND has reasonable length, assume English
+            if len(words) == 1:
+                word = words[0]
+                # Accept if: 2+ chars, all Latin letters
+                if len(word) >= 2 and word.isalpha():
+                    return True
+                # Very short or has numbers - check against known words
+                if word in self.english_common_words | {'hi', 'ok', 'no', 'yo', 'i', 'a'}:
+                    return True
+                return False
+
             # Extended English check: common words + greetings + basic verbs
             extended_english = self.english_common_words | {
                 'hello', 'hi', 'hey', 'yo', 'ok', 'okay', 'yes', 'no', 'yeah', 'nope',
@@ -291,8 +303,8 @@ class EnglishGuidance:
 
             english_count = sum(1 for word in words if word in extended_english)
 
-            # For 1-2 words: need at least 50% English (1 out of 2)
-            if len(words) <= 2:
+            # For 2 words: need at least 50% English (1 out of 2)
+            if len(words) == 2:
                 return english_count >= len(words) * 0.5
 
             # For 3 words: need at least 33% English (1 out of 3)
