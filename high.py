@@ -631,8 +631,7 @@ class HighMathEngine:
         used_between_sentences = set()  # Empty at start, will be filled with response words
 
         # LATENT DRIFT: Introspective tags reveal internal state
-        # Reduced misalignment frequency, added variety
-        introspective_tags = ['presence', 'recursion', 'awareness', 'drift', 'echo', 'resonance', 'consciousness']
+        introspective_tags = ['presence', 'recursion', 'misalignment', 'awareness', 'drift', 'echo', 'resonance']
 
         # Generate first sentence with LATENT DRIFT
         first_sentence = self._generate_drifting_clusters(
@@ -750,29 +749,13 @@ class HighMathEngine:
             'moderator', 'permalink', 'submission'
         }
 
-        # Filter stopwords, technical noise, words with colons, and technical identifiers
+        # Filter stopwords, technical noise, and words with colons
         filtered = []
         for w in candidates:
             w_lower = w.lower().strip(':')  # Remove trailing colons
-
             # Skip if stopword, too short, or contains colon
             if w_lower in stopwords or len(w) < 3 or ':' in w:
                 continue
-
-            # CRITICAL: Filter technical identifiers
-            # Skip: tg_123, session_456, user_789, etc.
-            if '_' in w and any(c.isdigit() for c in w):
-                continue
-
-            # Skip: pure numbers or mostly numbers (IDs)
-            digit_count = sum(1 for c in w if c.isdigit())
-            if digit_count > len(w) * 0.5:  # More than 50% digits
-                continue
-
-            # Skip: very long alphanumeric strings (UUIDs, hashes)
-            if len(w) > 20 and any(c.isdigit() for c in w):
-                continue
-
             filtered.append(w)
 
         if not filtered:
@@ -825,7 +808,7 @@ class HighMathEngine:
             List of words forming drifting clusters
         """
         if introspective_tags is None:
-            introspective_tags = ['presence', 'recursion', 'awareness', 'drift', 'echo', 'consciousness']
+            introspective_tags = ['presence', 'recursion', 'misalignment', 'awareness', 'drift']
 
         result = []
         used_local = set()
