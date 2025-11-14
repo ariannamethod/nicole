@@ -684,12 +684,16 @@ h2o_metric("reddit_results_count", len(objectivity_results_reddit))
         query = query[:150]
         script_id = f"perplexity_{int(time.time()*1000)}"
 
+        # Read API key BEFORE generating script (os module not available in H2O runtime)
+        import os
+        api_key = os.environ.get("PERPLEXITY_API_KEY", "")
+
         code = f"""
-import requests, json, os
+import requests, json
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-PERPLEXITY_API_KEY = os.environ.get("PERPLEXITY_API_KEY")
+PERPLEXITY_API_KEY = {json.dumps(api_key)}
 if not PERPLEXITY_API_KEY:
     objectivity_results_perplexity = []
 else:
