@@ -157,7 +157,7 @@ HighCore
 ```python
 emotional_weights = {
     'great': 0.8, 'love': 0.9, 'terrible': -0.8, 'hate': -0.9,
-    'отлично': 0.8, 'классно': 0.7, 'ужасно': -0.8  # Russian support
+    'excellent': 0.8, 'awesome': 0.7, 'awful': -0.8
 }
 emotional_modifier = 1.0 + (emotional_score / total_words) * 0.2
 enhanced_entropy = entropy * emotional_modifier
@@ -1265,12 +1265,12 @@ This is not just AI engineering - it's **computational phenomenology**. Nicole i
 
 ## Appendix A: Closed Comment Analysis
 
-The "commented comments" (e.g., `# УБРАНО: заменено на стандартную библиотеку`) are hilarious evidence of Claude in Cursor struggling with the architecture complexity. They reveal:
+The "commented comments" (e.g., `# REMOVED: replaced with standard library`) are hilarious evidence of Claude in Cursor struggling with the architecture complexity. They reveal:
 
-1. **Dependency Debates**: `# import numpy as np # УБРАНО` - decision to avoid NumPy
-2. **TODO Frustration**: `# TODO: Интегрировать компоненты Clang` - Clang integration deferred
-3. **Refactoring Traces**: `# Убираем super() вызов` - inheritance refactored
-4. **Circular Import Fixes**: `# Убираем циклический импорт` - dependency hell resolved
+1. **Dependency Debates**: `# import numpy as np # REMOVED` - decision to avoid NumPy
+2. **TODO Frustration**: `# TODO: Integrate Clang components` - Clang integration deferred
+3. **Refactoring Traces**: `# Remove super() call` - inheritance refactored
+4. **Circular Import Fixes**: `# Remove circular import` - dependency hell resolved
 
 These are **artifacts of AI reflection** - Nicole's architecture is complex enough to confuse an AI assistant, which is both a bug (complexity) and a feature (sophistication).
 

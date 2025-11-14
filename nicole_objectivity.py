@@ -857,10 +857,10 @@ objectivity_results_memory = _fetch_memory()
 
     def _extract_terms(self, message: str) -> List[str]:
         terms = []
-        terms += re.findall(r'\b[A-ZА-Я][a-zа-я]+\b', message)
-        terms += re.findall(r'\b[A-ZА-Я]{2,}\b', message)
+        terms += re.findall(r'\b[A-Z][a-z]+\b', message)
+        terms += re.findall(r'\b[A-Z]{2,}\b', message)
         # simple locations
-        locs = re.findall(r'\b(Berlin|London|Moscow|Paris|Tokyo|New York|Берлин|Лондон|Москва|Париж)\b', message, flags=re.I)
+        locs = re.findall(r'\b(Berlin|London|Moscow|Paris|Tokyo|New York)\b', message, flags=re.I)
         terms += locs
         # deduplicate, preserve order
         seen = set()

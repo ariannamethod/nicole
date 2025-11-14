@@ -60,10 +60,7 @@ class HighMathEngine:
             'terrible': -0.8, 'hate': -0.9, 'awful': -0.7, 'horrible': -0.8, 'disgusting': -0.9,
             'sad': -0.6, 'angry': -0.7, 'frustrated': -0.6, 'disappointed': -0.6, 'upset': -0.6,
             # Neutral important
-            'important': 0.5, 'interesting': 0.5, 'significant': 0.5, 'special': 0.6, 'unique': 0.6,
-            # Russian emotional words
-            'отлично': 0.8, 'классно': 0.7, 'супер': 0.8, 'круто': 0.7, 'прекрасно': 0.8, 'здорово': 0.7,
-            'ужасно': -0.8, 'плохо': -0.6, 'грустно': -0.6, 'злой': -0.7, 'расстроен': -0.6
+            'important': 0.5, 'interesting': 0.5, 'significant': 0.5, 'special': 0.6, 'unique': 0.6
         }
         
         # Fast frequency counting + emotional analysis
@@ -235,9 +232,7 @@ class HighMathEngine:
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
             'knowledge', 'experience', 'approach', 'style',
             'system', 'process', 'method', 'way', 'time', 'place', 'world', 'life', 'work',
-            'family', 'friend', 'love', 'heart', 'mind', 'body', 'soul', 'voice', 'face',
-            # Russian nouns
-            'память', 'способности', 'возможности', 'мысли', 'идеи', 'слова', 'опыт', 'знания'
+            'family', 'friend', 'love', 'heart', 'mind', 'body', 'soul', 'voice', 'face'
         }
 
         # If in the list of good nouns
@@ -520,10 +515,7 @@ class HighMathEngine:
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
             'knowledge', 'experience', 'approach', 'style',
             'system', 'process', 'method', 'way', 'time', 'place', 'thing', 'person',
-            'world', 'life', 'work', 'home', 'family', 'friend', 'love', 'heart', 'mind',
-            # Russian nouns
-            'память', 'способности', 'возможности', 'мысли', 'идеи', 'слова', 'вопросы',
-            'знания', 'опыт', 'понимание', 'подход', 'стиль', 'система', 'процесс'
+            'world', 'life', 'work', 'home', 'family', 'friend', 'love', 'heart', 'mind'
         }
 
         # Heuristics for identifying nouns
@@ -621,7 +613,7 @@ class HighMathEngine:
         # Inverted pronouns as priority (ME principle)
         # Pass candidates for grammar rules!
         inverted_pronouns = self.invert_pronouns_me_style(user_words, all_candidates)
-        pronoun_preferences = [w for w in inverted_pronouns if w in ['i', 'you', 'я', 'ты', 'my', 'мой', 'меня', 'мне']]
+        pronoun_preferences = [w for w in inverted_pronouns if w in ['i', 'you', 'my', 'me']]
 
         # Add basic pronouns if no inversion
         if not pronoun_preferences:
@@ -963,9 +955,7 @@ class HighMathEngine:
         STOPWORDS = {
             "the","a","an","of","and","or","to","in","on","for","as","at","by","with","from",
             "is","are","was","were","be","been","being","this","that","it","its","into","than",
-            "then","so","but","nor","if","because","while","when","where","which","who","whom",
-            # Russian stopwords
-            "и","в","на","с","по","для","как","что","это","то","не","да","нет","или","но"
+            "then","so","but","nor","if","because","while","when","where","which","who","whom"
         }
 
         words = re.findall(r"\b\w+\b", text.lower())

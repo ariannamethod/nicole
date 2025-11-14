@@ -130,9 +130,9 @@ class ResonanceAnalyzer:
     def emotional_resonance(text1: str, text2: str) -> float:
         """Emotional resonance"""
         emotional_words = {
-            'positive': ['хорошо', 'отлично', 'супер', 'круто', 'классно', 'радость', 'счастье'],
-            'negative': ['плохо', 'ужасно', 'грустно', 'злость', 'печаль', 'проблема'],
-            'neutral': ['нормально', 'обычно', 'так себе', 'ничего', 'может быть']
+            'positive': ['good', 'great', 'super', 'cool', 'awesome', 'joy', 'happiness', 'excellent'],
+            'negative': ['bad', 'terrible', 'sad', 'anger', 'sorrow', 'problem', 'awful'],
+            'neutral': ['normal', 'usually', 'okay', 'nothing', 'maybe']
         }
         
         def get_emotional_score(text):
@@ -544,43 +544,43 @@ def test_metrics_system():
     print("=== NICOLE METRICS SYSTEM TEST ===")
     
     # Test 1: Entropy
-    print("\\n--- Тест энтропии ---")
+    print("\\n--- Entropy Test ---")
     test_texts = [
         "hello hello hello",  # Low entropy
         "diverse interesting unique content",  # High entropy
         "a b c d e f g h i j k l m n o p q r s t"  # Maximum entropy
     ]
-    
+
     for text in test_texts:
         entropy = EntropyCalculator.word_entropy(text)
         print(f"'{text}': entropy = {entropy:.3f}")
-        
+
     # Test 2: Resonance
-    print("\\n--- Тест резонанса ---")
+    print("\\n--- Resonance Test ---")
     text_pairs = [
-        ("Я люблю программирование", "Программирование это круто"),
-        ("Какая погода?", "Сегодня солнечно"),
-        ("Привет как дела?", "Пока увидимся завтра")
+        ("I love programming", "Programming is awesome"),
+        ("What's the weather?", "It's sunny today"),
+        ("Hello how are you?", "See you tomorrow")
     ]
-    
+
     for text1, text2 in text_pairs:
         semantic = ResonanceAnalyzer.semantic_resonance(text1, text2)
         emotional = ResonanceAnalyzer.emotional_resonance(text1, text2)
         rhythmic = ResonanceAnalyzer.rhythmic_resonance(text1, text2)
-        
+
         print(f"'{text1}' <-> '{text2}':")
         print(f"  Semantic: {semantic:.3f}")
         print(f"  Emotional: {emotional:.3f}")
         print(f"  Rhythmic: {rhythmic:.3f}")
-        
+
     # Test 3: Full conversation analysis
-    print("\\n--- Тест анализа разговора ---")
-    
+    print("\\n--- Conversation Analysis Test ---")
+
     conversation = [
-        ("Привет Nicole!", "Привет! Как дела?"),
-        ("Хорошо, работаю над проектом", "Интересно! Что за проект?"),
-        ("Делаю нейронную сеть", "Круто! Расскажи подробнее"),
-        ("Это система без весов", "Необычный подход!")
+        ("Hello Nicole!", "Hello! How are you?"),
+        ("Good, working on a project", "Interesting! What project?"),
+        ("Building a neural network", "Cool! Tell me more"),
+        ("It's a weightless system", "Unusual approach!")
     ]
     
     for i, (user_msg, nicole_msg) in enumerate(conversation):
@@ -596,14 +596,14 @@ def test_metrics_system():
         print(f"  Engagement: {snapshot.engagement:.3f}")
         
     # Test 4: Session analytics
-    print("\\n--- Аналитика сессии ---")
+    print("\\n--- Session Analytics ---")
     session_analytics = nicole_metrics.get_session_analytics("test_session")
     print(f"Transformer changes: {session_analytics['transformer_changes']}")
     print(f"Overall session score: {session_analytics['session_score']:.3f}")
     print(f"Interactions: {session_analytics['total_interactions']}")
-    
+
     # Test 5: Anomaly detection
-    print("\\n--- Детекция аномалий ---")
+    print("\\n--- Anomaly Detection ---")
     anomalies = nicole_metrics.detect_anomalies()
     if anomalies:
         for anomaly in anomalies:
@@ -726,8 +726,8 @@ class VerbGraph:
     def __init__(self):
         self.verb_endings = defaultdict(lambda: defaultdict(int))
         # Simple verbs for start
-        self.common_verbs = {"run", "walk", "talk", "think", "know", "see", "go", "come", "say", "tell", 
-                           "работаю", "делаю", "думаю", "знаю", "вижу", "иду", "говорю", "понимаю"}
+        self.common_verbs = {"run", "walk", "talk", "think", "know", "see", "go", "come", "say", "tell",
+                           "work", "do", "make", "understand", "speak", "feel", "want", "need"}
     
     def observe_verb_ending(self, verb: str, punctuation: str):
         """Records how verb ended"""

@@ -560,13 +560,13 @@ class NicoleMemoryCore:
         if any(char in user_input for char in '?'):
             importance += 0.1
 
-        # - Personal information (Russian words preserved as data)
-        personal_words = ['я', 'мне', 'мой', 'моя', 'мое', 'меня', 'себя']
+        # - Personal information
+        personal_words = ['i', 'me', 'my', 'mine', 'myself']
         if any(word in user_input.lower().split() for word in personal_words):
             importance += 0.3
 
-        # - Emotional words (Russian words preserved as data)
-        emotional_words = ['люблю', 'ненавижу', 'нравится', 'злой', 'грустный', 'счастливый']
+        # - Emotional words
+        emotional_words = ['love', 'hate', 'like', 'angry', 'sad', 'happy', 'joy', 'fear']
         if any(word in user_input.lower() for word in emotional_words):
             importance += 0.2
 
