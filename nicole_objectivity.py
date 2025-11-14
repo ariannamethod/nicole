@@ -337,18 +337,54 @@ class NicoleObjectivity:
             'wiki', 'wikihow', 'wikipedia', 'encyclopedia'
         }
 
-        # MINIMAL filtering - only obvious garbage + provider blacklist
+        # INTELLIGENT filtering - remove garbage while preserving natural words
         filtered = []
         for w in words:
             # Skip if starts with digit (e.g., "3kbiahxwb1za1", "206333240")
             if w[0].isdigit():
                 continue
-            # Skip overly long slugs (>20 chars)
-            if len(w) > 20:
+
+            # Skip overly long slugs (>18 chars) - reduced from 20 to catch more glued words
+            if len(w) > 18:
                 continue
+
             # CRITICAL: Skip ALL provider/service names
             if w in provider_blacklist:
                 continue
+
+            # SMART FILTER 1: Skip ID patterns like "tg_206333240", "id_123", "user_abc123"
+            if re.match(r'^[a-z]+_\d+', w):
+                continue
+
+            # SMART FILTER 2: Skip hash-like gibberish (very low vowel ratio)
+            # Examples: "audhmwgvaky0b7ix", "j3bwzanxw8q"
+            vowels = sum(1 for c in w if c in 'aeiouy')
+            vowel_ratio = vowels / len(w) if len(w) > 0 else 0
+            if len(w) > 8 and vowel_ratio < 0.15:  # Conservative threshold
+                continue
+
+            # SMART FILTER 3: Skip words with >5 consonants in a row (gibberish hashes)
+            # Examples: "audhmwgvaky0b7ix" has "dhmwgv" (6 consonants)
+            # BUT keep normal words like "strength" (has vowels interspersed)
+            consonant_run = 0
+            max_consonant_run = 0
+            for c in w:
+                if c.isalpha() and c not in 'aeiouy':
+                    consonant_run += 1
+                    max_consonant_run = max(max_consonant_run, consonant_run)
+                else:
+                    consonant_run = 0
+            if max_consonant_run > 5:  # Allow up to 5 consonants (e.g., "strengths")
+                continue
+
+            # SMART FILTER 4: Skip short alphanumeric garbage codes (e.g., "ca754", "x3k1a")
+            # Pattern: short words (3-8 chars) with mixed letters+digits but low vowel count
+            if len(w) <= 8 and any(c.isdigit() for c in w):
+                # If it has digits and few vowels, likely a code/ID
+                digit_count = sum(1 for c in w if c.isdigit())
+                if digit_count >= 2 or (digit_count >= 1 and vowel_ratio < 0.3):
+                    continue
+
             filtered.append(w)
 
         if not filtered:
