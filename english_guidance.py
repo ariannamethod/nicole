@@ -242,81 +242,79 @@ class EnglishGuidance:
 
     def is_likely_english(self, text: str, threshold: float = 0.15) -> bool:
         """
-        Detects if text is likely English
+        SIMPLIFIED: Detects if text is likely English
 
-        Uses heuristics:
-        1. Check for non-Latin scripts (Cyrillic, Chinese, etc.) → NOT English
-        2. Check % of common English words
-        3. For short phrases (1-3 words), use relaxed threshold
+        RULES:
+        1. Non-Latin scripts (Cyrillic, Chinese, Arabic) → BLOCK immediately
+        2. Latin script → Check for OBVIOUS bias to other language (70%+ threshold)
+        3. If no obvious bias → ACCEPT
 
         Args:
             text: Input text
-            threshold: Minimum ratio of English words (default 0.15 = 15%)
+            threshold: IGNORED (kept for backwards compatibility)
 
         Returns:
-            True if likely English, False otherwise
+            True if likely English (Latin script without obvious bias), False otherwise
         """
-        # 1. Check for Cyrillic (Russian, Ukrainian, etc.)
+        # 1. BLOCK non-Latin scripts immediately
+
+        # Cyrillic (Russian, Ukrainian, etc.)
         if re.search(r'[а-яА-ЯёЁ]', text):
             return False
 
-        # 2. Check for Chinese/Japanese/Korean
+        # Chinese/Japanese/Korean
         if re.search(r'[\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff\uac00-\ud7af]', text):
             return False
 
-        # 3. Check for Arabic
+        # Arabic
         if re.search(r'[\u0600-\u06ff]', text):
             return False
 
-        # 4. Extract Latin words
+        # Hebrew
+        if re.search(r'[\u0590-\u05ff]', text):
+            return False
+
+        # Thai
+        if re.search(r'[\u0e00-\u0e7f]', text):
+            return False
+
+        # 2. Latin script - check for OBVIOUS bias to other languages
+
+        # Extract words
         words = re.findall(r'\b[a-z]+\b', text.lower())
 
         if not words:
-            # No Latin words found - could be symbols/numbers only
-            # Check if there's ANY alphabetic character
-            if re.search(r'[a-zA-Z]', text):
-                return True  # Has Latin chars but no complete words - assume English
-            else:
-                return True  # Only symbols/numbers - assume English for now
+            # No words - just symbols/numbers
+            return True
 
-        # 5. SPECIAL CASE: Short phrases (1-3 words)
-        # For short phrases: relaxed check - allow minority non-English words
-        if len(words) <= 3:
-            # For SINGLE WORD: if it's Latin-only (already passed Cyrillic/Chinese/Arabic checks)
-            # AND has reasonable length, assume English
-            if len(words) == 1:
-                word = words[0]
-                # Accept if: 2+ chars, all Latin letters
-                if len(word) >= 2 and word.isalpha():
-                    return True
-                # Very short or has numbers - check against known words
-                if word in self.english_common_words | {'hi', 'ok', 'no', 'yo', 'i', 'a'}:
-                    return True
-                return False
+        # Common words in other Latin-script languages
+        other_language_words = {
+            # French
+            'bonjour', 'merci', 'oui', 'non', 'monsieur', 'madame', 'comment', 'allez', 'vous',
+            'très', 'bien', 'mal', 'quel', 'quelle', 'avec', 'pour', 'sur', 'dans', 'est',
+            # Spanish
+            'hola', 'gracias', 'señor', 'señora', 'como', 'estas', 'muy', 'bueno', 'malo',
+            'que', 'por', 'para', 'con', 'donde', 'cuando', 'quien', 'cual', 'si', 'no',
+            # German
+            'hallo', 'danke', 'bitte', 'gut', 'schlecht', 'sehr', 'wie', 'was', 'wer',
+            'wo', 'wann', 'mit', 'für', 'auf', 'in', 'ist', 'sind', 'haben', 'sein',
+            # Italian
+            'ciao', 'grazie', 'prego', 'buono', 'cattivo', 'molto', 'come', 'cosa',
+            'dove', 'quando', 'chi', 'quale', 'con', 'per', 'su', 'in', 'è', 'sono',
+            # Portuguese
+            'olá', 'obrigado', 'obrigada', 'senhor', 'senhora', 'bom', 'mau', 'muito',
+            'como', 'que', 'onde', 'quando', 'quem', 'qual', 'com', 'para', 'em'
+        }
 
-            # Extended English check: common words + greetings + basic verbs
-            extended_english = self.english_common_words | {
-                'hello', 'hi', 'hey', 'yo', 'ok', 'okay', 'yes', 'no', 'yeah', 'nope',
-                'thanks', 'thank', 'please', 'sorry', 'bye', 'goodbye', 'welcome',
-                'nicole', 'speaking', 'viva', 'la'  # Allow "viva la" as common phrase
-            }
+        # Count how many words are from other languages
+        other_lang_count = sum(1 for w in words if w in other_language_words)
 
-            english_count = sum(1 for word in words if word in extended_english)
+        # If 70%+ words are from other languages → BLOCK
+        if len(words) >= 3 and other_lang_count / len(words) >= 0.7:
+            return False
 
-            # For 2 words: need at least 50% English (1 out of 2)
-            if len(words) == 2:
-                return english_count >= len(words) * 0.5
-
-            # For 3 words: need at least 33% English (1 out of 3)
-            # "viva la nicole" = 3/3 = 100% → PASS!
-            # "bonjour comment allez" = 0/3 = 0% → FAIL
-            return english_count / len(words) >= 0.33
-
-        # 6. Check ratio of common English words for longer phrases
-        english_count = sum(1 for word in words if word in self.english_common_words)
-        ratio = english_count / len(words)
-
-        return ratio >= threshold
+        # 3. ACCEPT - Latin script without obvious bias
+        return True
 
     def detect_question_pattern(self, text: str) -> Optional[str]:
         """
