@@ -686,7 +686,11 @@ h2o_metric("reddit_results_count", len(objectivity_results_reddit))
 
         # Read API key BEFORE generating script (os module not available in H2O runtime)
         import os
-        api_key = os.environ.get("PERPLEXITY_API_KEY", "")
+        api_key = os.environ.get("PERPLEXITY_API_KEY", "").strip()
+
+        # DEBUG: Log what we actually got from environment
+        print(f"[Perplexity:PreH2O] API key from os.environ: repr={repr(api_key)}, len={len(api_key)}")
+        print(f"[Perplexity:PreH2O] First 30 chars: {repr(api_key[:30])}")
 
         code = f"""
 import requests
