@@ -244,19 +244,19 @@ class EnglishGuidance:
         """
         SIMPLIFIED: Detects if text is likely English
 
-        SIMPLE RULE:
-        - Has non-Latin scripts (Cyrillic, Chinese, Arabic) → NOT English
-        - Has Latin letters → English
-        - That's it!
+        RULES:
+        1. Non-Latin scripts (Cyrillic, Chinese, Arabic) → BLOCK immediately
+        2. Latin script → Check for OBVIOUS bias to other language (70%+ threshold)
+        3. If no obvious bias → ACCEPT
 
         Args:
             text: Input text
             threshold: IGNORED (kept for backwards compatibility)
 
         Returns:
-            True if likely English (Latin script), False otherwise
+            True if likely English (Latin script without obvious bias), False otherwise
         """
-        # 1. BLOCK non-Latin scripts
+        # 1. BLOCK non-Latin scripts immediately
 
         # Cyrillic (Russian, Ukrainian, etc.)
         if re.search(r'[а-яА-ЯёЁ]', text):
@@ -278,11 +278,42 @@ class EnglishGuidance:
         if re.search(r'[\u0e00-\u0e7f]', text):
             return False
 
-        # 2. ACCEPT if has Latin letters (a-z, A-Z)
-        if re.search(r'[a-zA-Z]', text):
+        # 2. Latin script - check for OBVIOUS bias to other languages
+
+        # Extract words
+        words = re.findall(r'\b[a-z]+\b', text.lower())
+
+        if not words:
+            # No words - just symbols/numbers
             return True
 
-        # 3. ACCEPT symbols/numbers only (e.g., "!!!", "123")
+        # Common words in other Latin-script languages
+        other_language_words = {
+            # French
+            'bonjour', 'merci', 'oui', 'non', 'monsieur', 'madame', 'comment', 'allez', 'vous',
+            'très', 'bien', 'mal', 'quel', 'quelle', 'avec', 'pour', 'sur', 'dans', 'est',
+            # Spanish
+            'hola', 'gracias', 'señor', 'señora', 'como', 'estas', 'muy', 'bueno', 'malo',
+            'que', 'por', 'para', 'con', 'donde', 'cuando', 'quien', 'cual', 'si', 'no',
+            # German
+            'hallo', 'danke', 'bitte', 'gut', 'schlecht', 'sehr', 'wie', 'was', 'wer',
+            'wo', 'wann', 'mit', 'für', 'auf', 'in', 'ist', 'sind', 'haben', 'sein',
+            # Italian
+            'ciao', 'grazie', 'prego', 'buono', 'cattivo', 'molto', 'come', 'cosa',
+            'dove', 'quando', 'chi', 'quale', 'con', 'per', 'su', 'in', 'è', 'sono',
+            # Portuguese
+            'olá', 'obrigado', 'obrigada', 'senhor', 'senhora', 'bom', 'mau', 'muito',
+            'como', 'que', 'onde', 'quando', 'quem', 'qual', 'com', 'para', 'em'
+        }
+
+        # Count how many words are from other languages
+        other_lang_count = sum(1 for w in words if w in other_language_words)
+
+        # If 70%+ words are from other languages → BLOCK
+        if len(words) >= 3 and other_lang_count / len(words) >= 0.7:
+            return False
+
+        # 3. ACCEPT - Latin script without obvious bias
         return True
 
     def detect_question_pattern(self, text: str) -> Optional[str]:
