@@ -695,9 +695,12 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 PERPLEXITY_API_KEY = {json.dumps(api_key)}
 if not PERPLEXITY_API_KEY:
+    print("[Perplexity] No API key found in environment")
     objectivity_results_perplexity = []
 else:
+    print(f"[Perplexity] Using API key: {{PERPLEXITY_API_KEY[:20]}}...")
     query = {json.dumps(query)}
+    print(f"[Perplexity] Query: {{query}}")
 
     url = "https://api.perplexity.ai/search"
     headers = {{
@@ -714,9 +717,13 @@ else:
         # Use verify=False to bypass SSL cert issues in some environments
         r = requests.post(url, headers=headers, json=params, verify=False, timeout=20)
 
+        print(f"[Perplexity] HTTP {{r.status_code}}")
+
         if r.status_code == 200:
             data = r.json()
+            print(f"[Perplexity] Response keys: {{list(data.keys())}}")
             results = data.get("results", [])
+            print(f"[Perplexity] Results count: {{len(results)}}")
 
             parsed = []
             for result in results[:5]:
@@ -731,13 +738,14 @@ else:
                     }})
 
             objectivity_results_perplexity = parsed
+            print(f"[Perplexity] Parsed {{len(parsed)}} results")
 
         else:
-            print(f"[Perplexity] HTTP {{r.status_code}}: {{r.text[:200]}}")
+            print(f"[Perplexity] HTTP {{r.status_code}}: {{r.text[:300]}}")
             objectivity_results_perplexity = []
 
     except Exception as e:
-        print(f"[Perplexity:Error] {{e}}")
+        print(f"[Perplexity:Error] {{type(e).__name__}}: {{str(e)[:200]}}")
         objectivity_results_perplexity = []
 
 h2o_metric("perplexity_search_count", len(objectivity_results_perplexity))
