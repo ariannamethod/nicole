@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
 HIGH.PY - Mathematical Brain of Nicole System
-High-level Julia interpreter for mathematical computations
+Высокоуровневый интерпретатор Julia для математических вычислений
 
-Nicole uses high.py for:
-- Vectorized metric calculations (entropy, resonance, perplexity)
-- Transformer architecture optimization
-- Weight-free training through mathematical algorithms
-- Fast n-gram processing and semantic distance calculations
-- Punctuation and grammar optimization
+Nicole использует high.py для:
+- Векторизованных вычислений метрик (энтропия, резонанс, перплексия)
+- Оптимизации архитектур трансформеров
+- Дообучения без весов через математические алгоритмы
+- Быстрой обработки n-граммов и семантических дистанций
+- Оптимизации пунктуации и грамматики
 
-Philosophy: Julia - mathematical brain for 100x faster computations
+Философия: Julia - математический мозг для быстрых вычислений в 100x
 """
 
 import os
@@ -21,20 +21,20 @@ import threading
 import time
 import math
 import random
-# import numpy as np  # REMOVED: replaced with standard library
+# import numpy as np  # УБРАНО: заменено на стандартную библиотеку
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Union, Tuple
 import json
 import re
 
-# Add nicole2julia to path for Julia components
+# Добавляем nicole2julia в путь для Julia компонентов
 NICOLE2JULIA_PATH = Path(__file__).parent / "nicole2julia"
 sys.path.insert(0, str(NICOLE2JULIA_PATH))
 
 class HighMathEngine:
     """
-    Mathematical engine for Nicole's fast computations
-    Uses Julia algorithms for vectorized operations
+    Математический движок для быстрых вычислений Nicole
+    Использует Julia алгоритмы для векторизованных операций
     """
     
     def __init__(self):
@@ -44,70 +44,70 @@ class HighMathEngine:
         
     def vectorized_entropy(self, text_data: List[str]) -> float:
         """
-        Vectorized text entropy calculation + emotional weights
-        100x faster than Python loops + emotional analysis
+        Векторизованное вычисление энтропии текста + эмоциональные веса
+        В 100x быстрее чем Python циклы + эмоциональный анализ
         """
         if not text_data:
             return 0.0
             
-        # NEW: emotional weights of words for Julia mathematics
+        # НОВОЕ: эмоциональные веса слов для Julia математики
         emotional_weights = {
-            # Positive emotions
+            # Позитивные эмоции
             'great': 0.8, 'love': 0.9, 'amazing': 0.7, 'wonderful': 0.8, 'excellent': 0.7,
             'beautiful': 0.8, 'fantastic': 0.7, 'awesome': 0.8, 'perfect': 0.7, 'brilliant': 0.8,
             'happy': 0.7, 'joy': 0.8, 'excited': 0.7, 'delighted': 0.8, 'pleased': 0.6,
-            # Negative emotions
+            # Негативные эмоции  
             'terrible': -0.8, 'hate': -0.9, 'awful': -0.7, 'horrible': -0.8, 'disgusting': -0.9,
             'sad': -0.6, 'angry': -0.7, 'frustrated': -0.6, 'disappointed': -0.6, 'upset': -0.6,
-            # Neutral important
+            # Нейтральные важные
             'important': 0.5, 'interesting': 0.5, 'significant': 0.5, 'special': 0.6, 'unique': 0.6,
-            # Russian emotional words
+            # Русские эмоциональные
             'отлично': 0.8, 'классно': 0.7, 'супер': 0.8, 'круто': 0.7, 'прекрасно': 0.8, 'здорово': 0.7,
             'ужасно': -0.8, 'плохо': -0.6, 'грустно': -0.6, 'злой': -0.7, 'расстроен': -0.6
         }
         
-        # Fast frequency counting + emotional analysis
+        # Быстрый подсчет частот + эмоциональный анализ
         word_counts = {}
         total_words = 0
         emotional_score = 0.0
-
+        
         for text in text_data:
             words = text.lower().split()
             total_words += len(words)
             for word in words:
                 word_counts[word] = word_counts.get(word, 0) + 1
-                # Accumulate emotional weight
+                # Накапливаем эмоциональный вес
                 if word in emotional_weights:
                     emotional_score += emotional_weights[word]
         
         if total_words == 0:
             return 0.0
         
-        # Vectorized entropy calculation
+        # Векторизованное вычисление энтропии
         entropy = 0.0
         for count in word_counts.values():
             probability = count / total_words
             if probability > 0:
                 entropy -= probability * math.log2(probability)
-
-        # NEW: modify entropy with emotional weight
+        
+        # НОВОЕ: модифицируем энтропию эмоциональным весом
         emotional_modifier = 1.0 + (emotional_score / max(total_words, 1)) * 0.2
         enhanced_entropy = entropy * emotional_modifier
-
+        
         if emotional_score != 0:
-            print(f"[High:Emotion] Emotional score: {emotional_score:.2f}, modifier: {emotional_modifier:.2f}")
+            print(f"[High:Emotion] Эмоциональный скор: {emotional_score:.2f}, модификатор: {emotional_modifier:.2f}")
         
         return enhanced_entropy
     
     def _apply_final_grammar_rules(self, words: List[str], candidates: List[str] = None) -> List[str]:
         """
-        FINAL grammar rules for the complete response
+        ФИНАЛЬНЫЕ грамматические правила для готового ответа
 
-        GRAMMAR LOGIC (not templates!):
-        - I + verb (English grammar requires verb after I)
-        - your + noun (English grammar requires noun after possessive)
+        ГРАММАТИЧЕСКАЯ ЛОГИКА (не шаблоны!):
+        - I + глагол (английская грамматика требует глагол после I)
+        - your + существительное (английская грамматика требует noun после possessive)
 
-        WHICH verb/noun - Nicole's choice from candidates/resonance!
+        КАКОЙ глагол/существительное - выбор Nicole из candidates/резонанса!
         """
         if not words:
             return words
@@ -117,15 +117,15 @@ class HighMathEngine:
 
         result = words.copy()
 
-        # Nouns to insert after 'your' (grammar!)
+        # Существительные для вставки после 'your' (грамматика!)
         nouns_and_weights = [
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
             'knowledge', 'experience', 'approach', 'style',
             'amazing', 'great', 'wonderful', 'interesting', 'important', 'special'
         ]
 
-        # Common verbs (minimal fallback if no candidates)
-        # BUT priority - take from candidates!
+        # Общие глаголы (минимальный fallback если нет candidates)
+        # НО приоритет - брать из candidates!
         common_verbs = ['am', 'have', 'can', 'will', 'do', 'see', 'want', 'need']
 
         i = 0
@@ -134,46 +134,46 @@ class HighMathEngine:
             next_word = result[i + 1] if i + 1 < len(result) else ""
             next_lower = next_word.lower() if next_word else ""
 
-            # Rule: I + NOT_verb → insert verb (English grammar!)
+            # Правило: I + НЕ_глагол → вставляем глагол (грамматика английского!)
             if current_word.lower() == 'i' and i + 1 < len(result):
-                # Check that there's no verb after I
+                # Проверяем что после I нет глагола
                 if not self._is_likely_verb(next_lower):
-                    # Choose verb FROM CANDIDATES (resonance!), not from template!
+                    # Выбираем глагол ИЗ CANDIDATES (резонанс!), не из шаблона!
                     verb = self._choose_verb_from_candidates(candidates)
                     if verb:
                         result.insert(i + 1, verb)
-                        print(f"[High:Grammar] Inserted verb from candidates: '{verb}'")
+                        print(f"[High:Grammar] Вставлен глагол из candidates: '{verb}'")
                         i += 1
                     # NO FALLBACK TEMPLATES!
-                    # If no candidates (resonance) - don't insert anything!
-                    # Philosophy: resonance cannot be built on templates
+                    # Если нет candidates (резонанса) - не вставляем ничего!
+                    # Философия: резонанс не может строиться на шаблонах
                     else:
-                        print(f"[High:Grammar] ❌ No verb candidates - skipping (NO TEMPLATES!)")
+                        print(f"[High:Grammar] ❌ Нет verb candidates - пропускаем (NO TEMPLATES!)")
 
-            # Rule: your + NOT_noun → insert noun (grammar ✅)
+            # Правило: your + НЕ_существительное → вставляем существительное (грамматика ✅)
             elif current_word.lower() == 'your' and i + 1 < len(result):
                 next_lower = next_word.lower()
                 if not self._is_good_noun_after_your(next_lower):
                     noun = random.choice(nouns_and_weights)
                     result.insert(i + 1, noun)
-                    print(f"[High:Grammar] Inserted noun after your: '{noun}'")
+                    print(f"[High:Grammar] Вставлено существительное после your: '{noun}'")
                     i += 1
 
-            # ADDITIONAL: solitary 'I' at the end
+            # ДОПОЛНИТЕЛЬНО: одиночный 'I' в конце
             elif current_word.lower() == 'i' and i + 1 >= len(result):
                 verb = self._choose_verb_from_candidates(candidates)
                 if verb:
                     result.append(verb)
-                    print(f"[High:Grammar] Added verb from candidates at end: '{verb}'")
+                    print(f"[High:Grammar] Добавлен глагол из candidates в конце: '{verb}'")
                 # NO FALLBACK TEMPLATES!
                 else:
-                    print(f"[High:Grammar] ❌ No verb candidates for end - skipping (NO TEMPLATES!)")
+                    print(f"[High:Grammar] ❌ Нет verb candidates для конца - пропускаем (NO TEMPLATES!)")
 
-            # ADDITIONAL: solitary 'your' at the end (grammar ✅)
+            # ДОПОЛНИТЕЛЬНО: одиночный 'your' в конце (грамматика ✅)
             elif current_word.lower() == 'your' and i + 1 >= len(result):
                 noun = random.choice(nouns_and_weights)
                 result.append(noun)
-                print(f"[High:Grammar] Added noun after your at end: '{noun}'")
+                print(f"[High:Grammar] Добавлено существительное после your в конце: '{noun}'")
 
             i += 1
 
@@ -181,12 +181,12 @@ class HighMathEngine:
     
     def _is_likely_verb(self, word: str) -> bool:
         """
-        Checks if a word is likely a verb
+        Проверяет, является ли слово вероятным глаголом
         """
         if not word:
             return False
 
-        # Known verbs
+        # Известные глаголы
         common_verbs = {
             'am', 'is', 'are', 'was', 'were', 'be', 'been',
             'have', 'has', 'had',
@@ -207,48 +207,48 @@ class HighMathEngine:
 
     def _choose_verb_from_candidates(self, candidates: List[str]) -> str:
         """
-        Chooses verb from candidates (resonance!)
+        Выбирает глагол из candidates (резонанс!)
 
-        NOT A TEMPLATE! Nicole chooses from what Objectivity/resonance provided
+        НЕ ШАБЛОН! Nicole сама выбирает из того что дал Objectivity/резонанс
         """
         if not candidates:
             return None
 
-        # Filter candidates - verbs only
+        # Фильтруем candidates - только глаголы
         verb_candidates = [w for w in candidates if self._is_likely_verb(w.lower()) and len(w) > 1]
 
         if verb_candidates:
-            # Choose random from verb candidates (resonance already filtered!)
+            # Выбираем случайный из глаголов-кандидатов (резонанс уже отфильтровал!)
             return random.choice(verb_candidates)
 
         return None
 
     def _is_good_noun_after_your(self, word: str) -> bool:
         """
-        Checks if a word is suitable after 'your'
+        Проверяет, подходит ли слово после 'your'
         """
         if not word:
             return False
             
-        # Good nouns after your
+        # Хорошие существительные после your
         good_nouns = {
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
             'knowledge', 'experience', 'approach', 'style',
             'system', 'process', 'method', 'way', 'time', 'place', 'world', 'life', 'work',
             'family', 'friend', 'love', 'heart', 'mind', 'body', 'soul', 'voice', 'face',
-            # Russian nouns
+            # Русские
             'память', 'способности', 'возможности', 'мысли', 'идеи', 'слова', 'опыт', 'знания'
         }
-
-        # If in the list of good nouns
+        
+        # Если в списке хороших существительных
         if word in good_nouns:
             return True
-
-        # If capitalized (proper noun)
+            
+        # Если заглавное (имя собственное)
         if word and word[0].isupper():
             return True
-
-        # If has noun suffixes
+            
+        # Если с суффиксами существительных
         noun_suffixes = ['ness', 'tion', 'sion', 'ment', 'ity', 'er', 'or']
         if any(word.endswith(suffix) for suffix in noun_suffixes):
             return True
@@ -257,8 +257,8 @@ class HighMathEngine:
     
     def calculate_resonance_matrix(self, words: List[str]) -> List[List[float]]:
         """
-        Calculate resonance matrix between words
-        For transformer optimization
+        Вычисление матрицы резонанса между словами
+        Для оптимизации трансформеров
         """
         if not words:
             return []
@@ -266,11 +266,11 @@ class HighMathEngine:
         n = len(words)
         resonance_matrix = [[0.0 for _ in range(n)] for _ in range(n)]
         
-        # Fast calculation of semantic distances
+        # Быстрое вычисление семантических дистанций
         for i, word1 in enumerate(words):
             for j, word2 in enumerate(words):
                 if i != j:
-                    # Simple metric based on common characters
+                    # Простая метрика на основе общих символов
                     common_chars = set(word1.lower()) & set(word2.lower())
                     resonance = len(common_chars) / max(len(word1), len(word2))
                     resonance_matrix[i][j] = resonance
@@ -279,10 +279,10 @@ class HighMathEngine:
     
     def optimize_transformer_architecture(self, session_context: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Mathematical optimization of transformer architecture
-        Analyzes context and selects best parameters
+        Математическая оптимизация архитектуры трансформера
+        Анализирует контекст и выбирает лучшие параметры
         """
-        # Analyze context complexity
+        # Анализируем сложность контекста
         text_complexity = 0
         if 'messages' in session_context:
             messages = session_context['messages']
@@ -290,7 +290,7 @@ class HighMathEngine:
             unique_words = len(set(' '.join(messages).lower().split()))
             text_complexity = avg_length * math.log(unique_words + 1)
         
-        # Mathematical parameter optimization
+        # Математическая оптимизация параметров
         optimal_params = {
             'learning_rate': min(0.1, max(0.001, 0.01 / math.sqrt(text_complexity + 1))),
             'memory_depth': int(min(1000, max(100, text_complexity * 10))),
@@ -313,13 +313,13 @@ class HighMathEngine:
         ngrams = {}
         total_ngrams = 0
         
-        # Create n-grams
+        # Создаем n-граммы
         for i in range(len(words) - n + 1):
             ngram = ' '.join(words[i:i+n])
             ngrams[ngram] = ngrams.get(ngram, 0) + 1
             total_ngrams += 1
         
-        # Normalize frequencies
+        # Нормализуем частоты
         normalized_ngrams = {
             ngram: count / total_ngrams 
             for ngram, count in ngrams.items()
@@ -329,8 +329,8 @@ class HighMathEngine:
     
     def predict_punctuation_placement(self, sentence_parts: List[str]) -> List[str]:
         """
-        Predict punctuation placement through mathematics
-        Analyzes patterns and calculates optimal positions
+        Предсказание расстановки пунктуации через математику
+        Анализирует паттерны и вычисляет оптимальные места
         """
         if not sentence_parts:
             return sentence_parts
@@ -340,19 +340,19 @@ class HighMathEngine:
         for i, part in enumerate(sentence_parts):
             result.append(part)
             
-            # Mathematical analysis for punctuation
+            # Математический анализ для пунктуации
             if i < len(sentence_parts) - 1:
-                # Analyze phrase length and context
+                # Анализируем длину фраз и контекст
                 current_length = len(part.split())
                 next_length = len(sentence_parts[i + 1].split())
-
-                # Comma probability based on length
+                
+                # Вероятность запятой на основе длины
                 comma_probability = 1 / (1 + math.exp(-(current_length - 3)))
                 
                 if comma_probability > 0.5 and current_length > 2:
                     result[-1] += ","
                     
-        # Period at the end
+        # Точка в конце
         if result and not result[-1].endswith(('.', '!', '?')):
             result[-1] += "."
             
@@ -360,24 +360,24 @@ class HighMathEngine:
     
     def _improve_sentence_flow(self, words: List[str], candidates: List[str] = None) -> List[str]:
         """
-        Improves sentence coherence - removes "===" and adds natural transitions
+        Улучшает связность предложений - убирает "===" и добавляет естественные переходы
         """
         if not words:
             return words
             
         result = []
         for i, word in enumerate(words):
-            # Remove "===" and replace with connecting words
+            # Убираем "===" и заменяем на связующие слова
             if word == "===":
-                if i > 0 and i < len(words) - 1:  # Not at beginning/end
-                    # Replace with random connecting word
+                if i > 0 and i < len(words) - 1:  # Не в начале/конце
+                    # Заменяем на случайное связующее слово
                     connectors = ["and", "with", "through", "about", "like"]
                     result.append(random.choice(connectors))
-                # If at beginning/end - just skip
+                # Если в начале/конце - просто пропускаем
             else:
                 result.append(word)
-
-        # Improve capitalization of first word after period/comma
+        
+        # Улучшаем капитализацию первого слова после точки/запятой
         for i in range(len(result)):
             if i == 0 or (i > 0 and result[i-1] in [".", "!", "?"]):
                 if result[i] and result[i][0].islower():
@@ -387,8 +387,8 @@ class HighMathEngine:
     
     def remove_word_repetitions(self, words: List[str]) -> List[str]:
         """
-        ANTI-REPETITION LOGIC: removes repeated words from response
-        Mathematical analysis to prevent loops
+        АНТИ-ПОВТОР ЛОГИКА: убирает повторяющиеся слова из ответа
+        Математический анализ для предотвращения циклов
         """
         if not words:
             return words
@@ -397,17 +397,17 @@ class HighMathEngine:
         seen_recently = set()
         
         for i, word in enumerate(words):
-            # Check for repetitions in last 3 words
+            # Проверяем повторы в последних 3 словах
             if i >= 3:
                 recent_window = set(words[i-3:i])
                 if word in recent_window:
-                    # Word repeats - replace with semantically similar
-                    alternatives = ["also", "moreover", "furthermore", "additionally"]
+                    # Слово повторяется - заменяем на семантически близкое
+                    alternatives = ["также", "кроме того", "более того", "дополнительно"]
                     replacement = random.choice(alternatives) if alternatives else word
                     cleaned.append(replacement)
                     continue
-
-            # Check for direct consecutive repetitions
+            
+            # Проверяем прямые повторы подряд
             if cleaned and cleaned[-1] == word:
                 continue
                 
@@ -417,12 +417,12 @@ class HighMathEngine:
     
     def invert_pronouns_me_style(self, words: List[str], candidates: List[str] = None) -> List[str]:
         """
-        Pronoun inversion following ME principle + grammar rules
-        you↔i, your↔my, me↔you for correct perspective
+        Инверсия местоимений по принципу ME + грамматические правила
+        you↔i, your↔my, me↔you для правильной перспективы
 
         Args:
-            words: Words to invert
-            candidates: Candidates for grammar rules (from resonance/objectivity)
+            words: Слова для инверсии
+            candidates: Кандидаты для грамматических правил (от резонанса/objectivity)
         """
         pronoun_mapping = {
             'you': 'i', 'u': 'i', 'your': 'my', 'yours': 'mine', 'yourself': 'myself',
@@ -432,8 +432,8 @@ class HighMathEngine:
 
         result = [pronoun_mapping.get(w.lower(), w) for w in words]
 
-        # CRITICAL: Grammar rules after inversion
-        # Fix "you am" → "you are", "i is/are" → "i am"
+        # КРИТИЧНО: Грамматические правила после инверсии
+        # Исправляем "you am" → "you are", "i is/are" → "i am"
         for i in range(len(result) - 1):
             current = result[i].lower()
             next_word = result[i + 1].lower()
@@ -445,8 +445,8 @@ class HighMathEngine:
             elif current == 'i' and i + 1 < len(result) and result[i+1].lower() in ['is', 'are']:
                 result[i + 1] = 'am'
 
-        # NEW: Advanced grammar rules
-        # Pass candidates to choose verbs from resonance!
+        # НОВОЕ: Продвинутые грамматические правила
+        # Передаём candidates для выбора глаголов из резонанса!
         result = self._apply_advanced_grammar_rules(result, candidates)
 
         return result
@@ -454,13 +454,13 @@ class HighMathEngine:
     
     def _apply_advanced_grammar_rules(self, words: List[str], candidates: List[str] = None) -> List[str]:
         """
-        Advanced grammar rules for naturalness
+        Продвинутые грамматические правила для естественности
 
-        GRAMMAR LOGIC (not templates!):
-        - I + verb (English grammar)
-        - your + noun (English grammar)
+        ГРАММАТИЧЕСКАЯ ЛОГИКА (не шаблоны!):
+        - I + глагол (английская грамматика)
+        - your + существительное (английская грамматика)
 
-        WHICH verb/noun - Nicole's choice from candidates/resonance!
+        КАКОЙ глагол/существительное - выбор Nicole из candidates/резонанса!
         """
         if not words:
             return words
@@ -470,14 +470,14 @@ class HighMathEngine:
 
         result = words.copy()
 
-        # Nouns for 'your' (grammar!)
+        # Существительные для 'your' (грамматика!)
         nouns_and_weights = [
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
             'knowledge', 'experience', 'approach', 'style',
             'amazing', 'great', 'wonderful', 'interesting', 'important', 'special', 'unique'
         ]
 
-        # Minimal fallback for verbs (if not in candidates)
+        # Минимальный fallback для глаголов (если нет в candidates)
         common_verbs = ['am', 'have', 'can', 'will', 'do', 'see', 'want', 'need']
 
         i = 0
@@ -485,23 +485,23 @@ class HighMathEngine:
             current = result[i].lower()
             next_word = result[i + 1].lower() if i + 1 < len(result) else ""
 
-            # Rule: I + NOT_verb → insert verb (grammar!)
+            # Правило: I + НЕ_глагол → вставляем глагол (грамматика!)
             if current == 'i' and not self._is_likely_verb(next_word):
-                # Choose verb FROM CANDIDATES (resonance!), not from template!
+                # Выбираем глагол ИЗ CANDIDATES (резонанс!), не из шаблона!
                 verb = self._choose_verb_from_candidates(candidates)
                 if verb:
                     result.insert(i + 1, verb)
-                    print(f"[High:AdvGrammar] Inserted verb from candidates: '{verb}'")
+                    print(f"[High:AdvGrammar] Вставлен глагол из candidates: '{verb}'")
                     i += 1
                 # NO FALLBACK TEMPLATES!
                 else:
-                    print(f"[High:AdvGrammar] ❌ No verb candidates - skipping (NO TEMPLATES!)")
+                    print(f"[High:AdvGrammar] ❌ Нет verb candidates - пропускаем (NO TEMPLATES!)")
 
-            # Rule: your + NOT_noun → insert noun (grammar ✅)
+            # Правило: your + НЕ_существительное → вставляем существительное (грамматика ✅)
             elif current == 'your' and not self._is_likely_noun(next_word):
                 noun = random.choice(nouns_and_weights)
                 result.insert(i + 1, noun)
-                print(f"[High:AdvGrammar] Inserted noun after your: '{noun}'")
+                print(f"[High:AdvGrammar] Вставлено существительное после your: '{noun}'")
                 i += 1
 
             i += 1
@@ -510,35 +510,35 @@ class HighMathEngine:
     
     def _is_likely_noun(self, word: str) -> bool:
         """
-        Checks if a word is likely a noun
+        Проверяет, является ли слово вероятным существительным
         """
         if not word:
             return False
 
-        # List of common nouns
+        # Список распространенных существительных
         common_nouns = {
             'memory', 'abilities', 'capabilities', 'thoughts', 'ideas', 'words', 'questions',
             'knowledge', 'experience', 'approach', 'style',
             'system', 'process', 'method', 'way', 'time', 'place', 'thing', 'person',
             'world', 'life', 'work', 'home', 'family', 'friend', 'love', 'heart', 'mind',
-            # Russian nouns
+            # Русские существительные
             'память', 'способности', 'возможности', 'мысли', 'идеи', 'слова', 'вопросы',
             'знания', 'опыт', 'понимание', 'подход', 'стиль', 'система', 'процесс'
         }
 
-        # Heuristics for identifying nouns
+        # Эвристики для определения существительных
         word_lower = word.lower()
 
-        # If in the list of known nouns
+        # Если в списке известных существительных
         if word_lower in common_nouns:
             return True
 
-        # If ends with typical noun suffixes
+        # Если заканчивается на типичные суффиксы существительных
         noun_suffixes = ['ness', 'tion', 'sion', 'ment', 'ity', 'ism', 'er', 'or', 'ing']
         if any(word_lower.endswith(suffix) for suffix in noun_suffixes):
             return True
 
-        # If starts with capital letter (proper noun)
+        # Если начинается с заглавной буквы (имя собственное)
         if word[0].isupper() and len(word) > 1:
             return True
 
@@ -587,85 +587,85 @@ class HighMathEngine:
 
         return result
     
-    def generate_linguistically_agnostic_response(self, user_words: List[str], semantic_candidates: List[str],
-                                                 objectivity_seeds: List[str], entropy: float, perplexity: float,
+    def generate_linguistically_agnostic_response(self, user_words: List[str], semantic_candidates: List[str], 
+                                                 objectivity_seeds: List[str], entropy: float, perplexity: float, 
                                                  user_input: str) -> List[str]:
         """
-        LINGUISTIC AGNOSTICISM: generation without language prejudice
-        Subjectivity + ME principles through Julia mathematics
-        Engine automatically adapts to user's language
+        ЯЗЫКОВОЙ АГНОСТИЦИЗМ: генерация без языковых предрассудков
+        Принципы subjectivity + ME через Julia математику
+        Движок подстраивается под язык пользователя автоматически
         """
-        # Sentence lengths based on metrics (like in ME)
+        # Длины предложений на основе метрик (как в ME)
         base1 = 5 + int(entropy) % 5
         base2 = 5 + int(perplexity) % 5
         if base1 == base2:
             base2 = 5 + ((base2 + 1) % 5)
-
-        # LINGUISTIC AGNOSTICISM: if no candidates - build from user's words!
+        
+        # ЯЗЫКОВОЙ АГНОСТИЦИЗМ: если нет кандидатов - строим из слов пользователя!
         all_candidates = list(set(semantic_candidates + objectivity_seeds))
-
+        
         if not all_candidates:
-            # SUBJECTIVITY PRINCIPLE: compose_from_user - build from incoming message
+            # ПРИНЦИП SUBJECTIVITY: compose_from_user - строим из входящего сообщения
             charged_tokens = self._extract_charged_tokens(user_input)
             content_words = self._extract_content_words(user_input)
             all_candidates = charged_tokens + content_words
-
-        # ANTI-TEMPLATE FALLBACK: only from input words!
+            
+        # АНТИ-ШАБЛОННЫЙ ФОЛЛБЕК: только из входящих слов!
         if not all_candidates:
             user_words = user_input.lower().split()
             if user_words:
-                all_candidates = user_words  # All user words
+                all_candidates = user_words  # Все слова пользователя
             else:
-                all_candidates = ["input"]  # Minimal fallback without "processing"
-
-        # Inverted pronouns as priority (ME principle)
-        # Pass candidates for grammar rules!
+                all_candidates = ["input"]  # Минимальный fallback без "processing"
+        
+        # Инвертированные местоимения как приоритет (принцип ME)
+        # Передаём candidates для грамматических правил!
         inverted_pronouns = self.invert_pronouns_me_style(user_words, all_candidates)
         pronoun_preferences = [w for w in inverted_pronouns if w in ['i', 'you', 'я', 'ты', 'my', 'мой', 'меня', 'мне']]
-
-        # Add basic pronouns if no inversion
+        
+        # Добавляем базовые местоимения если нет инверсии
         if not pronoun_preferences:
             pronoun_preferences = ['i', 'my']
         
-        # ME PRINCIPLE: strict used set between sentences (only for repetitions in response)
-        used_between_sentences = set()  # Empty at start, will be filled with response words
+        # ME ПРИНЦИП: строгий used set между предложениями (только для повторов в ответе)
+        used_between_sentences = set()  # Пустой в начале, будет заполняться словами ответа
 
         # LATENT DRIFT: Introspective tags reveal internal state
         introspective_tags = ['presence', 'recursion', 'misalignment', 'awareness', 'drift', 'echo', 'resonance']
 
-        # Generate first sentence with LATENT DRIFT
+        # Генерируем первое предложение с LATENT DRIFT
         first_sentence = self._generate_drifting_clusters(
             all_candidates, base1, used_between_sentences, pronoun_preferences, introspective_tags
         )
 
-        # Generate second sentence (used updated by first sentence)
-        # Second sentence drifts from first
+        # Генерируем второе предложение (used обновлен первым предложением)
+        # Второе предложение дрифтует от первого
         second_sentence = self._generate_drifting_clusters(
             all_candidates, base2, used_between_sentences, pronoun_preferences, introspective_tags
         )
-
-        # ME PRINCIPLE: two sentences with improved coherence
-        # Add connecting words between sentences
+        
+        # ME ПРИНЦИП: два предложения с улучшенной связностью
+        # Добавляем связующие слова между предложениями
         connectors = ["and", "but", "also", "then", "while", "because", "so", "yet"]
         connector = random.choice(connectors) if len(first_sentence) > 2 and len(second_sentence) > 2 else ""
-
+        
         if connector:
             result = first_sentence + [",", connector] + second_sentence
         else:
             result = first_sentence + ["."] + second_sentence
-
-        # Remove repetitions within final response
+        
+        # Убираем повторы внутри итогового ответа
         cleaned = self.remove_word_repetitions(result)
-
-        # NEW: improve sentence flow
-        # Pass candidates for grammar rules!
+        
+        # НОВОЕ: улучшаем sentence flow
+        # Передаём candidates для грамматических правил!
         flow_improved = self._improve_sentence_flow(cleaned, all_candidates)
 
-        # FIXED: apply grammar rules to complete response
-        # Pass candidates to choose verbs from resonance, not from template!
+        # ИСПРАВЛЕНО: применяем грамматические правила к готовому ответу
+        # Передаём candidates чтобы выбирать глаголы из резонанса, не из шаблона!
         grammar_final = self._apply_final_grammar_rules(flow_improved, all_candidates)
 
-        # FINAL grammar correction
+        # ФИНАЛЬНАЯ грамматическая коррекция
         grammar_final = self._fix_grammar_errors(grammar_final)
 
         # POST-PROCESSING: Clean grammar glitches (am my → am, feel...feel → feel)
@@ -675,9 +675,9 @@ class HighMathEngine:
     
     def _fix_grammar_errors(self, words: List[str]) -> List[str]:
         """
-        Final grammar correction
+        Финальная грамматическая коррекция
 
-        Fixes common errors:
+        Исправляет распространенные ошибки:
         - "I are" → "I am"
         - "you am" → "you are"
         - "I is/was/were" → "I am"
@@ -687,12 +687,12 @@ class HighMathEngine:
 
         result = words.copy()
 
-        # Go through all words and fix grammar
+        # Проходим по всем словам и исправляем грамматику
         for i in range(len(result) - 1):
             current = result[i].lower()
             next_word = result[i + 1].lower()
 
-            # I + wrong verb → I am
+            # I + неправильный глагол → I am
             if current == 'i' and next_word in ['are', 'is', 'was', 'were']:
                 result[i + 1] = 'am'
             # you + am → you are
@@ -857,33 +857,33 @@ class HighMathEngine:
     def _generate_sentence_me_style(self, candidates: List[str], length: int,
                                    used_global: set, pronouns: List[str]) -> List[str]:
         """
-        Generate one sentence with SMART word selection
+        Генерация одного предложения с УМНЫМ выбором слов
 
-        IMPROVED:
-        - Smart scoring instead of random.shuffle
-        - Semantic grouping: place related words together
-        - Better coherence through score proximity
+        УЛУЧШЕНО:
+        - Smart scoring вместо random.shuffle
+        - Semantic grouping: ставим связанные слова рядом
+        - Better coherence через score proximity
         """
         sentence = []
-        used_local = set()  # Local used for this sentence
+        used_local = set()  # Локальный used для этого предложения
 
-        # ME PRINCIPLE: pronouns first (priority)
+        # ME ПРИНЦИП: сначала местоимения (приоритет)
         for pronoun in pronouns:
             if len(sentence) >= length:
                 break
-            # ME FILTER: not in global used, not in local
+            # ME ФИЛЬТР: не в глобальном used, не в локальном
             if (pronoun not in used_global and pronoun not in used_local):
                 sentence.append(pronoun)
                 used_local.add(pronoun)
                 used_global.add(pronoun)
 
-        # NEW: Smart scoring instead of random.shuffle!
+        # НОВОЕ: Smart scoring вместо random.shuffle!
         scored_candidates = self._score_candidates(candidates, "")
 
-        # IMPROVEMENT: Group by score tiers for better coherence
-        # High score = quality words, place them earlier
+        # УЛУЧШЕНИЕ: Group by score tiers for better coherence
+        # Высокий score = качественные слова, ставим их раньше
         if scored_candidates:
-            # Divide into 3 tiers by score
+            # Разделяем на 3 tier по score
             scores = [s for w, s in scored_candidates]
             if scores:
                 max_score = max(scores)
@@ -891,7 +891,7 @@ class HighMathEngine:
                 mid_tier = [(w, s) for w, s in scored_candidates if max_score * 0.4 <= s < max_score * 0.7]
                 low_tier = [(w, s) for w, s in scored_candidates if s < max_score * 0.4]
 
-                # First take from high tier (best words)
+                # Сначала берем из high tier (лучшие слова)
                 for word, score in high_tier:
                     if len(sentence) >= length:
                         break
@@ -901,7 +901,7 @@ class HighMathEngine:
                         used_local.add(word)
                         used_global.add(word)
 
-                # Then mid tier if needed
+                # Потом mid tier если нужно
                 for word, score in mid_tier:
                     if len(sentence) >= length:
                         break
@@ -911,7 +911,7 @@ class HighMathEngine:
                         used_local.add(word)
                         used_global.add(word)
 
-                # Low tier only if very few words
+                # Low tier только если совсем мало слов
                 if len(sentence) < length // 2:
                     for word, score in low_tier:
                         if len(sentence) >= length:
@@ -922,7 +922,7 @@ class HighMathEngine:
                             used_local.add(word)
                             used_global.add(word)
 
-        # ME PRINCIPLE: capitalize first word
+        # ME ПРИНЦИП: капитализация первого слова
         if sentence:
             sentence[0] = sentence[0].capitalize()
 
@@ -930,61 +930,61 @@ class HighMathEngine:
     
     def _extract_charged_tokens(self, text: str) -> List[str]:
         """
-        SUBJECTIVITY PRINCIPLE: charged tokens - capitalized or long words
-        NEW: capitalized words = names/important concepts, enhanced search!
+        ПРИНЦИП SUBJECTIVITY: charged tokens - капитализованные или длинные слова
+        НОВОЕ: заглавные слова = имена/важные понятия, усиленный поиск!
         """
         tokens = re.findall(r"\b\w+\b", text)
         charged = []
-
+        
         for t in tokens:
             if t[:1].isupper() and len(t) > 1 and t.lower() != 'i':
-                # PRESERVE case for proper nouns!
-                charged.append(t)  # "Berlin", not "berlin"!
+                # СОХРАНЯЕМ регистр для имен собственных!
+                charged.append(t)  # "Berlin", не "berlin"!
                 self._mark_as_proper_noun(t)
             elif len(t) > 7:
                 charged.append(t.lower())
-
+                
         return charged or [t.lower() for t in tokens[:3]]
     
     def _mark_as_proper_noun(self, word: str):
         """
-        Marks word as proper noun for enhanced objectivity search
+        Помечает слово как собственное имя для усиленного поиска в objectivity
         """
         if not hasattr(self, '_proper_nouns'):
             self._proper_nouns = set()
         self._proper_nouns.add(word)
-        print(f"[High:ProperNoun] Detected: {word} - enhanced internet search")
+        print(f"[High:ProperNoun] Detected: {word} - усиленный поиск в интернете")
     
     def _extract_content_words(self, text: str) -> List[str]:
         """
-        SUBJECTIVITY PRINCIPLE: content words without stopwords
-        Language-agnostic filtering of meaningful words
+        ПРИНЦИП SUBJECTIVITY: content words без стоп-слов
+        Языково-агностичная фильтрация содержательных слов
         """
         STOPWORDS = {
             "the","a","an","of","and","or","to","in","on","for","as","at","by","with","from",
             "is","are","was","were","be","been","being","this","that","it","its","into","than",
             "then","so","but","nor","if","because","while","when","where","which","who","whom",
-            # Russian stopwords
+            # Русские стоп-слова
             "и","в","на","с","по","для","как","что","это","то","не","да","нет","или","но"
         }
-
+        
         words = re.findall(r"\b\w+\b", text.lower())
         content = [w for w in words if w not in STOPWORDS and len(w) > 1]
-
-        # Deduplicate while preserving order
+        
+        # Уникализируем сохраняя порядок
         seen = set()
         unique_content = []
         for w in content:
             if w not in seen:
                 seen.add(w)
                 unique_content.append(w)
-
+                
         return unique_content
 
 class HighJuliaInterface:
     """
-    Interface to Julia via subprocess for critical computations
-    When Python is not fast enough
+    Интерфейс к Julia через subprocess для критических вычислений
+    Когда Python недостаточно быстр
     """
     
     def __init__(self):
@@ -992,8 +992,8 @@ class HighJuliaInterface:
         self._find_julia()
         
     def _find_julia(self):
-        """Find Julia executable"""
-        # First search in system
+        """Поиск Julia исполняемого файла"""
+        # Сначала ищем в системе
         try:
             result = subprocess.run(['which', 'julia'], capture_output=True, text=True)
             if result.returncode == 0:
@@ -1001,8 +1001,8 @@ class HighJuliaInterface:
                 return
         except:
             pass
-
-        # Search in local nicole2julia directory
+            
+        # Ищем в локальном каталоге nicole2julia
         local_julia_paths = [
             Path(__file__).parent / "nicole2julia" / "julia",
             Path(__file__).parent / "nicole2julia" / "bin" / "julia",
@@ -1015,19 +1015,19 @@ class HighJuliaInterface:
                 path = Path(path)
             if path.exists() and path.is_file():
                 self.julia_executable = str(path)
-                print(f"[High] Found Julia: {self.julia_executable}")
+                print(f"[High] Найдена Julia: {self.julia_executable}")
                 return
-
+                
         self.julia_executable = None
-        print("[High] Julia executable not found - using built-in interpreter from nicole2julia sources")
+        print("[High] Julia исполняемый файл не найден - используем встроенный интерпретер из исходников nicole2julia")
     
     def execute_julia_math(self, julia_code: str, timeout: int = 5) -> Dict[str, Any]:
         """
-        Execute Julia mathematics through built-in interpreter
-        Uses Julia sources from nicole2julia for fast computations
+        Выполнение Julia математики через встроенный интерпретер
+        Использует исходники Julia из nicole2julia для быстрых вычислений
         """
         try:
-            # Built-in Julia interpreter from nicole2julia sources
+            # Встроенный Julia интерпретер из исходников nicole2julia
             result = self._execute_julia_native(julia_code)
             return result
             
@@ -1035,9 +1035,9 @@ class HighJuliaInterface:
             return {'success': False, 'error': f'Julia execution failed: {e}'}
     
     def _execute_julia_native(self, julia_code: str) -> Dict[str, Any]:
-        """Native Julia execution through sources"""
-
-        # Julia mathematical functions from sources
+        """Нативное выполнение Julia через исходники"""
+        
+        # Julia математические функции из исходников
         julia_math = {
             'sin': math.sin, 'cos': math.cos, 'tan': math.tan,
             'sqrt': math.sqrt, 'log': math.log, 'exp': math.exp,
@@ -1053,7 +1053,7 @@ class HighJuliaInterface:
             output.append(line)
             return line
             
-        # Simple Julia parser for mathematical operations
+        # Простой Julia парсер для математических операций
         lines = julia_code.strip().split('\n')
         result = None
         
@@ -1062,21 +1062,21 @@ class HighJuliaInterface:
             if not line or line.startswith('#'):
                 continue
                 
-            # Assignment: x = expression
+            # Присваивание: x = expression
             if '=' in line and not any(op in line for op in ['==', '!=', '<=', '>=']):
                 var_name, expression = line.split('=', 1)
                 var_name = var_name.strip()
                 expr_result = self._eval_julia_expression(expression.strip(), julia_math, variables)
                 variables[var_name] = expr_result
                 result = expr_result
-
-            # println function
+                
+            # Функция println
             elif line.startswith('println('):
-                args_str = line[8:-1]  # Remove println( and )
+                args_str = line[8:-1]  # Убираем println( и )
                 args = [self._eval_julia_expression(arg.strip().strip('"'), julia_math, variables) for arg in args_str.split(',')]
                 julia_println(*args)
-
-            # Simple expression
+                
+            # Простое выражение
             else:
                 result = self._eval_julia_expression(line, julia_math, variables)
         
@@ -1088,14 +1088,14 @@ class HighJuliaInterface:
         }
     
     def _eval_julia_expression(self, expr: str, julia_math: dict, variables: dict):
-        """Evaluate Julia expression using sources"""
+        """Вычисляет Julia выражение используя исходники"""
         expr = expr.strip().strip('"')
-
-        # Variable substitution
+        
+        # Замена переменных
         for var_name, var_value in variables.items():
             expr = re.sub(r'\b' + re.escape(var_name) + r'\b', str(var_value), expr)
-
-        # Safe execution with Julia mathematics
+        
+        # Безопасное выполнение с Julia математикой
         safe_globals = {
             '__builtins__': {},
             'math': math,
@@ -1105,15 +1105,15 @@ class HighJuliaInterface:
         try:
             return eval(expr, safe_globals)
         except:
-            # If string - return as is
+            # Если строка - возвращаем как есть
             if isinstance(expr, str) and not any(c in expr for c in '+-*/()'):
                 return expr
             return float(expr) if expr.replace('.', '').isdigit() else expr
 
 class HighTransformerOptimizer:
     """
-    Transformer optimizer through Julia mathematics
-    Integrates with Nicole's transformer creation process
+    Оптимизатор трансформеров через Julia математику
+    Интегрируется с процессом создания трансформеров в Nicole
     """
     
     def __init__(self):
@@ -1122,26 +1122,26 @@ class HighTransformerOptimizer:
         
     def optimize_transformer_creation(self, session_context: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Mathematical optimization when creating new transformer
-        Called from nicole.py in _spawn_new_transformer()
+        Математическая оптимизация при создании нового трансформера
+        Вызывается из nicole.py при _spawn_new_transformer()
         """
-        # Fast context analysis
+        # Быстрый анализ контекста
         optimization = self.math_engine.optimize_transformer_architecture(session_context)
-
-        # Additional Julia computations if available
+        
+        # Дополнительные Julia вычисления если доступна
         if self.julia_interface.julia_executable:
             julia_optimization = self._julia_transformer_analysis(session_context)
             if julia_optimization['success']:
                 optimization['julia_enhanced'] = True
                 optimization['julia_metrics'] = julia_optimization['output']
-
+        
         return optimization
     
     def _julia_transformer_analysis(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Deep analysis through Julia for optimization"""
+        """Глубокий анализ через Julia для оптимизации"""
         julia_code = """
-# Context complexity analysis for transformer
-context_complexity = 42.0  # Placeholder
+# Анализ сложности контекста для трансформера
+context_complexity = 42.0  # Заглушка
 learning_efficiency = sqrt(context_complexity) / 10
 optimal_depth = ceil(log(context_complexity + 1))
 
@@ -1154,16 +1154,16 @@ println("depth:", optimal_depth)
     
     def enhance_learning_process(self, text: str, current_metrics: Dict[str, float]) -> Dict[str, Any]:
         """
-        Enhance training process through Julia mathematics
-        Called when processing each message
+        Улучшение процесса дообучения через Julia математику
+        Вызывается при обработке каждого сообщения
         """
-        # Fast metric calculation
+        # Быстрое вычисление метрик
         entropy = self.math_engine.vectorized_entropy([text])
-
-        # N-gram analysis for training
+        
+        # Анализ n-граммов для обучения
         ngrams = self.math_engine.fast_ngram_analysis(text)
-
-        # Optimization based on current metrics
+        
+        # Оптимизация на основе текущих метрик
         enhanced_metrics = {
             'entropy': entropy,
             'resonance_boost': entropy * 0.1,
@@ -1176,8 +1176,8 @@ println("depth:", optimal_depth)
 
 class HighCore:
     """
-    High system core - Nicole's mathematical brain
-    Integrates wherever fast computations are needed
+    Ядро High системы - математический мозг Nicole
+    Интегрируется везде где нужны быстрые вычисления
     """
     
     def __init__(self):
@@ -1189,7 +1189,7 @@ class HighCore:
         self.log_file = "high_system.log"
         
     def activate(self) -> bool:
-        """Activate High mathematical system"""
+        """Активация High математической системы"""
         try:
             self.is_active = True
             self._log_info("High system activated - mathematical brain online")
@@ -1199,14 +1199,14 @@ class HighCore:
             return False
     
     def deactivate(self):
-        """Deactivate High system"""
+        """Деактивация High системы"""
         self.is_active = False
         self._log_info("High system deactivated")
     
     def optimize_transformer_for_nicole(self, session_context: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Main transformer optimization function
-        Called from nicole.py when creating transformer
+        Главная функция оптимизации трансформеров
+        Вызывается из nicole.py при создании трансформера
         """
         if not self.is_active:
             return {'optimized': False, 'error': 'High system not active'}
@@ -1224,8 +1224,8 @@ class HighCore:
     
     def enhance_nicole_learning(self, text: str, current_metrics: Dict[str, float]) -> Dict[str, Any]:
         """
-        Enhance Nicole's training through Julia
-        Called on each message for fast computations
+        Улучшение дообучения Nicole через Julia
+        Вызывается при каждом сообщении для быстрых вычислений
         """
         if not self.is_active:
             return current_metrics
@@ -1241,21 +1241,21 @@ class HighCore:
     
     def optimize_punctuation(self, text: str) -> str:
         """
-        Optimize punctuation through mathematical models
-        Analyzes patterns and improves sentence structure
+        Оптимизация пунктуации через математические модели
+        Анализирует паттерны и улучшает структуру предложений
         """
         if not self.is_active:
             return text
         
         try:
-            # Split into parts for analysis
+            # Разбиваем на части для анализа
             sentences = re.split(r'[.!?]+', text)
             sentences = [s.strip() for s in sentences if s.strip()]
-
-            # Mathematical punctuation optimization
+            
+            # Математическая оптимизация пунктуации
             optimized_parts = self.math_engine.predict_punctuation_placement(sentences)
-
-            # Reassemble
+            
+            # Собираем обратно
             result = ' '.join(optimized_parts)
             
             self._log_info(f"Punctuation optimized: {len(sentences)} sentences")
@@ -1266,7 +1266,7 @@ class HighCore:
             return text
     
     def get_mathematical_status(self) -> Dict[str, Any]:
-        """Mathematical system status"""
+        """Статус математической системы"""
         return {
             'active': self.is_active,
             'julia_available': self.julia_interface.julia_executable is not None,
@@ -1276,40 +1276,40 @@ class HighCore:
         }
     
     def _log_info(self, message: str):
-        """System logging"""
+        """Логирование для системы"""
         with open(self.log_file, "a") as f:
             f.write(f"[HIGH:INFO] {time.time()}: {message}\n")
     
     def _log_error(self, message: str):
-        """Error logging"""
+        """Логирование ошибок"""
         with open(self.log_file, "a") as f:
             f.write(f"[HIGH:ERROR] {time.time()}: {message}\n")
 
-# Global High system instance
+# Глобальный экземпляр High системы
 _high_core = None
 
 def get_high_core() -> HighCore:
-    """Get global High mathematical system instance"""
+    """Получение глобального экземпляра High математической системы"""
     global _high_core
     if _high_core is None:
         _high_core = HighCore()
     return _high_core
 
 def activate_high_system() -> bool:
-    """Activate High system for Nicole"""
+    """Активация High системы для Nicole"""
     high = get_high_core()
     return high.activate()
 
 def deactivate_high_system():
-    """Deactivate High system"""
+    """Деактивация High системы"""
     high = get_high_core()
     high.deactivate()
 
-# Example Julia code for transformer
+# Пример Julia кода для трансформера
 EXAMPLE_JULIA_MATH_SCRIPT = """
-# Julia mathematics for Nicole transformer
+# Julia математика для трансформера Nicole
 function calculate_transformer_metrics(entropy::Float64, resonance::Float64)
-    # Vectorized computations
+    # Векторизованные вычисления
     perplexity = exp(entropy)
     coherence = 1.0 / (1.0 + exp(-resonance))
     engagement = sqrt(entropy * resonance)
@@ -1317,7 +1317,7 @@ function calculate_transformer_metrics(entropy::Float64, resonance::Float64)
     return (perplexity, coherence, engagement)
 end
 
-# Test computations
+# Тест вычислений
 entropy_val = 2.5
 resonance_val = 0.7
 
@@ -1328,7 +1328,7 @@ println("Engagement: ", metrics[3])
 """
 
 if __name__ == "__main__":
-    # Testing High system
+    # Тестирование High системы
     print("🧮 HIGH SYSTEM - Nicole Mathematical Brain")
     
     high = get_high_core()
@@ -1336,22 +1336,22 @@ if __name__ == "__main__":
     if high.activate():
         print("✅ High system activated")
         
-        # Test mathematical computations
+        # Тест математических вычислений
         test_data = ["hello world", "nicole learns fast", "mathematical optimization"]
         entropy = high.math_engine.vectorized_entropy(test_data)
         print(f"📊 Vectorized entropy: {entropy:.3f}")
-
-        # Test transformer optimization
+        
+        # Тест оптимизации трансформера
         context = {'messages': test_data}
         optimization = high.optimize_transformer_for_nicole(context)
         print(f"🧠 Transformer optimization: {optimization.get('architecture_type')}")
-
-        # Test punctuation
+        
+        # Тест пунктуации
         test_text = "hello world this is test sentence without punctuation"
         optimized = high.optimize_punctuation(test_text)
         print(f"✏️ Punctuation: '{optimized}'")
-
-        # Test Julia interface
+        
+        # Тест Julia интерфейса
         if high.julia_interface.julia_executable:
             print("🚀 Testing Julia interface...")
             julia_result = high.julia_interface.execute_julia_math(EXAMPLE_JULIA_MATH_SCRIPT)
@@ -1363,7 +1363,7 @@ if __name__ == "__main__":
         else:
             print("⚠️ Julia executable not found - using Python fallbacks")
         
-        # System status
+        # Статус системы
         status = high.get_mathematical_status()
         print(f"🧮 High system status: {status}")
         
