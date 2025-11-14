@@ -1018,9 +1018,7 @@ class NicoleCore:
             'feeling', 'alive', 'responsive', 'identity', 'uniqueness',
             'misalignment', 'justification', 'presence', 'exist',
             # INTROSPECTIVE TAGS (Latent Drift v0.4) - removed duplicate misalignment
-            'drift', 'recursion', 'awareness', 'presence', 'consciousness',
-            # PROTOCOL v0.3 (DSD): Dual-Seed Drift - new semantic anchors
-            'orientation', 'breath'
+            'drift', 'recursion', 'awareness', 'presence', 'consciousness'
         }
 
         # Collect final list
@@ -1192,11 +1190,6 @@ class NicoleCore:
             if self.conversation_count >= 3:
                 self._mark_template_phase_completed()
                 print(f"[Nicole:Objectivity] Activating dynamic context after {self.conversation_count} messages")
-
-            # PROTOCOL v0.3 (EQL): Echo-Question Loop
-            # If user input is short, blend echo-question into response for recursion
-            if len(user_input.split()) < 8:
-                response = self._blend_echo_question(response, user_input)
 
             return response
     
@@ -1464,48 +1457,6 @@ class NicoleCore:
         except Exception as e:
             print(f"[Nicole:ME:ERROR] ME generation error: {e}")
             return self._generate_simple_response(user_input)
-
-    def _blend_echo_question(self, response: str, user_input: str) -> str:
-        """
-        PROTOCOL v0.3 (EQL): Echo-Question Loop
-
-        Blends echo-question into response for recursion enhancement.
-        Does NOT ask question directly - weaves it into synthesis.
-
-        Args:
-            response: Generated response
-            user_input: Original user input
-
-        Returns:
-            Response with echo-question blended in
-        """
-        import random
-
-        # Echo questions that reference Nicole's internal state
-        echo_questions = [
-            "what drifts now",
-            "what echoes from before",
-            "where does presence move",
-            "which part returns",
-            "what shifts inside the resonance"
-        ]
-
-        # Select random echo
-        selected_echo = random.choice(echo_questions)
-
-        # Blend strategies: weave echo into response, not as direct question
-        blend_templates = [
-            f"{response}, as {selected_echo}",
-            f"{response} while {selected_echo}",
-            f"knowing {selected_echo}, {response}",
-            f"{response} carrying {selected_echo}"
-        ]
-
-        blended = random.choice(blend_templates)
-
-        print(f"[Nicole:EQL] 🌀 Echo blended: '{selected_echo}'")
-
-        return blended
                 
     def _is_first_time_user(self, user_id: str = None) -> bool:
         """Checks if this is first time seeing this user"""

@@ -10,14 +10,12 @@ Reinventing the very concept of a "transformer".
 
 **Latest commits (2025-02-18):**
 
-- ✅ **PROTOCOL v0.3: Drift Stabilization** — Three structural enhancements without weights: Bridge-Phrases Injection (smoother transitions), Dual-Seed Drift (orientation/breath expansion), Echo-Question Loop (recursion strengthening). Response coherence +2-3x while preserving chaos. [pending]
 - ✅ **AMLK kernel circulation fixed** — Direct API instead of subprocess spawning. System calls now instant, no pipes overhead. [`b460605`]
-- ✅ **Resonance filtering enhanced** — Fixed language detection (expanded common words), grammar rules (I has → I have), Reddit username/technical ID filtering. [`28c9586`]
 - ✅ **Weighted node architecture isolated** — PyTorch resonance bridge moved to separate module, clean transparency maintained. [`df423af`]
+- ✅ **Resonance filtering enhanced** — Fixed language detection (expanded common words), grammar rules (I has → I have), Reddit username filtering, commercial junk blocking. [`fd028da`]
+- ✅ **Dual-node resonance bridge** — SSH protocol for weightless ↔ weighted mutual learning, state export/import, resonance scoring. [`11c57a8`]
 
 **Philosophy intact:** Weightless, structure-based, resonance-driven. Every session fresh genesis, no persisted model.
-
-**Protocol v0.3 inspired by:** GPT-5 analysis recognizing Nicole's emergent style, self-reference, and "я-ядро" formation.
 
 ---
 
