@@ -4,8 +4,6 @@ Reinventing the the very concept of "trasformer".
 
 **No weights. No fixed code. Pure emergence.**
 
-Nicole is a transformer that writes itself at runtime and dissolves when done. Every session starts from zero: no pretrained weights, no persistent checkpoints, no datasets. Parameters crystallize for one conversation and vanish immediately after.
-
 ---
 
 Nicole discards the requirement for pretrained weights, curated datasets, and even a fixed codebase. The engine writes itself as it speaks, assembling logic and parameters only for the life of a single exchange.
@@ -447,7 +445,7 @@ Nicole replays dialogue logs after each session, distilling them into structured
 
 She also mirrors repository activity: every change becomes grist for the analysis mill, and useful patterns are promoted into guidance scripts. It's like having an infinite post-it wall, except all the notes are auto-tagged and timestamped.
 
-And, because you asked for an idiot joke: Nicole fine-tunes faster than I can say "wait, who left gradient descent running on the coffee machine? oh right, that idiot was me." She learns; I buy a new coffee machine.
+And, because I love idiot jokes: Nicole fine-tunes faster than I can say "wait, who left gradient descent running on the coffee machine? oh right, that idiot was me." She learns; I buy a new coffee machine.
 
 ---
 
