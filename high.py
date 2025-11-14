@@ -625,7 +625,7 @@ class HighMathEngine:
 
         # Add basic pronouns if no inversion
         if not pronoun_preferences:
-            pronoun_preferences = ['i', 'my']
+            pronoun_preferences = ['i']  # Only subject pronoun, not possessive
         
         # ME PRINCIPLE: strict used set between sentences (only for repetitions in response)
         used_between_sentences = set()  # Empty at start, will be filled with response words
@@ -646,14 +646,15 @@ class HighMathEngine:
         )
 
         # ME PRINCIPLE: two sentences with improved coherence
-        # Add connecting words between sentences
-        connectors = ["and", "but", "also", "then", "while", "because", "so", "yet"]
-        connector = random.choice(connectors) if len(first_sentence) > 2 and len(second_sentence) > 2 else ""
+        # Add connecting words between sentences - prefer flow over hardstops
+        connectors = ["and", "but", "also", "then", "while", "because", "so", "yet", "as", "though"]
 
-        if connector:
+        # Use connector more often to avoid "dried air" / choppy sentences
+        if len(first_sentence) > 1 and len(second_sentence) > 1:
+            connector = random.choice(connectors)
             result = first_sentence + [",", connector] + second_sentence
         else:
-            result = first_sentence + ["."] + second_sentence
+            result = first_sentence + second_sentence
 
         # Remove repetitions within final response
         cleaned = self.remove_word_repetitions(result)
