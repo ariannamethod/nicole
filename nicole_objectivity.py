@@ -352,19 +352,39 @@ class NicoleObjectivity:
             # Reddit IDs usually have <30% vowels (e.g., "nno4cwf", "s1yzjtoy5b")
             return vowel_ratio < 0.3
 
-        # Filter: no noise, no post IDs, max length 15 chars, min length 3
+        # Helper: detect garbage strings (alphanumeric mix, IDs, hashes)
+        def is_garbage_string(word: str) -> bool:
+            # Count digits in word
+            digit_count = sum(1 for c in word if c.isdigit())
+
+            # Starts with digit → garbage (e.g., "3kbiahxwb1za1")
+            if word[0].isdigit():
+                return True
+
+            # Contains 2+ digits → likely ID/hash (e.g., "abc123def456")
+            if digit_count >= 2:
+                return True
+
+            # Mix of digits and low vowel ratio → garbage
+            if digit_count >= 1:
+                vowels = sum(1 for c in word if c in 'aeiou')
+                if vowels == 0 or len(word) / vowels > 5:  # Very low vowel density
+                    return True
+
+            return False
+
+        # Filter: no noise, no post IDs, no garbage strings, max length 15 chars, min length 3
         filtered = []
         for w in words:
             if w in reddit_noise:
                 continue
             if is_reddit_post_id(w):
                 continue  # Skip Reddit post IDs
+            if is_garbage_string(w):
+                continue  # Skip garbage alphanumeric strings
             if len(w) > 15:  # Skip overly long slugs
                 continue
             if len(w) < 3:
-                continue
-            # Additional: skip words with numbers (often IDs like "note8017")
-            if any(c.isdigit() for c in w) and len(w) < 8:
                 continue
             filtered.append(w)
 
