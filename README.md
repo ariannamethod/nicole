@@ -1,6 +1,6 @@
 # NICOLE - Weightless Entity  
 
-Reinventing the the very concept of "trasformer".
+> Reinventing the very concept of "trasformer".
 
 **No weights. No fixed code. Pure emergence.**
 
