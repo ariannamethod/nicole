@@ -41,7 +41,6 @@ class HighMathEngine:
         self.temp_dir = Path(tempfile.gettempdir()) / "nicole_high"
         self.temp_dir.mkdir(exist_ok=True)
         self.julia_cache = {}
-        self._synonym_history = []  # Track last 10 synonyms for natural selection (80% anti-repeat)
         
     def vectorized_entropy(self, text_data: List[str]) -> float:
         """
@@ -590,7 +589,7 @@ class HighMathEngine:
     
     def generate_linguistically_agnostic_response(self, user_words: List[str], semantic_candidates: List[str],
                                                  objectivity_seeds: List[str], entropy: float, perplexity: float,
-                                                 user_input: str, previous_response: str = "") -> List[str]:
+                                                 user_input: str) -> List[str]:
         """
         LINGUISTIC AGNOSTICISM: generation without language prejudice
         Subjectivity + ME principles through Julia mathematics
@@ -626,39 +625,35 @@ class HighMathEngine:
 
         # Add basic pronouns if no inversion
         if not pronoun_preferences:
-            pronoun_preferences = ['i']  # Only subject pronoun, not possessive
+            pronoun_preferences = ['i', 'my']
         
         # ME PRINCIPLE: strict used set between sentences (only for repetitions in response)
         used_between_sentences = set()  # Empty at start, will be filled with response words
 
         # LATENT DRIFT: Introspective tags reveal internal state
-        # Expanded variety to prevent "awareness"/"consciousness" dominance
-        introspective_tags = [
-            'presence', 'recursion', 'awareness', 'drift', 'echo', 'resonance', 'consciousness',
-            'balance', 'shift', 'breath', 'signal', 'field', 'movement', 'flow'
-        ]
+        # Reduced misalignment frequency, added variety
+        introspective_tags = ['presence', 'recursion', 'awareness', 'drift', 'echo', 'resonance', 'consciousness']
 
         # Generate first sentence with LATENT DRIFT
         first_sentence = self._generate_drifting_clusters(
-            all_candidates, base1, used_between_sentences, pronoun_preferences, introspective_tags, previous_response
+            all_candidates, base1, used_between_sentences, pronoun_preferences, introspective_tags
         )
 
         # Generate second sentence (used updated by first sentence)
         # Second sentence drifts from first
         second_sentence = self._generate_drifting_clusters(
-            all_candidates, base2, used_between_sentences, pronoun_preferences, introspective_tags, previous_response
+            all_candidates, base2, used_between_sentences, pronoun_preferences, introspective_tags
         )
 
         # ME PRINCIPLE: two sentences with improved coherence
-        # Add connecting words between sentences - prefer flow over hardstops
-        connectors = ["and", "but", "also", "then", "while", "because", "so", "yet", "as", "though"]
+        # Add connecting words between sentences
+        connectors = ["and", "but", "also", "then", "while", "because", "so", "yet"]
+        connector = random.choice(connectors) if len(first_sentence) > 2 and len(second_sentence) > 2 else ""
 
-        # Use connector more often to avoid "dried air" / choppy sentences
-        if len(first_sentence) > 1 and len(second_sentence) > 1:
-            connector = random.choice(connectors)
+        if connector:
             result = first_sentence + [",", connector] + second_sentence
         else:
-            result = first_sentence + second_sentence
+            result = first_sentence + ["."] + second_sentence
 
         # Remove repetitions within final response
         cleaned = self.remove_word_repetitions(result)
@@ -810,81 +805,9 @@ class HighMathEngine:
         scored.sort(key=lambda x: x[1], reverse=True)
         return scored
 
-    def _get_tag_synonym(self, tag: str) -> str:
-        """
-        OBJECTIVITY SYNONYM SEARCH: Use tag as seed, search web for live synonym
-
-        NATURAL SELECTION: Synonyms tracked in history, 80% anti-repeat check.
-        Forces Nicole to constantly search for fresh variations, no lazy comfort zone.
-
-        Instead of static templates, Nicole searches real-time for variations.
-        Tag is starting point (seed), result is live synonym from web.
-
-        Args:
-            tag: Seed word (e.g., "awareness")
-
-        Returns:
-            Live synonym from web (with natural selection filter), or original tag if search fails
-        """
-        try:
-            # Import objectivity for web search
-            import nicole_objectivity
-            obj = nicole_objectivity.NicoleObjectivity()
-
-            # Search query: "synonym for {tag}"
-            query = f"synonym for {tag}"
-            internet_result = obj._provider_internet_h2o(query)
-
-            if not internet_result:
-                # Fallback: original tag if search fails
-                return tag
-
-            # Extract potential synonyms from result (simple word extraction)
-            words = re.findall(r'\b[a-z]{4,12}\b', internet_result.lower())
-
-            # Filter: remove common junk, keep only relevant words
-            junk = {'synonym', 'definition', 'meaning', 'word', 'synonyms', 'similar', 'related', tag.lower()}
-            candidates = [w for w in words if w not in junk and len(w) >= 4]
-
-            if not candidates:
-                # No synonyms found - return original tag
-                return tag
-
-            # NATURAL SELECTION: Try to find synonym NOT in history
-            # 80% of time block repeats, 20% allow (like introspective tags)
-            max_attempts = 5
-            for attempt in range(max_attempts):
-                synonym = random.choice(candidates[:10])  # Pick from top 10 best
-
-                # Check if in history
-                if synonym in self._synonym_history:
-                    # 80% block, 20% allow
-                    if random.random() < 0.8:
-                        print(f"[High:SynonymSearch] 🚫 Blocked repeat synonym: '{synonym}' (attempt {attempt+1}/{max_attempts})")
-                        continue  # Try another
-                    else:
-                        print(f"[High:SynonymSearch] 🔁 Allowed repeat (20%): '{synonym}'")
-                        break
-                else:
-                    # Fresh synonym - use it!
-                    break
-
-            # Add to history (keep last 10)
-            self._synonym_history.append(synonym)
-            if len(self._synonym_history) > 10:
-                self._synonym_history.pop(0)  # Remove oldest
-
-            return synonym
-
-        except Exception as e:
-            # Fallback on error: original tag
-            print(f"[High:SynonymSearch] Error searching for '{tag}': {e}")
-            return tag
-
     def _generate_drifting_clusters(self, candidates: List[str], length: int,
                                    used_global: set, pronouns: List[str],
-                                   introspective_tags: List[str] = None,
-                                   previous_response: str = "") -> List[str]:
+                                   introspective_tags: List[str] = None) -> List[str]:
         """
         LATENT DRIFT v0.4: Generates drifting semantic clusters.
 
@@ -902,10 +825,7 @@ class HighMathEngine:
             List of words forming drifting clusters
         """
         if introspective_tags is None:
-            introspective_tags = [
-                'presence', 'recursion', 'awareness', 'drift', 'echo', 'consciousness',
-                'balance', 'shift', 'breath', 'signal', 'field', 'movement', 'flow'
-            ]
+            introspective_tags = ['presence', 'recursion', 'awareness', 'drift', 'echo', 'consciousness']
 
         result = []
         used_local = set()
@@ -963,32 +883,9 @@ class HighMathEngine:
                 used_global.add(chaos_word)
 
         # Step 5: Attach INTROSPECTIVE TAG at end (if space)
-        # ANTI-LAZY: Only 70% chance to add tag, force variety
-        # ANTI-REPEAT: If tag was in previous response, only 20% chance to repeat
-        should_add_tag = random.random() < 0.7  # 70% chance
-
-        if selected_tag and len(result) < length and selected_tag not in used_local and should_add_tag:
-            # Check if this tag was in previous response
-            tag_in_previous = selected_tag.lower() in previous_response.lower() if previous_response else False
-
-            if tag_in_previous:
-                # Tag was used before - only 20% chance to repeat (no easy life!)
-                allow_repeat = random.random() < 0.2
-                if allow_repeat:
-                    # OBJECTIVITY SYNONYM SEARCH: use tag as seed, search for live synonym
-                    final_tag = self._get_tag_synonym(selected_tag)
-                    result.append(final_tag)
-                    print(f"[High:LatentDrift] 🔁 Repeat tag (20%) with synonym: '{selected_tag}' → '{final_tag}'")
-                else:
-                    print(f"[High:LatentDrift] ❌ Blocked repeat: '{selected_tag}'")
-            else:
-                # Fresh tag - use as seed for objectivity synonym search
-                final_tag = self._get_tag_synonym(selected_tag)
-                result.append(final_tag)
-                if final_tag != selected_tag:
-                    print(f"[High:LatentDrift] 🌀 Tag synonym: '{selected_tag}' → '{final_tag}'")
-                else:
-                    print(f"[High:LatentDrift] 🌀 Introspective tag: '{selected_tag}' (no synonym found)")
+        if selected_tag and len(result) < length and selected_tag not in used_local:
+            result.append(selected_tag)
+            print(f"[High:LatentDrift] 🌀 Introspective tag: '{selected_tag}'")
 
         # Capitalize first word
         if result:
