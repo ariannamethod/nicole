@@ -1,4 +1,4 @@
-# NICOLE: - Weightless Entity
+# NICOLE: Weightless Entity
 
 Reinventing the very concept of a "transformer".
 
