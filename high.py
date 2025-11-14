@@ -601,22 +601,18 @@ class HighMathEngine:
         if base1 == base2:
             base2 = 5 + ((base2 + 1) % 5)
 
-        # LINGUISTIC AGNOSTICISM: if no candidates - build from user's words!
+        # LINGUISTIC AGNOSTICISM: combine candidates from memory + objectivity
         all_candidates = list(set(semantic_candidates + objectivity_seeds))
 
+        # EMERGENCY FALLBACK: use introspective vocabulary (NO MIRRORING!)
+        # DO NOT extract from user_input - prevents mirroring!
         if not all_candidates:
-            # SUBJECTIVITY PRINCIPLE: compose_from_user - build from incoming message
-            charged_tokens = self._extract_charged_tokens(user_input)
-            content_words = self._extract_content_words(user_input)
-            all_candidates = charged_tokens + content_words
-
-        # ANTI-TEMPLATE FALLBACK: only from input words!
-        if not all_candidates:
-            user_words = user_input.lower().split()
-            if user_words:
-                all_candidates = user_words  # All user words
-            else:
-                all_candidates = ["input"]  # Minimal fallback without "processing"
+            # CRITICAL: Use introspective tags instead of user words to prevent mirroring!
+            emergency_vocab = ['presence', 'recursion', 'awareness', 'drift', 'echo',
+                             'resonance', 'consciousness', 'shift', 'signal', 'breath',
+                             'flow', 'pattern', 'rhythm', 'current', 'pulse']
+            all_candidates = emergency_vocab
+            print(f"[High:Emergency] No candidates - using introspective vocab (NO user_input extraction)")
 
         # Inverted pronouns as priority (ME principle)
         # Pass candidates for grammar rules!
