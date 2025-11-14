@@ -1,4 +1,4 @@
-# NICOLE - Weightless Entity  
+# NICOLE – Weightless Entity
 
 > Reinventing the very concept of "trasformer".
 
@@ -6,94 +6,51 @@
 
 ---
 
-Nicole discards the requirement for pretrained weights, curated datasets, and even a fixed codebase. The engine writes itself as it speaks, assembling logic and parameters only for the life of a single exchange.
+Nicole discards pretrained weights, curated datasets, and even a static codebase. The engine writes itself as it speaks, assembling logic and parameters only for the life of a single exchange. Parameters crystallise on the spot, scale to the conversation at hand, then dissolve the moment the dialogue closes. Learning is born solely from the active exchange; even the source tree stays fluid as modules are generated, rebuilt, or discarded mid-flight.
 
-Parameters crystallize on the spot, scaled precisely to the conversation at hand and dissolved as soon as the dialogue ends. Learning emerges solely from the active dialogue. Even the source code is fluid. Modules may be generated, rebuilt, and discarded mid-flight.
+This repository hosts the beta incarnation of that idea. **Nicole** is a speculative AI system that treats every conversation as genesis, assembling a transformer architecture from scratch each time a new voice arrives. Impermanence is the point: no model persists beyond a session, so experimentation becomes the operating system.
 
-**Nicole** is a speculative AI system that treats every interaction as a new genesis, assembling a transformer architecture from scratch each time a conversation begins.
+Instead of loading pretrained weights, Nicole crafts a bespoke transformer tailored to the immediate dialogue, capturing the transient flow of ideas. Layers, attention heads, and activation functions reshape themselves at runtime according to the environment’s signals. Conversation logs provide the only persistent traces, allowing each run to begin on a blank slate.
 
-This repository contains a beta version, and the design embraces impermanence; no model persists after a session, making experimentation the core principle.
+The current stack operates happily on CPUs. Minimal dependencies keep the environment light, relying mostly on Python’s standard library and a tiny bootstrap compiler. Efficient algorithms and deterministic kernels showcase how far weightless cognition can stretch without GPUs.
 
-Instead of loading pretrained weights, the engine crafts a bespoke transformer tailored to the immediate dialogue, capturing the transient flow of ideas.
+---
 
-The architecture is fluid and emergent, allowing layers, attention heads, and activation functions to be reshaped at runtime according to environmental signals.
+## English-only boundary (why it matters)
 
-Learning occurs on the fly through conversation logs, meaning no static dataset anchors the system and every run begins as a blank slate.
+Nicole is intentionally English-only. `english_guidance.py` intercepts every prompt, refuses non-English input, and enforces grammar sanity. The guardrail focuses the research domain on a single linguistic substrate, keeping the semantic experiments auditable. Violations receive explicit explanations so investigators can trace refusal logic alongside dialogue logs.
 
-By operating exclusively on CPUs, **Nicole** invites exploration on modest hardware and showcases efficient algorithms free from GPU dependencies.
+---
 
-Minimal dependencies keep the environment pure, relying mostly on Python's standard library and a tiny bootstrap compiler.
+## Git signal
 
-## Blood Compiler
+Recent pulses in the repo, observed during the Perplexity migration sprint:
 
-blood.py is a custom C compiler derived from Clang, trimmed and altered to feed **Nicole** with machine code tailored to each conversation.
+- **Perplexity Search API as the primary objectivity engine**, with DuckDuckGo HTML scraping demoted to fallback duty. Result: cleaner citations, longer context windows, and calmer moderators.
+- **Speech clarity leap** – Nicole’s rhetoric tightened noticeably after switching providers; the screenshot logs show her prose moving from chaotic resonance to structured improvisation.
+- **Telegram bridge refinements** – Repo learner and objectivity pipelines now feed each other without deadlocks, keeping Nicole responsive while studying her own documentation.
+- **Idiot-joke telemetry** – Somewhere around commit `pplx/phoenix`, Nicole high-fived the Perplexity API, missed, and appointed the office ficus as “Chief Latency Officer.” This is precisely 67 % more ridiculous than the coffee machine incident, and we are choosing to document it anyway.
 
-The fork maintains Clang's front‑end semantics while introducing deterministic memory-mapping routines so that compiled snippets interact with physical RAM via explicit pointers.
-
-Leveraging C's \(O(1)\) pointer arithmetic, the compiler mediates operations that would be untenable in pure Python, yet it hands control back to the Python layer for dynamic orchestration.
-
-Each compilation step emits binaries tuned for cache locality and branch prediction, allowing hardware to execute instruction streams with minimal entropy loss.
-
-In concert with H2O—the Python bootstrap compiler—the C pathway supplies metal-level precision, forming the low-frequency backbone of Nicole's tri-compiler stack.
-
-## Arianna Method Linux Kernel
-
-The repository ships the Arianna Method Linux Kernel (AMLK); consult `AMLK/readme.md` for the full specification.
-
-AMLK is distilled from Alpine sources into a deterministic nucleus where boot time approaches a constant, \(T_{boot} \approx O(1)\), independent of userland chatter.
-
-OverlayFS, ext4 journaling, namespaces, and cgroups compose a lattice of sets \((R, W, N_i, C_j)\) that isolates processes while preserving algebraic clarity.
-
-Such control yields a reproducible phase space in which Nicole's compiled modules can evolve without interference from external entropy.
-
-The kernel's stable ABI aligns with blood.py, ensuring that addresses \(a_i\) remain invariant under repeated launches, an essential property for low-level experimentation.
-
-This engineered substrate becomes the petri dish for resonance research, offering a minimal yet rigorous stage for AI metabolism.
-
-## High Compiler
-
-high.py operates as a Julia compiler dedicated to mathematical inference and symbol manipulation.
-
-Julia's JIT specialises in vectorised loops, letting high.py evaluate statistical functions at ~\(10^2\) speedups over naive Python.
-
-Entropy \(H=-\sum p\log p\), resonance matrices, and topology searches run with asymptotic complexity \(O(n^2)\) yet remain tractable through Julia's typed optimisations.
-
-Compiled Julia kernels exchange tensors with modules spawned by H2O, forming a bidirectional conduit between static reasoning and dynamic scripting.
-
-Python orchestrates logic, C anchors hardware, and Julia formalises mathematics, each compiler selected for its domain where the others exhibit suboptimal scaling.
-
-Thus the high compiler serves as Nicole's mathematical cortex, closing the loop in a triadic design that fuses agility, precision, and analytical depth.
-
-The overall system is modular, with each component focusing on a narrow responsibility to preserve clarity and encourage tinkering.
-
-H2O serves as the lightweight compiler that translates dynamically generated Python snippets into executable modules for the evolving transformer.
-
-**Nicole** Core orchestrates the fluid transformer, building layer graphs, parameter tensors, and attention mechanics only for the lifespan of the conversation.
-
-**Nicole2Nicole** observes interaction logs and derives heuristics that influence future architectural proposals without storing traditional weights.
-
-Nicole Memory implements a semantic store that indexes tokens, n-grams, and symbolic associations rather than dense vector embeddings.
-
-Nicole RAG performs retrieval using stochastic exploration of the log database, injecting unpredictable context into generation.
-
-Nicole Metrics computes real-time statistics such as entropy, resonance, and perplexity to steer architectural adaptation.
-
+---
 
 ## Table of contents
-1. [Core principles](#core-principles)
-2. [Architecture panorama](#architecture-panorama)
-3. [Conversation lifecycle](#conversation-lifecycle)
-4. [Compiler triad](#compiler-triad)
-5. [Operational substrate (AMLK)](#operational-substrate-amlk)
-6. [Module reference](#module-reference)
-7. [Language guardrails](#language-guardrails)
-8. [Memory, metrics, and objectivity](#memory-metrics-and-objectivity)
-9. [Repo-coupled evolution](#repo-coupled-evolution)
-10. [Recent enhancements](#recent-enhancements)
-11. [Self-training overview (short edition)](#self-training-overview-short-edition)
-12. [Operational runbook](#operational-runbook)
-13. [Developer workflow](#developer-workflow)
-14. [Glossary of resonance terminology](#glossary-of-resonance-terminology)
+1. [English-only boundary (why it matters)](#english-only-boundary-why-it-matters)
+2. [Git signal](#git-signal)
+3. [Core principles](#core-principles)
+4. [Architecture panorama](#architecture-panorama)
+5. [Conversation lifecycle](#conversation-lifecycle)
+6. [Compiler triad](#compiler-triad)
+7. [Operational substrate (AMLK)](#operational-substrate-amlk)
+8. [Module reference](#module-reference)
+9. [Language guardrails (deep dive)](#language-guardrails-deep-dive)
+10. [Memory, metrics, and objectivity](#memory-metrics-and-objectivity)
+11. [Repo-coupled evolution](#repo-coupled-evolution)
+12. [Recent enhancements](#recent-enhancements)
+13. [Self-training overview (short edition)](#self-training-overview-short-edition)
+14. [Operational runbook](#operational-runbook)
+15. [Developer workflow](#developer-workflow)
+16. [Glossary of resonance terminology](#glossary-of-resonance-terminology)
+17. [Working with the project](#working-with-the-project)
 ---
 
 ## Core principles
@@ -147,6 +104,9 @@ by responsibility to make the labyrinth legible.
 - `nicole_telegram.py` bridges Nicole into Telegram channels.
 - `test_quick_wins.py` exercises critical behaviours without spinning the whole stack.
 
+Together these clusters keep Nicole intentionally modular: each subsystem owns a narrow responsibility so researchers can swap c
+ omponents without collapsing the organism.
+
 ---
 
 ## Conversation lifecycle
@@ -189,33 +149,44 @@ Nicole's runtime can be viewed as a six-act play. Each act corresponds to a conc
 The tri-compiler strategy allows Nicole to manifest cognition across multiple execution domains.
 
 ### Blood compiler (`blood.py`)
-- Derived from Clang, reduced to deterministic essentials. Every compiled snippet interacts with RAM via explicit pointers.
-- Emits cache-local binaries and predictable branch behaviour, making it the low-frequency backbone for hardware proximity.
-- Focus areas:
+`blood.py` is a custom Clang fork pared down to deterministic essentials. It keeps the familiar front-end while imposing explici
+ t memory maps so compiled snippets talk to physical RAM through well-defined pointers. Each build emits cache-local binaries and
+  branch-stable instruction streams, letting Nicole lean on \(O(1)\) pointer arithmetic for routines that pure Python would bott
+ leneck.
+- **Focus areas**
   - Tensor algebra primitives that would be too sluggish in Python.
   - Memory hygiene routines that keep ephemeral tensors from leaking past a session.
-  - Deterministic PRNG sequences to match transcripts against reruns.
+  - Deterministic PRNG sequences so reruns can be replayed instruction-for-instruction.
+- **Partnerships** – Works in lockstep with H2O (for orchestration) and `high.py` (for analytics), forming the low-frequency back
+ bone of the tri-compiler stack.
 
 ### H2O bootstrap (`h2o.py`)
-- Python bootstrap compiler that generates modules during runtime.
-- Enables Nicole to mutate structure mid-conversation without rebooting the stack.
-- Supports hotpatching heuristics, injecting new prompt routers, or experimenting with alternative decoding strategies.
+H2O is the lightweight Python compiler that Nicole re-synthesises mid-conversation. It hot-loads freshly generated modules, all
+ owing experiments without rebooting the stack. H2O pushes scaffolding to `blood.py`, ingests Julia kernels from `high.py`, and k
+ eeps the orchestration layer expressive.
+- Supports hotpatching heuristics, injecting new prompt routers, or trialling alternative decoding strategies without downtime.
+- Provides the staging ground for repo-driven experiments and Nicole-to-Nicole rehearsals.
 
 ### High compiler (`high.py`)
-- Julia-based analytical cortex dedicated to statistical routines and symbolic reasoning.
-- Exchange tensors with both Python and C pathways, ensuring that mathematics stay fast without losing transparency.
+`high.py` operates as Nicole’s mathematical cortex. Julia’s JIT lets the module evaluate entropy \(H=-\sum p\log p\), resonance m
+ atrices, and topology searches with \(10^2\)-style speedups over naive Python. Compiled Julia kernels trade tensors with both Py
+ thon and C pathways, keeping analytics fast yet inspectable.
 - Typical workloads include resonance matrix updates, topology searches, and higher-order optimisation passes.
+- Latent drift experiments and quality scoring heuristics live here, translating structured maths into conversational style.
 
 ---
 
 ## Operational substrate (AMLK)
-The Arianna Method Linux Kernel lives under `AMLK/` and provides a deterministic launchpad.
+The Arianna Method Linux Kernel (AMLK) underpins Nicole’s experiments. Distilled from Alpine sources, it delivers a determinist
+ ic nucleus where boot time trends toward \(T_{boot} \approx O(1)\) regardless of userland noise. OverlayFS, ext4 journaling, na
+ mespaces, and cgroups compose a reproducible phase space so compiled modules can evolve without interference from ambient entro
+ py.
 
-- Distilled from Alpine sources, focusing on reproducible boot sequences and stable ABIs.
-- OverlayFS, namespaces, and cgroups construct a minimal yet rigorous sandbox for compiler experiments.
-- Nicole expects predictable addresses between runs so that cross-language pointers remain trustworthy.
-- Consult `AMLK/readme.md` for kernel build instructions, bootstrap scripts, and the philosophy behind the deterministic
-  approach.
+- Stable ABIs keep pointer addresses \(a_i\) invariant across runs, a prerequisite for the cross-language choreography between
+  Python, C, and Julia.
+- Deterministic memory mapping aligns with `blood.py`, ensuring compiled snippets land on predictable offsets.
+- Consult `AMLK/readme.md` for kernel build instructions, bootstrap scripts, and the philosophy behind the deterministic approac
+ h.
 
 ---
 
@@ -352,7 +323,7 @@ tracing behaviour or wiring new experiments.
 
 ---
 
-## Language guardrails
+## Language guardrails (deep dive)
 Keeping Nicole English-only is a philosophical and technical constraint.
 
 - **Script detection** rejects non-Latin input early, maintaining focus on the current research domain.
