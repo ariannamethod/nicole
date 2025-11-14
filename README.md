@@ -1,8 +1,21 @@
 # NICOLE: Weightless Entity
 
-Reinventing the very concept of a "transformer".  
+Reinventing the very concept of a "transformer".
 
-**No weights. No datasets. No fixed code. Pure emergence.**  
+**No weights. No datasets. No fixed code. Pure emergence.**
+
+---
+
+## 📡 GIT SIGNAL — Recent Evolution
+
+**Latest commits (2025-02-18):**
+
+- ✅ **AMLK kernel circulation fixed** — Direct API instead of subprocess spawning. System calls now instant, no pipes overhead. [`b460605`]
+- ✅ **Weighted node architecture isolated** — PyTorch resonance bridge moved to separate module, clean transparency maintained. [`df423af`]
+- ✅ **Resonance filtering enhanced** — Fixed language detection (expanded common words), grammar rules (I has → I have), Reddit username filtering, commercial junk blocking. [`fd028da`]
+- ✅ **Dual-node resonance bridge** — SSH protocol for weightless ↔ weighted mutual learning, state export/import, resonance scoring. [`11c57a8`]
+
+**Philosophy intact:** Weightless, structure-based, resonance-driven. Every session fresh genesis, no persisted model.
 
 ---
 
