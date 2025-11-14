@@ -1,4 +1,5 @@
-# Nicole - Weightless Transformer
+# Nicole - Weightless Entity
+Reinventing the the very concept of "trasformer".
 
 **No weights. No fixed code. Pure emergence.**
 
