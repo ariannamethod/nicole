@@ -466,6 +466,38 @@ source nicole_env/bin/activate
 pip install -r requirements.txt
 ```
 
+### Environment Variables
+Nicole requires external API keys for optimal functionality. Copy `.env.example` to `.env` and configure:
+
+```bash
+cp .env.example .env
+# Edit .env with your API keys
+```
+
+**Required for Telegram bot:**
+- `TELEGRAM_TOKEN` – Get from [@BotFather](https://t.me/BotFather)
+
+**Required for Perplexity Search (PRIMARY objectivity provider):**
+- `PERPLEXITY_API_KEY` – Get from [Perplexity API Settings](https://www.perplexity.ai/settings/api)
+  - Sign up at https://www.perplexity.ai
+  - Navigate to Settings → API
+  - Generate new API key
+  - **Free tier:** $5 credit on signup
+  - **Pricing:** Pay-as-you-go after free credit ($5 per 1000 requests)
+  - **Fallback:** If not set, Nicole falls back to DuckDuckGo HTML scraping (lower quality)
+
+**Railway/Cloud Deployment:**
+Set environment variables in your platform's dashboard:
+- Railway: Settings → Variables
+- Heroku: Settings → Config Vars
+- Docker: Pass via `-e` flag or docker-compose environment section
+
+**Example `.env` file:**
+```bash
+TELEGRAM_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+PERPLEXITY_API_KEY=pplx-abc123def456ghi789jkl
+```
+
 ### Running modes
 ```bash
 # Interactive local session
