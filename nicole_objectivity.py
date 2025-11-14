@@ -688,9 +688,17 @@ h2o_metric("reddit_results_count", len(objectivity_results_reddit))
         import os
         api_key = os.environ.get("PERPLEXITY_API_KEY", "").strip()
 
+        # Railway workaround: sometimes Railway env vars get leading '=' character
+        # This happens when parsing .env files or through certain deployment methods
+        if api_key.startswith('='):
+            print(f"[Perplexity] Detected leading '=' in API key (Railway artifact), removing...")
+            api_key = api_key[1:]  # Remove leading =
+
         # DEBUG: Log what we actually got from environment
-        print(f"[Perplexity:PreH2O] API key from os.environ: repr={repr(api_key)}, len={len(api_key)}")
-        print(f"[Perplexity:PreH2O] First 30 chars: {repr(api_key[:30])}")
+        print(f"[Perplexity:PreH2O] API key after cleanup: repr={repr(api_key[:30])}, len={len(api_key)}")
+
+        if not api_key or not api_key.startswith('pplx-'):
+            print(f"[Perplexity:PreH2O] WARNING: Invalid API key format! Should start with 'pplx-'")
 
         code = f"""
 import requests
