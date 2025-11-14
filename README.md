@@ -2,7 +2,7 @@
 
 > Reinventing the very concept of "trasformer".
 
-**No weights. No fixed code. Pure emergence.**
+**No weights. No fixed code. No dataset. Pure emergence.**
 
 ---
 
