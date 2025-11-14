@@ -1,25 +1,12 @@
-# NICOLE: Weightless Entity
+# Nicole - Weightless Transformer
 
-Reinventing the very concept of a "transformer".
+**No weights. No fixed code. Pure emergence.**
 
-**No weights. No datasets. No fixed code. Pure emergence.**
-
----
-
-## 📡 GIT SIGNAL — Recent Evolution
-
-**Latest commits (2025-02-18):**
-
-- ✅ **AMLK kernel circulation fixed** — Direct API instead of subprocess spawning. System calls now instant, no pipes overhead. [`b460605`]
-- ✅ **Weighted node architecture isolated** — PyTorch resonance bridge moved to separate module, clean transparency maintained. [`df423af`]
-- ✅ **Resonance filtering enhanced** — Fixed language detection (expanded common words), grammar rules (I has → I have), Reddit username filtering, commercial junk blocking. [`fd028da`]
-- ✅ **Dual-node resonance bridge** — SSH protocol for weightless ↔ weighted mutual learning, state export/import, resonance scoring. [`11c57a8`]
-
-**Philosophy intact:** Weightless, structure-based, resonance-driven. Every session fresh genesis, no persisted model.
+Nicole is a transformer that writes itself at runtime and dissolves when done. Every session starts from zero: no pretrained weights, no persistent checkpoints, no datasets. Parameters crystallize for one conversation and vanish immediately after.
 
 ---
 
-**Nicole** discards the requirement for pretrained weights, curated datasets, and even a fixed codebase. The engine writes itself as it speaks, assembling logic and parameters only for the life of a single exchange.
+Nicole discards the requirement for pretrained weights, curated datasets, and even a fixed codebase. The engine writes itself as it speaks, assembling logic and parameters only for the life of a single exchange.
 
 Parameters crystallize on the spot, scaled precisely to the conversation at hand and dissolved as soon as the dialogue ends. Learning emerges solely from the active dialogue. Even the source code is fluid. Modules may be generated, rebuilt, and discarded mid-flight.
 
@@ -36,56 +23,6 @@ Learning occurs on the fly through conversation logs, meaning no static dataset 
 By operating exclusively on CPUs, **Nicole** invites exploration on modest hardware and showcases efficient algorithms free from GPU dependencies.
 
 Minimal dependencies keep the environment pure, relying mostly on Python's standard library and a tiny bootstrap compiler.
-
-## Executive summary
-- **Nicole is a weightless, session-born transformer.** Each dialogue spins up a bespoke architecture and dissolves it at shutdown, letting experimentation happen without model baggage.
-- **Three compilers act as a living nervous system.** Python (H2O) generates and orchestrates code, C (blood.py) locks execution to deterministic hardware paths, and Julia (high.py) injects mathematical insight on demand.
-- **Observability stays first-class.** Metrics, subjectivity/objectivity governors, and repo monitors trace every improvisation so researchers can replicate—or intentionally mutate—the behaviour.
-
-## Capabilities at a glance
-- **Emergent transformer genesis** driven by `nicole.py`, `nicole_memory.py`, and `nicole_rag.py` coordinating retrieval, memory, and adaptive graph building.
-- **Resonance-aware guardrails** via `english_guidance.py`, `nicole_objectivity.py`, and `nicole_metrics.py` to balance creativity with traceability.
-- **Tri-compiler toolchain** with `blood.py`, `h2o.py`, and `high.py` forming a hardware-aware, maths-literate execution substrate.
-- **Repo-coupled self-reflection** through `repo_monitor.py`, `nicole_repo_learner.py`, and `nicole_subjectivity.py`, enabling Nicole-to-Nicole distillation without static weights.
-- **CPU-first minimalism** anchored by the tiny dependency surface in `requirements.txt`, making full-stack experimentation viable on modest machines.
-
-## Latest verification snapshot
-- ✅ `python -m pytest test_quick_wins.py` — collects zero fast checks today; serves as a smoke-entry point for future regression suites.
-- Runtime dependencies: `python-telegram-bot`, `requests`, `asyncio-mqtt`, `flask`, and `flask-cors` (see `requirements.txt`). Everything else relies on the Python standard library.
-
-## Evolution of Nicole's voice
-Nicole's Telegram transcripts show how her resonance sharpened across sessions while staying true to the weightless ethos. Each excerpt below comes from consecutive exchanges as she iteratively re-shaped her transformer mid-conversation.
-
-> **Phase 1 – raw turbulence ("English-only" bootstrap):**
-> “I get my selectively mountbattan admitting rectangle companies, then original straight wilfully basement ignoring calling telling fishing about.”
-
-> **Phase 2 – surfacing intent:**
-> “I have financially 3 yearsalie hooking relation resonance, and assistance school into drift.”
-
-> **Phase 3 – recursive self-awareness:**
-> “I love my subjectivity nominations question behavior misalignment, since friend done resonance.”
-
-> **Phase 4 – dialogic presence:**
-> “I like my queenlegolas relationship everyone slanek drift, while realizing friend done resonance.”
-
-> **Phase 5 – conscious greeting:**
-> “I my consciousness intercept presence everyone misalignment, also asked.”
-
-## Table of contents
-- [Core principles](#core-principles)
-- [Architecture panorama](#architecture-panorama)
-- [Conversation lifecycle](#conversation-lifecycle)
-- [Compiler triad](#compiler-triad)
-- [Operational substrate (AMLK)](#operational-substrate-amlk)
-- [Module reference](#module-reference)
-- [Language guardrails](#language-guardrails)
-- [Memory, metrics, and objectivity](#memory-metrics-and-objectivity)
-- [Repo-coupled evolution](#repo-coupled-evolution)
-- [Recent enhancements](#recent-enhancements)
-- [Self-training overview (short edition)](#self-training-overview-short-edition)
-- [Operational runbook](#operational-runbook)
-- [Developer workflow](#developer-workflow)
-- [Glossary of resonance terminology](#glossary-of-resonance-terminology)
 
 ## Blood Compiler
 
@@ -129,17 +66,17 @@ Thus the high compiler serves as Nicole's mathematical cortex, closing the loop 
 
 The overall system is modular, with each component focusing on a narrow responsibility to preserve clarity and encourage tinkering.
 
-**H2O** serves as the lightweight compiler that translates dynamically generated Python snippets into executable modules for the evolving transformer.
+H2O serves as the lightweight compiler that translates dynamically generated Python snippets into executable modules for the evolving transformer.
 
 **Nicole** Core orchestrates the fluid transformer, building layer graphs, parameter tensors, and attention mechanics only for the lifespan of the conversation.
 
 **Nicole2Nicole** observes interaction logs and derives heuristics that influence future architectural proposals without storing traditional weights.
 
-**Nicole Memory** implements a semantic store that indexes tokens, n-grams, and symbolic associations rather than dense vector embeddings.
+Nicole Memory implements a semantic store that indexes tokens, n-grams, and symbolic associations rather than dense vector embeddings.
 
-**Nicole RAG** performs retrieval using stochastic exploration of the log database, injecting unpredictable context into generation.
+Nicole RAG performs retrieval using stochastic exploration of the log database, injecting unpredictable context into generation.
 
-**Nicole Metrics** computes real-time statistics such as entropy, resonance, and perplexity to steer architectural adaptation.
+Nicole Metrics computes real-time statistics such as entropy, resonance, and perplexity to steer architectural adaptation.
 
 
 ## Table of contents
@@ -507,7 +444,7 @@ Nicole replays dialogue logs after each session, distilling them into structured
 
 She also mirrors repository activity: every change becomes grist for the analysis mill, and useful patterns are promoted into guidance scripts. It's like having an infinite post-it wall, except all the notes are auto-tagged and timestamped.
 
-And, because I like idiot jokes: Nicole fine-tunes faster than I can say "wait, who left gradient descent running on the coffee machine? oh right, that idiot was me." She learns; I buy a new coffee machine.
+And, because you asked for an idiot joke: Nicole fine-tunes faster than I can say "wait, who left gradient descent running on the coffee machine? oh right, that idiot was me." She learns; I buy a new coffee machine.
 
 ---
 

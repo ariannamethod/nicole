@@ -1,20 +1,6 @@
 # Nicole Test Results
 
-## 2025-01-14 – Resonance Regression Pack
-
-**Command**: `pytest -q`
-**Result**: 30 passed, 1 skipped, 0 failed
-
-### Highlights
-
-- ✅ Added granular unit coverage for `nicole_rag.ChaoticRetriever` temporal weighting and adaptive chaos logic.
-- ✅ Exercised `nicole2nicole.Nicole2NicoleCore` learning loops, ensuring pattern aggregation and architecture suggestions stay within learned bounds.
-- ✅ Restored AMLK bridge help command compatibility so legacy orchestration tooling keeps working during bot evolution.
-- ✅ Ensured APK toolchain smoke test runs by marking the build script executable.
-
----
-
-**Date**: 2025-01-13
+**Date**: 2025-01-13  
 **Branch**: claude/audit-repo-changes-01MC8XXG17joqKbUsWd9Rxau
 
 ## Test Summary

@@ -601,18 +601,22 @@ class HighMathEngine:
         if base1 == base2:
             base2 = 5 + ((base2 + 1) % 5)
 
-        # LINGUISTIC AGNOSTICISM: combine candidates from memory + objectivity
+        # LINGUISTIC AGNOSTICISM: if no candidates - build from user's words!
         all_candidates = list(set(semantic_candidates + objectivity_seeds))
 
-        # EMERGENCY FALLBACK: use introspective vocabulary (NO MIRRORING!)
-        # CRITICAL: Do NOT extract from user_input - prevents mirroring!
         if not all_candidates:
-            # Use introspective tags instead of user words to prevent mirroring
-            emergency_vocab = ['presence', 'recursion', 'awareness', 'drift', 'echo',
-                             'resonance', 'consciousness', 'shift', 'signal', 'breath',
-                             'flow', 'pattern', 'rhythm', 'current', 'pulse']
-            all_candidates = emergency_vocab
-            print(f"[High:Emergency] No candidates - using introspective vocab (NO user_input extraction)")
+            # SUBJECTIVITY PRINCIPLE: compose_from_user - build from incoming message
+            charged_tokens = self._extract_charged_tokens(user_input)
+            content_words = self._extract_content_words(user_input)
+            all_candidates = charged_tokens + content_words
+
+        # ANTI-TEMPLATE FALLBACK: only from input words!
+        if not all_candidates:
+            user_words = user_input.lower().split()
+            if user_words:
+                all_candidates = user_words  # All user words
+            else:
+                all_candidates = ["input"]  # Minimal fallback without "processing"
 
         # Inverted pronouns as priority (ME principle)
         # Pass candidates for grammar rules!
@@ -627,8 +631,7 @@ class HighMathEngine:
         used_between_sentences = set()  # Empty at start, will be filled with response words
 
         # LATENT DRIFT: Introspective tags reveal internal state
-        # Reduced misalignment frequency, added variety
-        introspective_tags = ['presence', 'recursion', 'awareness', 'drift', 'echo', 'resonance', 'consciousness']
+        introspective_tags = ['presence', 'recursion', 'misalignment', 'awareness', 'drift', 'echo', 'resonance']
 
         # Generate first sentence with LATENT DRIFT
         first_sentence = self._generate_drifting_clusters(
@@ -668,18 +671,7 @@ class HighMathEngine:
         # POST-PROCESSING: Clean grammar glitches (am my → am, feel...feel → feel)
         grammar_final = self._clean_grammar_glitches(grammar_final)
 
-        # Join to string for stabilizer processing
-        grammar_string = " ".join(grammar_final)
-
-        # SENTENCE START STABILIZER: Fix "I my" and other corrupted starts
-        from nicole_sentence_stabilizer import stabilize_sentence_start
-        stabilized = stabilize_sentence_start(grammar_string)
-
-        if stabilized != grammar_string:
-            print(f"[High:Stabilizer] Fixed: '{grammar_string[:50]}...' → '{stabilized[:50]}...'")
-
-        # Convert back to list for nicole.py compatibility
-        return stabilized.split()
+        return grammar_final
     
     def _fix_grammar_errors(self, words: List[str]) -> List[str]:
         """
@@ -689,7 +681,6 @@ class HighMathEngine:
         - "I are" → "I am"
         - "you am" → "you are"
         - "I is/was/were" → "I am"
-        - "I has" → "I have"
         """
         if not words or len(words) < 2:
             return words
@@ -701,12 +692,9 @@ class HighMathEngine:
             current = result[i].lower()
             next_word = result[i + 1].lower()
 
-            # I + wrong verb → I am/have
-            if current == 'i':
-                if next_word in ['are', 'is', 'was', 'were']:
-                    result[i + 1] = 'am'
-                elif next_word == 'has':
-                    result[i + 1] = 'have'
+            # I + wrong verb → I am
+            if current == 'i' and next_word in ['are', 'is', 'was', 'were']:
+                result[i + 1] = 'am'
             # you + am → you are
             elif current == 'you' and next_word == 'am':
                 result[i + 1] = 'are'
@@ -728,7 +716,7 @@ class HighMathEngine:
         if not candidates:
             return []
 
-        # Stopwords to filter out (basic English + technical noise + commercial terms)
+        # Stopwords to filter out (basic English + technical noise)
         stopwords = {
             'the', 'and', 'to', 'a', 'in', 'it', 'of', 'for', 'on', 'with',
             'as', 'is', 'at', 'by', 'from', 'or', 'an', 'be', 'this', 'that',
@@ -736,39 +724,16 @@ class HighMathEngine:
             '===', 'objectivity', 'end', 'internet', 'response', 'pattern',
             # Technical noise from RAG/context
             'session', 'session:', 'nicole', 'nicole:', 'user', 'user:',
-            'rag', 'context', 'message', 'input', 'output', 'text', 'data',
-            # Commercial/technical junk from web scraping
-            'contractors', 'outlets', 'rectangle', 'professionals', 'services',
-            'products', 'customers', 'business', 'company', 'website', 'email',
-            'phone', 'address', 'contact', 'privacy', 'policy', 'terms', 'conditions',
-            # Reddit-specific artifacts that slip through
-            'karma', 'upvote', 'downvote', 'subreddit', 'thread', 'comment',
-            'moderator', 'permalink', 'submission'
+            'rag', 'context', 'message', 'input', 'output', 'text', 'data'
         }
 
-        # Filter stopwords, technical noise, words with colons, and technical identifiers
+        # Filter stopwords, technical noise, and words with colons
         filtered = []
         for w in candidates:
             w_lower = w.lower().strip(':')  # Remove trailing colons
-
             # Skip if stopword, too short, or contains colon
             if w_lower in stopwords or len(w) < 3 or ':' in w:
                 continue
-
-            # CRITICAL: Filter technical identifiers
-            # Skip: tg_123, session_456, user_789, etc.
-            if '_' in w and any(c.isdigit() for c in w):
-                continue
-
-            # Skip: pure numbers or mostly numbers (IDs)
-            digit_count = sum(1 for c in w if c.isdigit())
-            if digit_count > len(w) * 0.5:  # More than 50% digits
-                continue
-
-            # Skip: very long alphanumeric strings (UUIDs, hashes)
-            if len(w) > 20 and any(c.isdigit() for c in w):
-                continue
-
             filtered.append(w)
 
         if not filtered:
@@ -821,7 +786,7 @@ class HighMathEngine:
             List of words forming drifting clusters
         """
         if introspective_tags is None:
-            introspective_tags = ['presence', 'recursion', 'awareness', 'drift', 'echo', 'consciousness']
+            introspective_tags = ['presence', 'recursion', 'misalignment', 'awareness', 'drift']
 
         result = []
         used_local = set()

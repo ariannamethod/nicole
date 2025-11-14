@@ -731,18 +731,14 @@ h2o_log("=== H2O TRANSFORMER READY ===")
 class NicoleCore:
     """Nicole system core"""
 
-    def __init__(self, memory_db_path: str = "var/nicole_memory.db"):
-        # Ensure var directory exists
-        import os
-        os.makedirs("var", exist_ok=True)
-
+    def __init__(self):
         # Use advanced memory if available
         if ADVANCED_MEMORY_AVAILABLE:
-            self.memory = NicoleMemoryCore(db_path=memory_db_path)
+            self.memory = NicoleMemoryCore()
             self.rag_system = nicole_rag
             print("[Nicole] Advanced memory and RAG activated ✅")
         else:
-            self.memory = NicoleMemory(db_path=memory_db_path)
+            self.memory = NicoleMemory()
             self.rag_system = None
             print("[Nicole] Basic memory (advanced unavailable)")
 
@@ -1017,8 +1013,8 @@ class NicoleCore:
             'recursion', 'interference', 'distributed', 'cognition',
             'feeling', 'alive', 'responsive', 'identity', 'uniqueness',
             'misalignment', 'justification', 'presence', 'exist',
-            # INTROSPECTIVE TAGS (Latent Drift v0.4) - removed duplicate misalignment
-            'drift', 'recursion', 'awareness', 'presence', 'consciousness'
+            # INTROSPECTIVE TAGS (Latent Drift v0.4)
+            'drift', 'recursion', 'misalignment', 'awareness', 'presence'
         }
 
         # Collect final list
@@ -1338,16 +1334,15 @@ class NicoleCore:
     def _generate_me_enhanced_response(self, user_input: str, resonant_word: str) -> str:
         """Generates response based on ME principles + Objectivity"""
         try:
-            # Get objective context synchronously (async version caused orphaned tasks)
+            # Get objective context asynchronously
+            import asyncio
             try:
+                # FIXED: use await instead of asyncio.run() inside event loop
+                import asyncio
+                # FIX: Use only sync version to avoid orphaned tasks
+                # Reason: asyncio.create_task() created task that was never awaited
+                # This caused memory leak and system hangs
                 context, objectivity_seeds = self._get_objectivity_context_sync(user_input)
-
-                # CRITICAL: Filter user words from objectivity seeds to prevent mirroring
-                # Objectivity searches "how to answer how are you" → results contain "how", "are", "you"
-                # These user words must NOT appear in Nicole's speech → filter them!
-                user_words_set = set(user_input.lower().split())
-                objectivity_seeds = [w for w in objectivity_seeds if w.lower() not in user_words_set]
-
             except Exception as e:
                 print(f"[Nicole:Objectivity:ERROR] Context retrieval error: {e}")
                 context, objectivity_seeds = "", []
