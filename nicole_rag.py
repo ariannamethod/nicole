@@ -380,38 +380,38 @@ def test_rag_system():
     print("=== NICOLE RAG SYSTEM TEST ===")
     
     # Test 1: Basic search
-    print("\\n--- Тест базового поиска ---")
+    print("\\n--- Basic Search Test ---")
     context_results = nicole_rag.retriever.retrieve_context("programming work")
     print(f"Found {len(context_results)} context records")
     for result in context_results:
         print(f"- {result['type']}: {result['content'][:80]}... (relevance: {result['relevance']:.3f})")
-        
+
     # Test 2: Different strategies
-    print("\\n--- Тест стратегий ---")
+    print("\\n--- Strategies Test ---")
     strategies = ['factual', 'creative', 'chaotic', 'balanced']
-    
+
     for strategy in strategies:
         response, context = nicole_rag.generate_augmented_response(
-            "Tell me about programming", 
+            "Tell me about programming",
             "Programming is cool",
             strategy=strategy
         )
         print(f"Strategy {strategy}: {response}")
-        
+
     # Test 3: Adaptation
-    print("\\n--- Тест адаптации ---")
-    
+    print("\\n--- Adaptation Test ---")
+
     # Simulate feedback
     nicole_rag.adapt_retrieval_strategy(0.8, 'balanced')
     nicole_rag.adapt_retrieval_strategy(0.3, 'chaotic')
     nicole_rag.adapt_retrieval_strategy(0.9, 'creative')
-    
+
     best_strategy = nicole_rag.get_best_strategy()
     print(f"Best strategy: {best_strategy}")
-    
+
     # Statistics
     stats = nicole_rag.get_rag_statistics()
-    print(f"\\nСтатистика RAG:")
+    print(f"\\nRAG Statistics:")
     for key, value in stats.items():
         print(f"- {key}: {value}")
         

@@ -696,7 +696,7 @@ if __name__ == "__main__":
     print("\n5. Language Detection (Honest Boundary):")
     test_languages = [
         ("Hello, how are you?", "English"),
-        ("Привет, как дела?", "Not English"),
+        ("Hola, como estas?", "Not English"),
         ("Bonjour, comment allez-vous?", "Not English"),
         ("你好吗？", "Not English"),
         ("This is a test", "English")

@@ -1,26 +1,26 @@
 # Nicole - Neural Organism Intelligence Conversational Language Engine
-# Минимальные зависимости для CPU-only системы без тяжелых библиотек
+# Minimal dependencies for CPU-only system without heavy libraries
 
-# Telegram bot и HTTP requests
+# Telegram bot and HTTP requests
 python-telegram-bot==20.7
 requests==2.31.0
 
-# System monitoring для AMLK API
+# System monitoring for AMLK API
 psutil>=5.9.0
 
-# Для асинхронности (если нужно)
+# For async operations (if needed)
 asyncio-mqtt==0.16.1
 
-# Для веб интерфейса (опционально)
+# For web interface (optional)
 flask==3.0.0
 flask-cors==4.0.0
 
-# Все остальное - стандартная библиотека Python:
-# - sqlite3 (встроенный)
-# - json (встроенный)
-# - time (встроенный)
-# - threading (встроенный)
-# - math (встроенный)
-# - random (встроенный)
-# - collections (встроенный)
-# - typing (встроенный)
+# Everything else - Python standard library:
+# - sqlite3 (built-in)
+# - json (built-in)
+# - time (built-in)
+# - threading (built-in)
+# - math (built-in)
+# - random (built-in)
+# - collections (built-in)
+# - typing (built-in)

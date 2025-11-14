@@ -67,8 +67,8 @@ if unfamiliar_question(user_input):
     synthesize_response()
 ```
 
-**Templates** = fixed answers (навязывание)
-**Vectors** = search directions (направление)
+**Templates** = fixed answers (imposition)
+**Vectors** = search directions (guidance)
 
 Like a compass: shows WHERE to look, not WHAT to find!
 
