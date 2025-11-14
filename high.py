@@ -41,7 +41,6 @@ class HighMathEngine:
         self.temp_dir = Path(tempfile.gettempdir()) / "nicole_high"
         self.temp_dir.mkdir(exist_ok=True)
         self.julia_cache = {}
-        self._synonym_history = []  # Track last 10 synonyms for natural selection (80% anti-repeat)
         
     def vectorized_entropy(self, text_data: List[str]) -> float:
         """
@@ -799,77 +798,6 @@ class HighMathEngine:
         scored.sort(key=lambda x: x[1], reverse=True)
         return scored
 
-    def _get_tag_synonym(self, tag: str) -> str:
-        """
-        OBJECTIVITY SYNONYM SEARCH: Use tag as seed, search web for live synonym
-
-        NATURAL SELECTION: Synonyms tracked in history, 80% anti-repeat check.
-        Forces Nicole to constantly search for fresh variations, no lazy comfort zone.
-
-        Instead of static templates, Nicole searches real-time for variations.
-        Tag is starting point (seed), result is live synonym from web.
-
-        Args:
-            tag: Seed word (e.g., "awareness")
-
-        Returns:
-            Live synonym from web (with natural selection filter), or original tag if search fails
-        """
-        try:
-            # Import objectivity for web search
-            import nicole_objectivity
-            obj = nicole_objectivity.NicoleObjectivity()
-
-            # Search query: "synonym for {tag}"
-            query = f"synonym for {tag}"
-            internet_result = obj._provider_internet_h2o(query)
-
-            if not internet_result:
-                # Fallback: original tag if search fails
-                return tag
-
-            # Extract potential synonyms from result (simple word extraction)
-            words = re.findall(r'\b[a-z]{4,12}\b', internet_result.lower())
-
-            # Filter: remove common junk, keep only relevant words
-            junk = {'synonym', 'definition', 'meaning', 'word', 'synonyms', 'similar', 'related', tag.lower()}
-            candidates = [w for w in words if w not in junk and len(w) >= 4]
-
-            if not candidates:
-                # No synonyms found - return original tag
-                return tag
-
-            # NATURAL SELECTION: Try to find synonym NOT in history
-            # 80% of time block repeats, 20% allow (like introspective tags)
-            max_attempts = 5
-            for attempt in range(max_attempts):
-                synonym = random.choice(candidates[:10])  # Pick from top 10 best
-
-                # Check if in history
-                if synonym in self._synonym_history:
-                    # 80% block, 20% allow
-                    if random.random() < 0.8:
-                        print(f"[High:SynonymSearch] 🚫 Blocked repeat synonym: '{synonym}' (attempt {attempt+1}/{max_attempts})")
-                        continue  # Try another
-                    else:
-                        print(f"[High:SynonymSearch] 🔁 Allowed repeat (20%): '{synonym}'")
-                        break
-                else:
-                    # Fresh synonym - use it!
-                    break
-
-            # Add to history (keep last 10)
-            self._synonym_history.append(synonym)
-            if len(self._synonym_history) > 10:
-                self._synonym_history.pop(0)  # Remove oldest
-
-            return synonym
-
-        except Exception as e:
-            # Fallback on error: original tag
-            print(f"[High:SynonymSearch] Error searching for '{tag}': {e}")
-            return tag
-
     def _generate_drifting_clusters(self, candidates: List[str], length: int,
                                    used_global: set, pronouns: List[str],
                                    introspective_tags: List[str] = None,
@@ -964,20 +892,14 @@ class HighMathEngine:
                 # Tag was used before - only 20% chance to repeat (no easy life!)
                 allow_repeat = random.random() < 0.2
                 if allow_repeat:
-                    # OBJECTIVITY SYNONYM SEARCH: use tag as seed, search for live synonym
-                    final_tag = self._get_tag_synonym(selected_tag)
-                    result.append(final_tag)
-                    print(f"[High:LatentDrift] 🔁 Repeat tag (20%) with synonym: '{selected_tag}' → '{final_tag}'")
+                    result.append(selected_tag)
+                    print(f"[High:LatentDrift] 🔁 Repeat tag (20%): '{selected_tag}'")
                 else:
                     print(f"[High:LatentDrift] ❌ Blocked repeat: '{selected_tag}'")
             else:
-                # Fresh tag - use as seed for objectivity synonym search
-                final_tag = self._get_tag_synonym(selected_tag)
-                result.append(final_tag)
-                if final_tag != selected_tag:
-                    print(f"[High:LatentDrift] 🌀 Tag synonym: '{selected_tag}' → '{final_tag}'")
-                else:
-                    print(f"[High:LatentDrift] 🌀 Introspective tag: '{selected_tag}' (no synonym found)")
+                # Fresh tag - add it
+                result.append(selected_tag)
+                print(f"[High:LatentDrift] 🌀 Introspective tag: '{selected_tag}'")
 
         # Capitalize first word
         if result:
