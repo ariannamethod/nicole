@@ -672,7 +672,18 @@ class HighMathEngine:
         # POST-PROCESSING: Clean grammar glitches (am my → am, feel...feel → feel)
         grammar_final = self._clean_grammar_glitches(grammar_final)
 
-        return grammar_final
+        # Join to string for stabilizer processing
+        grammar_string = " ".join(grammar_final)
+
+        # SENTENCE START STABILIZER: Fix "I my" and other corrupted starts
+        from nicole_sentence_stabilizer import stabilize_sentence_start
+        stabilized = stabilize_sentence_start(grammar_string)
+
+        if stabilized != grammar_string:
+            print(f"[High:Stabilizer] Fixed: '{grammar_string[:50]}...' → '{stabilized[:50]}...'")
+
+        # Convert back to list for nicole.py compatibility
+        return stabilized.split()
     
     def _fix_grammar_errors(self, words: List[str]) -> List[str]:
         """
