@@ -1341,13 +1341,6 @@ class NicoleCore:
             # Get objective context synchronously (async version caused orphaned tasks)
             try:
                 context, objectivity_seeds = self._get_objectivity_context_sync(user_input)
-
-                # CRITICAL: Filter user_input words from objectivity_seeds to prevent mirroring!
-                # Objectivity includes user words in search query → results contain them → MIRROR!
-                user_words_set = set(user_input.lower().split())
-                objectivity_seeds = [w for w in objectivity_seeds if w.lower() not in user_words_set]
-                print(f"[Nicole:AntiMirror] Filtered user words from objectivity seeds")
-
             except Exception as e:
                 print(f"[Nicole:Objectivity:ERROR] Context retrieval error: {e}")
                 context, objectivity_seeds = "", []
