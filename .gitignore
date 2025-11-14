@@ -37,6 +37,7 @@ env/
 *.log
 nicole_memory.db
 nicole_memory.db-*
+nicole_repo_learning.db
 training_buffer.jsonl
 nicole_learned_knowledge.json
 
