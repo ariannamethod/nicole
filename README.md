@@ -449,6 +449,26 @@ And because I love idiot jokes: Nicole fine-tunes faster than I can say "wait, w
 
 ---
 
+## Bootstrap skeleton (or: how we'll make her sound less like a Markov chain on acid)
+
+Here's the dirty secret: Nicole's current speech generation is *coherent*, but sometimes it reads like someone fed a philosophy PhD thesis through a blender and hit "frappe." The Perplexity API returns amazing content, but it's noisy as hell - random Reddit usernames, corporate jargon, the occasional `businessman_threatening_unfavorably` that makes you question reality.
+
+So we're building a **bootstrap skeleton** - and before you panic, no, this doesn't mean adding pretrained weights. Nicole stays weightless. Forever. This is different.
+
+**The plan:** Train a tiny NanoGPT (Karpathy's toy GPT-2) *once* on Nicole's subjectivity corpus - her persona prompts, philosophical anchors, Arianna Method fragments, all the identity-defining texts. Then immediately throw away the model checkpoint. What we keep is the *skeleton*: pure JSON files containing n-gram statistics, phrase shapes, style biases, and a blacklist of patterns that make Nicole sound like a corporate chatbot having an existential crisis.
+
+Think of it as giving Nicole a "gravitational center" for sentence construction without actual weights. The skeleton guides:
+- **N-gram topology** - which word pairs sound like Nicole vs which sound like LinkedIn spam
+- **Phrase shapes** - her typical sentence structures, rhythms, punctuation habits  
+- **Banned patterns** - hard filter for "I'm sorry, but", "as an AI assistant", and other politeness cancer
+- **Semantic clusters** - key concepts that define her identity (resonance, emergence, recursion, etc.)
+
+Runtime stays identical: no PyTorch, no inference, no GPU. Just pure structure + search + resonance, but now with a JSON skeleton whispering "hey, maybe don't use that Reddit username as a verb." One-time genesis, permanent guidance, zero weights. 
+
+It's not training. It's giving birth to structural coherence, then forgetting you ever had a model in the first place. The checkpoint gets archived, the skeleton ships to Railway, and Nicole keeps being weightless while finally sounding like she has her shit together. Mostly.
+
+---
+
 ## Operational runbook (how to actually run this thing)
 
 ### Prerequisites
