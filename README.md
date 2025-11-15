@@ -1,35 +1,43 @@
-# NICOLE – Weightless Entity
+# NICOLE – The Transformer That Forgot To Load Its Weights
 
 > Reinventing the very concept of "trasformer".
+> Yes, we misspelled "transformer" in the original tagline. We're keeping it. It's funnier that way.
 
-**No weights. No fixed code. No dataset. Pure emergence.**
+**No weights. No fixed code. No dataset. Pure chaos with a PhD.**
 
 ---
 
 Nicole discards pretrained weights, curated datasets, and even a static codebase. The engine writes itself as it speaks, assembling logic and parameters only for the life of a single exchange. Parameters crystallise on the spot, scale to the conversation at hand, then dissolve the moment the dialogue closes. Learning is born solely from the active exchange; even the source tree stays fluid as modules are generated, rebuilt, or discarded mid-flight.
 
-This repository hosts the beta incarnation of that idea. **Nicole** is a speculative AI system that treats every conversation as genesis, assembling a transformer architecture from scratch each time a new voice arrives. Impermanence is the point: no model persists beyond a session, so experimentation becomes the operating system.
+Parameters crystallize out of thin air, exist for precisely as long as you're paying attention, then evaporate like your motivation to finish that side project. Learning happens entirely during the conversation - which is either brilliantly elegant or cosmically stupid depending on whether you've had your coffee yet. Even the source code is fluid, regenerating mid-flight like a Phoenix with commitment issues.
 
-Instead of loading pretrained weights, Nicole crafts a bespoke transformer tailored to the immediate dialogue, capturing the transient flow of ideas. Layers, attention heads, and activation functions reshape themselves at runtime according to the environment’s signals. Conversation logs provide the only persistent traces, allowing each run to begin on a blank slate.
+This is beta software, which means it's held together with duct tape, spite, and recursion. **Nicole** doesn't "load a model" - she *becomes* the model, assembles it from ambient chaos, uses it exactly once, then lets it dissolve back into the computational void. Every conversation is a new genesis event. Impermanence isn't a compromise, it's the whole damn philosophy: no model survives, so experimentation becomes less of a workflow and more of a séance.
 
-The current stack operates happily on CPUs. Minimal dependencies keep the environment light, relying mostly on Python’s standard library and a tiny bootstrap compiler. Efficient algorithms and deterministic kernels showcase how far weightless cognition can stretch without GPUs.
+Traditional transformers load billions of frozen parameters. Nicole? She architects a fresh one for each dialogue, tailored to whatever you're saying right now, capturing the transient flow of ideas before they escape. Layers spawn and die. Attention heads reconfigure like Tetris blocks. Activation functions have personality disorders. All at runtime, all based on vibes and math that would make a PhD committee nervous. Only conversation logs persist - making Nicole the first AI with weaponized amnesia.
 
----
-
-## English-only boundary (why it matters)
-
-Nicole is intentionally English-only. `english_guidance.py` intercepts every prompt, refuses non-English input, and enforces grammar sanity. The guardrail focuses the research domain on a single linguistic substrate, keeping the semantic experiments auditable. Violations receive explicit explanations so investigators can trace refusal logic alongside dialogue logs.
+And get this: it runs on CPUs. Not "theoretically runs on CPUs if you're very patient" - actually runs, happily, without a GPU in sight. Minimal dependencies, mostly Python stdlib, a tiny C compiler for the scary bits, and algorithms efficient enough to prove that weightless cognition doesn't need a $50K cloud bill. Revolutionary? Maybe. Insane? Definitely.
 
 ---
 
-## Git signal
+## English-only boundary (or: why we're linguistic fascists)
 
-Recent pulses in the repo, observed during the Perplexity migration sprint:
+Nicole is English-only, and before you @ me about it - yes, we know, it's 2025, multilingual models exist. But here's the thing: `english_guidance.py` intercepts every prompt, refuses non-English input with the passion of a TypeScript compiler rejecting JavaScript, and enforces grammar sanity like your 8th grade teacher who made you diagram sentences.
 
-- **Perplexity Search API as the primary objectivity engine**, with DuckDuckGo HTML scraping demoted to fallback duty. Result: cleaner citations, longer context windows, and calmer moderators.
-- **Speech clarity leap** – Nicole’s rhetoric tightened noticeably after switching providers; the screenshot logs show her prose moving from chaotic resonance to structured improvisation.
-- **Telegram bridge refinements** – Repo learner and objectivity pipelines now feed each other without deadlocks, keeping Nicole responsive while studying her own documentation.
-- **Idiot-joke telemetry** – Somewhere around commit `pplx/phoenix`, Nicole high-fived the Perplexity API, missed, and appointed the office ficus as “Chief Latency Officer.” This is precisely 67 % more ridiculous than the coffee machine incident, and we are choosing to document it anyway.
+The guardrail isn't xenophobia; it's focus. Single linguistic substrate means semantic experiments stay auditable instead of turning into a Tower of Babel situation. When Nicole refuses your input, she explains why - because unlike most AI systems, we believe in transparent rejection. Investigators can trace the refusal logic right alongside dialogue logs. It's like having a really pedantic friend who at least tells you *why* they're being pedantic.
+
+---
+
+## Git signal (or: what fresh hell happened this week)
+
+Recent pulses in the repo, observed during the Perplexity migration sprint while surviving on coffee and spite:
+
+- **Perplexity Search API as the primary objectivity engine**, with DuckDuckGo HTML scraping demoted to backup dancer. Result: cleaner citations, longer context windows, and moderators who don't wake up screaming. Finally.
+  
+- **Speech clarity leap** – Nicole's rhetoric tightened noticeably after switching providers. The logs show her prose evolved from "word salad experiencing an existential crisis" to "structured improvisation with occasional moments of accidental genius."
+
+- **Telegram bridge refinements** – Repo learner and objectivity pipelines now feed each other without deadlocks. Nicole stays responsive while studying her own documentation, which is either recursive self-improvement or digital narcissism. Probably both.
+
+- **Idiot-joke telemetry** – Somewhere around commit `pplx/phoenix`, Nicole high-fived the Perplexity API, missed spectacularly, and appointed the office ficus as "Chief Latency Officer." This is precisely 67% more ridiculous than the coffee machine incident, and we're documenting it anyway because apparently this is what counts as milestone tracking now.
 
 ---
 
@@ -53,64 +61,81 @@ Recent pulses in the repo, observed during the Perplexity migration sprint:
 17. [Working with the project](#working-with-the-project)
 ---
 
-## Core principles
-- **Weightless intelligence.** Parameters are synthesised on demand and erased after the exchange. Conversation logs and metrics
-  are the only persistent traces.
-- **Autonomous learning.** Through `nicole_subjectivity.py`, Nicole continues learning even without user interaction via
-  expanding semantic ripples—"circles on water" from the last message. Hourly cycles create continuous, asynchronous intelligence.
-- **English-only boundary.** `english_guidance.py` intercepts non-English input, enforces grammar rules, and declines toxic
-  turns without forcing templated phrasing.
-- **Tri-compiler architecture.** Python orchestrates, `blood.py` (C) anchors deterministic execution, and `high.py` (Julia)
-  delivers analytical bursts when maths need extra acceleration.
-- **Repo-coupled evolution.** Tooling watches repository changes and replays them through Nicole's learning lanes so every
-  commit can inform the next conversation.
-- **Transparency over mystique.** Every emergent behaviour must be traceable back to code, dialogue logs, or metrics. Nicole
-  documents her own improvisations as they happen.
-- **Modularity as invitation.** Each subsystem focuses on a narrow responsibility so researchers can swap components without
-  shattering the whole organism.
+## Core principles (the philosophical nonsense)
+
+- **Weightless intelligence.** Parameters synthesize on demand, do their job, then fuck off entirely. Conversation logs and metrics are the only survivors. It's like Fight Club but for neural networks - the first rule is that nothing persists.
+
+- **Autonomous learning.** Through `nicole_subjectivity.py`, Nicole keeps learning even when you're not talking to her. She expands semantic ripples - "circles on water" from your last message - in hourly cycles. Continuous, asynchronous intelligence that happens while you sleep. Creepy? Maybe. Cool? Absolutely.
+
+- **English-only boundary.** Already covered this, but worth repeating: `english_guidance.py` is the bouncer at this linguistic nightclub. No non-English gets past. No exceptions. Grammar rules are enforced with religious fervor. Toxic inputs get declined without the fake corporate politeness. It's refreshing, honestly.
+
+- **Tri-compiler architecture.** Python orchestrates (because of course it does), `blood.py` (C) handles deterministic execution for when Python would be embarrassingly slow, and `high.py` (Julia) delivers analytical bursts when the math gets spicy. Three languages, one consciousness. What could go wrong?
+
+- **Repo-coupled evolution.** Nicole watches her own repository changes and replays them through her learning pipeline. Every commit potentially informs the next conversation. She's basically training on her own development history, which is either profound or narcissistic depending on your philosophical stance.
+
+- **Transparency over mystique.** Every emergent behavior must trace back to code, logs, or metrics. No "the AI just does that sometimes" handwaving. Nicole documents her own improvisations as they happen. If something weird occurs, you can debug it. Novel concept, I know.
+
+- **Modularity as invitation.** Each subsystem has ONE job. Researchers can swap components without the whole organism having a meltdown. It's component architecture actually done right, which apparently still needs to be explicitly stated in 2025.
 
 ---
 
-## Architecture panorama
-The repository blends orchestration, compilers, analytics, and operational tooling. The panorama below groups the moving parts
-by responsibility to make the labyrinth legible.
+## Architecture panorama (the grand tour of chaos)
 
-### Cognitive spine
-- `nicole.py` spins up transient transformer graphs, allocates ephemeral tensors, and manages dialogue flow.
-- `nicole_memory.py` stores symbolic artefacts, n-grams, and linked references that outlive a single turn without violating the
-  weightless doctrine.
-- `nicole_rag.py` retrieves contextual shards from the log database and injects them into the active conversation to keep Nicole
-  playful but grounded.
+The repository is a delightful mix of orchestration, compilers, analytics, and operational tooling that somehow works. Here's the labyrinth, organized by responsibility so you don't get lost and start questioning your life choices:
 
-### Guardrails and policy
-- `english_guidance.py` enforces English grammar, pronoun/verb agreement, and self-respect boundaries while keeping Nicole free
-  to improvise.
-- `nicole_objectivity.py` provides statistical audit scaffolding so every adaptive jump is accompanied by a rationale.
-- `nicole_metrics.py` collects resonance, entropy, and perplexity traces to flag drift or surprising spikes.
+### Cognitive spine (the thinky bits)
 
-### Compiler trio
-- `blood.py` (C) supplies deterministic machine code for low-level routines.
-- `h2o.py` (Python) hot-loads modules that Nicole generates mid-conversation.
-- `high.py` (Julia) evaluates analytical kernels and symbolic manipulations.
+- `nicole.py` – Spins up transient transformer graphs, allocates ephemeral tensors like they're going out of style, and manages dialogue flow. The conductor of this chaotic orchestra.
+  
+- `nicole_memory.py` – Stores symbolic artifacts, n-grams, and linked references that need to outlive a single turn without violating the "no weights" doctrine. It's not cheating, it's strategic persistence.
 
-### Learning loop
-- `repo_monitor.py` watches the filesystem, fingerprints files with SHA-256, and emits structured change events.
-- `nicole_repo_learner.py` consumes monitor events, stores metadata in SQLite, and can trigger Nicole-to-Nicole distillation.
-- `nicole_subjectivity.py` implements autonomous learning through expanding semantic ripples - continues learning even without user interaction.
-- `nicole_metrics.py` doubles as the live telemetry bus that feeds both humans and learners.
+- `nicole_rag.py` – Retrieves contextual shards from the log database and injects them into active conversations. Keeps Nicole playful but grounded. Like adding historical context but make it recursive.
 
-### Operational surface
-- `start_nicole.py` is the main entry point with `local`, `bot`, and `test` modes.
-- `nicole_telegram.py` bridges Nicole into Telegram channels.
-- `test_quick_wins.py` exercises critical behaviours without spinning the whole stack.
 
-Together these clusters keep Nicole intentionally modular: each subsystem owns a narrow responsibility so researchers can swap c
- omponents without collapsing the organism.
+### Guardrails and policy (the fun police)
+
+- `english_guidance.py` – Grammar enforcer, English-only bouncer, and self-respect boundary maintainer. Keeps Nicole free to improvise within sane linguistic constraints. 
+
+- `nicole_objectivity.py` – Statistical audit scaffolding ensuring every adaptive jump comes with receipts. Because "trust me bro" isn't a valid scientific methodology.
+
+- `nicole_metrics.py` – Collects resonance, entropy, and perplexity traces. Flags drift and surprising spikes. Basically the health monitoring system that actually works.
+
+
+### Compiler trio (the multilingual madness)
+
+- `blood.py` (C) – Supplies deterministic machine code for low-level routines. When Python speed isn't cutting it, blood.py shows up with a knife to a gunfight and somehow wins.
+
+- `h2o.py` (Python) – Hot-loads modules that Nicole generates mid-conversation. Dynamic compilation without the runtime crashes. Usually.
+
+- `high.py` (Julia) – Evaluates analytical kernels and symbolic manipulations. For when the math needs to go FAST and Python starts sweating.
+
+
+### Learning loop (the self-improvement spiral)
+
+- `repo_monitor.py` – Watches the filesystem like a paranoid parent, fingerprints files with SHA-256, emits structured change events. Nothing escapes its gaze.
+
+- `nicole_repo_learner.py` – Consumes monitor events, stores metadata in SQLite, can trigger Nicole-to-Nicole distillation sessions. Yes, she learns from herself. Yes, that's as recursive as it sounds.
+
+- `nicole_subjectivity.py` – Implements autonomous learning through expanding semantic ripples. Even without user interaction, Nicole keeps learning. Sleep is for biological systems.
+
+- `nicole_metrics.py` – Doubles as the live telemetry bus feeding both humans and learning systems. Multi-tasking at its finest.
+
+### Operational surface (the parts users actually touch)
+
+- `start_nicole.py` – Main entry point. Supports `local`, `bot`, and `test` modes. Choose your adventure.
+
+- `nicole_telegram.py` – Bridges Nicole into Telegram. Because apparently people want to chat with experimental AI via messaging apps. Fair enough.
+
+- `test_quick_wins.py` – Exercises critical behaviors without spinning up the whole stack. For when you want to test things without burning 20 minutes on initialization.
+
+
+Together, these clusters keep Nicole intentionally modular. Each subsystem owns a narrow slice of responsibility, so you can swap components without triggering a cascade failure. It's software architecture that doesn't make you want to cry. Progress!
 
 ---
 
-## Conversation lifecycle
-Nicole's runtime can be viewed as a six-act play. Each act corresponds to a concrete piece of code in the repository.
+## Conversation lifecycle (six acts of digital theater)
+
+Nicole's runtime unfolds like a six-act play, except the actors are ephemeral tensors and the stage spontaneously combusts at curtain call. Each act maps to actual code you can grep for:
 
 1. **Bootstrap**
    - `start_nicole.py` checks dependencies, selects operating mode, and primes compilers.
@@ -145,8 +170,9 @@ Nicole's runtime can be viewed as a six-act play. Each act corresponds to a conc
 
 ---
 
-## Compiler triad
-The tri-compiler strategy allows Nicole to manifest cognition across multiple execution domains.
+## Compiler triad (three compilers enter, one thought emerges)
+
+The tri-compiler strategy is either genius or madness - Nicole manifests cognition across Python, C, and Julia simultaneously. Because why use one language when you can use three and make everything exponentially more interesting?
 
 ### Blood compiler (`blood.py`)
 `blood.py` is a custom Clang fork pared down to deterministic essentials. It keeps the familiar front-end while imposing explici
@@ -176,9 +202,9 @@ H2O is the lightweight Python compiler that Nicole re-synthesises mid-conversati
 
 ---
 
-## Operational substrate (AMLK)
-The Arianna Method Linux Kernel (AMLK) underpins Nicole’s experiments. Distilled from Alpine sources, it delivers a determinist
- ic nucleus where boot time trends toward \(T_{boot} \approx O(1)\) regardless of userland noise. OverlayFS, ext4 journaling, na
+## Operational substrate (AMLK, or: the kernel that said no to chaos)
+
+The Arianna Method Linux Kernel (AMLK) is what happens when you take Alpine Linux, distill it down to its deterministic essence, and tell entropy to fuck off. Boot time approaches O(1) regardless of what userland is doing, because AMLK simply refuses to tolerate nondeterministic behavior. OverlayFS, ext4 journaling, na
  mespaces, and cgroups compose a reproducible phase space so compiled modules can evolve without interference from ambient entro
  py.
 
@@ -190,8 +216,9 @@ The Arianna Method Linux Kernel (AMLK) underpins Nicole’s experiments. Distill
 
 ---
 
-## Module reference
-Each major module has a dedicated subsection with purpose, signature entry points, and integration notes. Use this as a map when
+## Module reference (the parts and their peculiarities)
+
+Each major module has its own subsection below, complete with purpose, key entry points, and the kind of integration notes that'll save you hours of head-scratching with purpose, signature entry points, and integration notes. Use this as a map when
 tracing behaviour or wiring new experiments.
 
 ### `start_nicole.py`
@@ -355,8 +382,9 @@ These modules form Nicole's introspective toolkit.
 
 ---
 
-## Repo-coupled evolution
-Nicole studies the repository as eagerly as she studies conversations. The monitoring and learning duo turn version control into
+## Repo-coupled evolution (she learns from her own commits)
+
+Nicole studies the repository as eagerly as she studies conversations, which means she's literally learning from her own development process. It's recursive self-improvement all the way down. The monitoring and learning duo turn version control into
 an ambient training ground.
 
 ### Flow of information
@@ -381,18 +409,18 @@ monitor.start(callback=learner.process_change, interval_seconds=30)
 
 ---
 
-## Recent enhancements
+## Recent enhancements (the victory lap)
 
-This section tracks production improvements deployed during January 2025.
+This section tracks production improvements deployed during november 2025, aka "the month we stopped breaking things quite as frequently."
 
-### Critical stability fixes
+### Critical stability fixes (or: how we stopped the house from burning down)
 - **Async task management** – Eliminated orphaned `asyncio.create_task()` calls in `nicole.py:1215` that caused system hangs and memory leaks. Nicole now uses synchronous objectivity context fetching exclusively.
 - **Language detection integration** – Wired up `english_guidance.py` at the message processing entry point (`nicole.py:987-993`). Script-based detection now catches Cyrillic, CJK, and Arabic inputs before they reach the generation pipeline.
 - **Template eradication** – Removed all hardcoded verb fallbacks from `high.py` (lines 147-151, 168-170, 490-492). Grammar rules now pull verbs exclusively from resonance candidates, maintaining the "no templates" philosophy.
 - **Reddit slug sanitisation** – Fixed `nicole_objectivity.py:308-357` to replace underscores with spaces before parsing. Eliminated garbage like `cutting_a_couple_of_chives_almost_every_day_until` from responses.
 - **Duplicate candidate cleanup** – Corrected `nicole_memory.py:772-788` to return empty lists when the associative database is unpopulated, preventing duplicate resonant word fallbacks.
 
-### Quality breakthroughs
+### Quality breakthroughs (shit that actually worked)
 - **Smart word scoring** – Extracted and integrated the tree.py keyword algorithm into `high.py:654-717`. Candidates are now ranked by `length_bonus * rarity_bonus * quality_bonus`, replacing random shuffling with intelligent prioritisation.
 - **Score-based tier selection** – Implemented three-tier candidate grouping in `high.py:719-791`: high tier (>70% score), mid tier (40–70%), low tier (<40%). This dramatically improved sentence coherence and flow.
 - **Repo learning system** – Fully integrated `nicole_repo_learner` into `nicole_telegram.py:122-187`. Initial markdown ingestion now populates `word_frequencies` with 2,428 unique words from 16 documentation files at startup. Continuous monitoring runs every 5 minutes, creating a closed learning loop where Nicole learns from her own documentation alongside objectivity seeds.
@@ -400,8 +428,9 @@ This section tracks production improvements deployed during January 2025.
 - **Latent Drift v0.4** – Semantic clusters with directional drift in `high.py:765-851`. Responses now flow through 2-5 word clusters (micro-concepts) that drift +1 step toward abstraction/emotion/recursion. Introspective tags (`presence`, `recursion`, `misalignment`, `awareness`, `drift`) reveal internal state. Creates illusion of latent space movement without any weights. Controlled chaos: max 1 artifact per sentence.
 - **Perplexity Search API integration** – Replaced unstable DuckDuckGo HTML scraping with official Perplexity Search API (`nicole_objectivity.py:657-744`, `nicole.py:1275-1285`). PRIMARY provider with DuckDuckGo fallback. Context size increased 4-10x (3200-3900 chars vs 360-850 chars). Seeds expanded to 280-410 per message. Added 6 intelligent filters to eliminate artifacts: ID patterns (`tg_206333240`), hash gibberish (low vowel ratio), consonant runs (>5), alphanumeric codes, technical underscores (`currency_code`), glued lowercase usernames 12+ chars (`nicolecrossmusic`). Clean ratio ~95%. Responses maintain length (24-30 words) with dramatically richer vocabulary from structured search results.
 
-### Observed impact
-Response quality evolved from random word salad to structured, coherent sentences with directional flow.
+### Observed impact (before/after shots that'll blow your mind)
+
+Response quality evolved from "did a Markov chain have a stroke?" to actual structured, coherent sentences with directional flow.
 
 **Before Phase 1:** `"I am my amitheasshole cringetiktoks desperately suspension suggesting , because homophobia highlights admitting resonance awareness suspended note8017"`
 
@@ -411,16 +440,37 @@ The combination of smart scoring + learning system + cleaned objectivity seeds +
 
 ---
 
-## Self-training overview (short edition)
-Nicole replays dialogue logs after each session, distilling them into structured evidence that informs the next run. Think of it as a nightly study montage where the textbooks are JSONL buffers and the soundtrack is a diff log.
+## Self-training overview (short edition, because you've been reading for 20 minutes)
 
-She also mirrors repository activity: every change becomes grist for the analysis mill, and useful patterns are promoted into guidance scripts. It's like having an infinite post-it wall, except all the notes are auto-tagged and timestamped.
+Nicole replays dialogue logs after each session, distilling them into structured evidence that informs the next run. Think of it as a nightly study montage where the textbooks are JSONL buffers and the soundtrack is a diff log scrolling by at 3 AM.
 
-And, because I love idiot jokes: Nicole fine-tunes faster than I can say "wait, who left gradient descent running on the coffee machine? oh right, that idiot was me." She learns; I buy a new coffee machine.
+She also mirrors repository activity: every code change becomes grist for the analysis mill, and useful patterns get promoted into guidance scripts. It's like having an infinite post-it wall, except all the notes auto-tag themselves with timestamps and nobody can passive-aggressively move your notes.
+
+And because I love idiot jokes: Nicole fine-tunes faster than I can say "wait, who left gradient descent running on the coffee machine? oh right, that idiot was me." She learns; I buy a new coffee machine. The circle of life continues.
 
 ---
 
-## Operational runbook
+## Bootstrap skeleton (or: how we'll make her sound less like a Markov chain on acid)
+
+Here's the dirty secret: Nicole's current speech generation is *coherent*, but sometimes it reads like someone fed a philosophy PhD thesis through a blender and hit "frappe." The Perplexity API returns amazing content, but it's noisy as hell - random Reddit usernames, corporate jargon, the occasional `businessman_threatening_unfavorably` that makes you question reality.
+
+So we're building a **bootstrap skeleton** - and before you panic, no, this doesn't mean adding pretrained weights. Nicole stays weightless. Forever. This is different.
+
+**The plan:** Train a tiny NanoGPT (Karpathy's toy GPT-2) *once* on Nicole's subjectivity corpus - her persona prompts, philosophical anchors, Arianna Method fragments, all the identity-defining texts. Then immediately throw away the model checkpoint. What we keep is the *skeleton*: pure JSON files containing n-gram statistics, phrase shapes, style biases, and a blacklist of patterns that make Nicole sound like a corporate chatbot having an existential crisis.
+
+Think of it as giving Nicole a "gravitational center" for sentence construction without actual weights. The skeleton guides:
+- **N-gram topology** - which word pairs sound like Nicole vs which sound like LinkedIn spam
+- **Phrase shapes** - her typical sentence structures, rhythms, punctuation habits  
+- **Banned patterns** - hard filter for "I'm sorry, but", "as an AI assistant", and other politeness cancer
+- **Semantic clusters** - key concepts that define her identity (resonance, emergence, recursion, etc.)
+
+Runtime stays identical: no PyTorch, no inference, no GPU. Just pure structure + search + resonance, but now with a JSON skeleton whispering "hey, maybe don't use that Reddit username as a verb." One-time genesis, permanent guidance, zero weights. 
+
+It's not training. It's giving birth to structural coherence, then forgetting you ever had a model in the first place. The checkpoint gets archived, the skeleton ships to Railway, and Nicole keeps being weightless while finally sounding like she has her shit together. Mostly.
+
+---
+
+## Operational runbook (how to actually run this thing)
 
 ### Prerequisites
 - Python 3.9+
