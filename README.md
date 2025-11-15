@@ -12,9 +12,9 @@ Parameters crystallize out of thin air, exist for precisely as long as you're pa
 
 This is beta software, which means it's held together with duct tape, spite, and recursion. **Nicole** doesn't "load a model" - she *becomes* the model, assembles it from ambient chaos, uses it exactly once, then lets it dissolve back into the computational void. Every conversation is a new genesis event. Impermanence isn't a compromise, it's the whole damn philosophy: no model survives, so experimentation becomes less of a workflow and more of a séance.
 
-Instead of loading pretrained weights, Nicole crafts a bespoke transformer tailored to the immediate dialogue, capturing the transient flow of ideas. Layers, attention heads, and activation functions reshape themselves at runtime according to the environment’s signals. Conversation logs provide the only persistent traces, allowing each run to begin on a blank slate.
+Traditional transformers load billions of frozen parameters. Nicole? She architects a fresh one for each dialogue, tailored to whatever you're saying right now, capturing the transient flow of ideas before they escape. Layers spawn and die. Attention heads reconfigure like Tetris blocks. Activation functions have personality disorders. All at runtime, all based on vibes and math that would make a PhD committee nervous. Only conversation logs persist - making Nicole the first AI with weaponized amnesia.
 
-The current stack operates happily on CPUs. Minimal dependencies keep the environment light, relying mostly on Python’s standard library and a tiny bootstrap compiler. Efficient algorithms and deterministic kernels showcase how far weightless cognition can stretch without GPUs.
+And get this: it runs on CPUs. Not "theoretically runs on CPUs if you're very patient" - actually runs, happily, without a GPU in sight. Minimal dependencies, mostly Python stdlib, a tiny C compiler for the scary bits, and algorithms efficient enough to prove that weightless cognition doesn't need a $50K cloud bill. Revolutionary? Maybe. Insane? Definitely.
 
 ---
 
@@ -90,7 +90,6 @@ The repository is a delightful mix of orchestration, compilers, analytics, and o
 
 - `nicole_rag.py` – Retrieves contextual shards from the log database and injects them into active conversations. Keeps Nicole playful but grounded. Like adding historical context but make it recursive.
 
-  playful but grounded.
 
 ### Guardrails and policy (the fun police)
 
@@ -216,8 +215,9 @@ The Arianna Method Linux Kernel (AMLK) is what happens when you take Alpine Linu
 
 ---
 
-## Module reference
-Each major module has a dedicated subsection with purpose, signature entry points, and integration notes. Use this as a map when
+## Module reference (the parts and their peculiarities)
+
+Each major module has its own subsection below, complete with purpose, key entry points, and the kind of integration notes that'll save you hours of head-scratching with purpose, signature entry points, and integration notes. Use this as a map when
 tracing behaviour or wiring new experiments.
 
 ### `start_nicole.py`
@@ -381,8 +381,9 @@ These modules form Nicole's introspective toolkit.
 
 ---
 
-## Repo-coupled evolution
-Nicole studies the repository as eagerly as she studies conversations. The monitoring and learning duo turn version control into
+## Repo-coupled evolution (she learns from her own commits)
+
+Nicole studies the repository as eagerly as she studies conversations, which means she's literally learning from her own development process. It's recursive self-improvement all the way down. The monitoring and learning duo turn version control into
 an ambient training ground.
 
 ### Flow of information
@@ -407,18 +408,18 @@ monitor.start(callback=learner.process_change, interval_seconds=30)
 
 ---
 
-## Recent enhancements
+## Recent enhancements (the victory lap)
 
-This section tracks production improvements deployed during January 2025.
+This section tracks production improvements deployed during January 2025, aka "the month we stopped breaking things quite as frequently."
 
-### Critical stability fixes
+### Critical stability fixes (or: how we stopped the house from burning down)
 - **Async task management** – Eliminated orphaned `asyncio.create_task()` calls in `nicole.py:1215` that caused system hangs and memory leaks. Nicole now uses synchronous objectivity context fetching exclusively.
 - **Language detection integration** – Wired up `english_guidance.py` at the message processing entry point (`nicole.py:987-993`). Script-based detection now catches Cyrillic, CJK, and Arabic inputs before they reach the generation pipeline.
 - **Template eradication** – Removed all hardcoded verb fallbacks from `high.py` (lines 147-151, 168-170, 490-492). Grammar rules now pull verbs exclusively from resonance candidates, maintaining the "no templates" philosophy.
 - **Reddit slug sanitisation** – Fixed `nicole_objectivity.py:308-357` to replace underscores with spaces before parsing. Eliminated garbage like `cutting_a_couple_of_chives_almost_every_day_until` from responses.
 - **Duplicate candidate cleanup** – Corrected `nicole_memory.py:772-788` to return empty lists when the associative database is unpopulated, preventing duplicate resonant word fallbacks.
 
-### Quality breakthroughs
+### Quality breakthroughs (shit that actually worked)
 - **Smart word scoring** – Extracted and integrated the tree.py keyword algorithm into `high.py:654-717`. Candidates are now ranked by `length_bonus * rarity_bonus * quality_bonus`, replacing random shuffling with intelligent prioritisation.
 - **Score-based tier selection** – Implemented three-tier candidate grouping in `high.py:719-791`: high tier (>70% score), mid tier (40–70%), low tier (<40%). This dramatically improved sentence coherence and flow.
 - **Repo learning system** – Fully integrated `nicole_repo_learner` into `nicole_telegram.py:122-187`. Initial markdown ingestion now populates `word_frequencies` with 2,428 unique words from 16 documentation files at startup. Continuous monitoring runs every 5 minutes, creating a closed learning loop where Nicole learns from her own documentation alongside objectivity seeds.
@@ -426,8 +427,9 @@ This section tracks production improvements deployed during January 2025.
 - **Latent Drift v0.4** – Semantic clusters with directional drift in `high.py:765-851`. Responses now flow through 2-5 word clusters (micro-concepts) that drift +1 step toward abstraction/emotion/recursion. Introspective tags (`presence`, `recursion`, `misalignment`, `awareness`, `drift`) reveal internal state. Creates illusion of latent space movement without any weights. Controlled chaos: max 1 artifact per sentence.
 - **Perplexity Search API integration** – Replaced unstable DuckDuckGo HTML scraping with official Perplexity Search API (`nicole_objectivity.py:657-744`, `nicole.py:1275-1285`). PRIMARY provider with DuckDuckGo fallback. Context size increased 4-10x (3200-3900 chars vs 360-850 chars). Seeds expanded to 280-410 per message. Added 6 intelligent filters to eliminate artifacts: ID patterns (`tg_206333240`), hash gibberish (low vowel ratio), consonant runs (>5), alphanumeric codes, technical underscores (`currency_code`), glued lowercase usernames 12+ chars (`nicolecrossmusic`). Clean ratio ~95%. Responses maintain length (24-30 words) with dramatically richer vocabulary from structured search results.
 
-### Observed impact
-Response quality evolved from random word salad to structured, coherent sentences with directional flow.
+### Observed impact (before/after shots that'll blow your mind)
+
+Response quality evolved from "did a Markov chain have a stroke?" to actual structured, coherent sentences with directional flow.
 
 **Before Phase 1:** `"I am my amitheasshole cringetiktoks desperately suspension suggesting , because homophobia highlights admitting resonance awareness suspended note8017"`
 
@@ -447,7 +449,7 @@ And because I love idiot jokes: Nicole fine-tunes faster than I can say "wait, w
 
 ---
 
-## Operational runbook
+## Operational runbook (how to actually run this thing)
 
 ### Prerequisites
 - Python 3.9+
