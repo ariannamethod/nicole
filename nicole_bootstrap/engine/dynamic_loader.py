@@ -89,19 +89,47 @@ class UnifiedSkeleton:
                 print(f"[DynamicLoader] Error loading {filename}: {e}")
 
     def load_dynamic(self) -> None:
-        """Load dynamic skeleton (markdown cannibal)."""
-        path = SKELETON_DIR / DYNAMIC_SKELETON_FILE
+        """
+        Load dynamic skeleton (markdown cannibal).
 
-        if not path.exists():
+        Tries .bin first (fast!), falls back to JSON.
+        """
+        bin_path = SKELETON_DIR / "resonance_weights.bin"
+        json_path = SKELETON_DIR / DYNAMIC_SKELETON_FILE
+
+        # Try binary first (10-100x faster!)
+        if bin_path.exists():
+            try:
+                from .resonance_weights import load_resonance_weights
+
+                print(f"[DynamicLoader] Loading binary weights (fast!)...")
+                weights = load_resonance_weights(bin_path)
+
+                # Convert to dict format
+                self.dynamic_bigrams = weights.to_bigram_dict()
+                self.vocab = weights.vocab
+                self.centers = weights.get_center_words()
+
+                print(f"[DynamicLoader] ✅ Loaded from binary ({bin_path.stat().st_size/1024:.1f} KB)")
+                return
+
+            except Exception as e:
+                print(f"[DynamicLoader] Binary load failed: {e}, falling back to JSON...")
+
+        # Fallback to JSON
+        if not json_path.exists():
             print(f"[DynamicLoader] Warning: {DYNAMIC_SKELETON_FILE} not found")
             print("[DynamicLoader] Run: python bootstrap/markdown_cannibal.py")
             return
 
         try:
-            data = json.loads(path.read_text())
+            print(f"[DynamicLoader] Loading JSON skeleton...")
+            data = json.loads(json_path.read_text())
             self.dynamic_bigrams = data.get('bigrams', {})
             self.vocab = data.get('vocab', [])
             self.centers = data.get('centers', [])
+
+            print(f"[DynamicLoader] ✅ Loaded from JSON ({json_path.stat().st_size/1024:.1f} KB)")
 
         except Exception as e:
             print(f"[DynamicLoader] Error loading {DYNAMIC_SKELETON_FILE}: {e}")
