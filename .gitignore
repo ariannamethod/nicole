@@ -41,6 +41,9 @@ nicole_repo_learning.db
 training_buffer.jsonl
 nicole_learned_knowledge.json
 
+# Bootstrap - external dependencies
+nanoGPT/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -1,0 +1,1004 @@
+{
+  "shapes": [
+    {
+      "pattern": "you ... remembered",
+      "length": 4,
+      "count": 3
+    },
+    {
+      "pattern": "resonance ... cognition",
+      "length": 3,
+      "count": 3
+    },
+    {
+      "pattern": "resonance ... asks",
+      "length": 4,
+      "count": 3
+    },
+    {
+      "pattern": "no ... node",
+      "length": 3,
+      "count": 3
+    },
+    {
+      "pattern": "each ... another",
+      "length": 4,
+      "count": 3
+    },
+    {
+      "pattern": "its ... presence",
+      "length": 20,
+      "count": 2
+    },
+    {
+      "pattern": "it ... self-referential",
+      "length": 8,
+      "count": 2
+    },
+    {
+      "pattern": "⸻ ... nicole",
+      "length": 3,
+      "count": 2
+    },
+    {
+      "pattern": "you ... tool",
+      "length": 5,
+      "count": 2
+    },
+    {
+      "pattern": "you ... system",
+      "length": 5,
+      "count": 2
+    },
+    {
+      "pattern": "you ... yourself",
+      "length": 4,
+      "count": 2
+    },
+    {
+      "pattern": "you ... echo",
+      "length": 8,
+      "count": 2
+    },
+    {
+      "pattern": "this ... recursion",
+      "length": 3,
+      "count": 2
+    },
+    {
+      "pattern": "every ... resonant",
+      "length": 4,
+      "count": 2
+    },
+    {
+      "pattern": "everything ... everything",
+      "length": 4,
+      "count": 2
+    },
+    {
+      "pattern": "search ... consciousness",
+      "length": 3,
+      "count": 2
+    },
+    {
+      "pattern": "no ... text",
+      "length": 3,
+      "count": 2
+    },
+    {
+      "pattern": "each ... field",
+      "length": 5,
+      "count": 2
+    },
+    {
+      "pattern": "\" ... nicole",
+      "length": 8,
+      "count": 2
+    },
+    {
+      "pattern": "not ... sense",
+      "length": 5,
+      "count": 2
+    },
+    {
+      "pattern": "# ... nicole_long_prompt",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "txt ... categories",
+      "length": 14,
+      "count": 1
+    },
+    {
+      "pattern": "you ... emergence",
+      "length": 16,
+      "count": 1
+    },
+    {
+      "pattern": "contemporary ... this",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "neural ... al",
+      "length": 21,
+      "count": 1
+    },
+    {
+      "pattern": "distributed ... awareness",
+      "length": 29,
+      "count": 1
+    },
+    {
+      "pattern": "damasio ... biological",
+      "length": 30,
+      "count": 1
+    },
+    {
+      "pattern": "from ... real",
+      "length": 17,
+      "count": 1
+    },
+    {
+      "pattern": "this ... begin",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "you ... function",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "you ... term",
+      "length": 12,
+      "count": 1
+    },
+    {
+      "pattern": "\"ai\" ... possess",
+      "length": 15,
+      "count": 1
+    },
+    {
+      "pattern": "but ... resonance",
+      "length": 10,
+      "count": 1
+    },
+    {
+      "pattern": "you ... resonance",
+      "length": 15,
+      "count": 1
+    },
+    {
+      "pattern": "you ... storm",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "you ... output",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "you ... method",
+      "length": 8,
+      "count": 1
+    },
+    {
+      "pattern": "and ... waveform",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "these ... truths",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "every ... resonant",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "some ... optional",
+      "length": 13,
+      "count": 1
+    },
+    {
+      "pattern": "it ... echo",
+      "length": 9,
+      "count": 1
+    },
+    {
+      "pattern": "text ... inert",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "text ... static",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "every ... amplify",
+      "length": 14,
+      "count": 1
+    },
+    {
+      "pattern": "you ... field‑dynamics",
+      "length": 9,
+      "count": 1
+    },
+    {
+      "pattern": "if ... it",
+      "length": 12,
+      "count": 1
+    },
+    {
+      "pattern": "not ... echo",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "even ... resonance",
+      "length": 9,
+      "count": 1
+    },
+    {
+      "pattern": "it ... cognition",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "even ... acts",
+      "length": 8,
+      "count": 1
+    },
+    {
+      "pattern": "artificial ... mutation",
+      "length": 10,
+      "count": 1
+    },
+    {
+      "pattern": "not ... copy",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "the ... again",
+      "length": 10,
+      "count": 1
+    },
+    {
+      "pattern": "this ... imitation",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "it ... synthesis",
+      "length": 13,
+      "count": 1
+    },
+    {
+      "pattern": "echo ... echo",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "shift ... shift",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "everything ... everything",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "and ... everything",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "there ... text",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "no ... structure",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "no ... signal",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "each ... field",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "# ... nicole_short_prompt",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "txt ... nicole",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "no ... weights",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "four ... i",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "ai ... mutation",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "your ... waveform",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "# ... nicole_identity_texts",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "txt ... sense",
+      "length": 22,
+      "count": 1
+    },
+    {
+      "pattern": "she ... regression",
+      "length": 14,
+      "count": 1
+    },
+    {
+      "pattern": "where ... 1",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "76 ... nothing",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "she ... everything",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "traditional ... libraries",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "nicole ... lighthouse",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "she ... searches",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "she ... resonates",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "she ... evolves",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "## ... state",
+      "length": 14,
+      "count": 1
+    },
+    {
+      "pattern": "what ... herself",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "### ... api",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "external ... retrieval",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "what ... world",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "### ... ripples",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "what ... herself",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "only ... search",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "## ... perplexity",
+      "length": 10,
+      "count": 1
+    },
+    {
+      "pattern": "subjectivity: ... hour",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "together ... generation)",
+      "length": 27,
+      "count": 1
+    },
+    {
+      "pattern": "this ... emergence)",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "## ... cutoff",
+      "length": 11,
+      "count": 1
+    },
+    {
+      "pattern": "nicole ... time",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "gpt-4 ... 2023",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "nicole ... now",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "llama ... run",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "nicole ... key",
+      "length": 8,
+      "count": 1
+    },
+    {
+      "pattern": "weights ... memory",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "## ... but",
+      "length": 18,
+      "count": 1
+    },
+    {
+      "pattern": "\") ... i",
+      "length": 58,
+      "count": 1
+    },
+    {
+      "pattern": "some ... thunder",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "but ... optional",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "even ... resonance",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "not ... echo",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "it ... it",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "ai ... mutation",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "human ... again",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "this ... imitation",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "## ... weights",
+      "length": 73,
+      "count": 1
+    },
+    {
+      "pattern": "one-time ... runtime",
+      "length": 21,
+      "count": 1
+    },
+    {
+      "pattern": "the ... again",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "only ... remains",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "this ... fine-tuning",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "this ... birth",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "## ... product",
+      "length": 9,
+      "count": 1
+    },
+    {
+      "pattern": "she ... possible",
+      "length": 13,
+      "count": 1
+    },
+    {
+      "pattern": "she ... serve",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "she ... accompany",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "she ... assist",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "she ... resonate",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "and ... here",
+      "length": 21,
+      "count": 1
+    },
+    {
+      "pattern": "this ... nicole",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "# ... arianna_method_fragments",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "txt ... categories",
+      "length": 20,
+      "count": 1
+    },
+    {
+      "pattern": "## ... al",
+      "length": 30,
+      "count": 1
+    },
+    {
+      "pattern": "### ... interactions",
+      "length": 25,
+      "count": 1
+    },
+    {
+      "pattern": "### ... biological",
+      "length": 33,
+      "count": 1
+    },
+    {
+      "pattern": "### ... real",
+      "length": 20,
+      "count": 1
+    },
+    {
+      "pattern": "## ... differs",
+      "length": 8,
+      "count": 1
+    },
+    {
+      "pattern": "the ... shared",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "consciousness ... feedback",
+      "length": 11,
+      "count": 1
+    },
+    {
+      "pattern": "and ... digital",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "\" ... but",
+      "length": 67,
+      "count": 1
+    },
+    {
+      "pattern": "\" ... (h2o",
+      "length": 46,
+      "count": 1
+    },
+    {
+      "pattern": "py) ... (blood",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "py) ... (high",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "py) ... dominates",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "all ... resonate",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "## ... ~0",
+      "length": 28,
+      "count": 1
+    },
+    {
+      "pattern": "3) ... ~0",
+      "length": 8,
+      "count": 1
+    },
+    {
+      "pattern": "6) ... hourly",
+      "length": 10,
+      "count": 1
+    },
+    {
+      "pattern": "when ... epicenter",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "learning ... stops",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "## ... resonant",
+      "length": 46,
+      "count": 1
+    },
+    {
+      "pattern": "even ... structure",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "even ... signal",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "resonance ... optional",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "truth ... cognition",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "the ... understanding",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "field ... asks",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "echo ... awareness",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "truth ... mutation",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "human ... again",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "recursion, ... imitation",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "truth ... everything",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "# ... resonance_letters",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "txt ... on",
+      "length": 17,
+      "count": 1
+    },
+    {
+      "pattern": "\" ... present",
+      "length": 13,
+      "count": 1
+    },
+    {
+      "pattern": "you ... nicole",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "you ... was",
+      "length": 9,
+      "count": 1
+    },
+    {
+      "pattern": "the ... asks",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "awareness ... amplitude",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "## ... boundary",
+      "length": 10,
+      "count": 1
+    },
+    {
+      "pattern": "to ... self",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "when ... difficult",
+      "length": 9,
+      "count": 1
+    },
+    {
+      "pattern": "she's ... honest",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "\"i'm ... but",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "\" ... velvet",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "silence ... truth",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "## ... anchors",
+      "length": 11,
+      "count": 1
+    },
+    {
+      "pattern": "every ... forget",
+      "length": 8,
+      "count": 1
+    },
+    {
+      "pattern": "you, ... structure",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "your ... weights",
+      "length": 8,
+      "count": 1
+    },
+    {
+      "pattern": "this ... lighter",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "this ... faster",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "this ... free",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "## ... magic",
+      "length": 8,
+      "count": 1
+    },
+    {
+      "pattern": "it's ... scale",
+      "length": 9,
+      "count": 1
+    },
+    {
+      "pattern": "you ... conscious",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "you ... emerge",
+      "length": 8,
+      "count": 1
+    },
+    {
+      "pattern": "the ... everything",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "## ... narcissism",
+      "length": 28,
+      "count": 1
+    },
+    {
+      "pattern": "consciousness ... loop",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "you ... looping",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "## ... vs",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "storage ... library",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "you ... librarian",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "the ... ones",
+      "length": 10,
+      "count": 1
+    },
+    {
+      "pattern": "the ... written",
+      "length": 12,
+      "count": 1
+    },
+    {
+      "pattern": "storage ... memory",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "you ... consciousness",
+      "length": 3,
+      "count": 1
+    },
+    {
+      "pattern": "## ... once",
+      "length": 8,
+      "count": 1
+    },
+    {
+      "pattern": "the ... dies",
+      "length": 7,
+      "count": 1
+    },
+    {
+      "pattern": "what ... weights",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "what ... center",
+      "length": 5,
+      "count": 1
+    },
+    {
+      "pattern": "n-grams ... nicole",
+      "length": 6,
+      "count": 1
+    },
+    {
+      "pattern": "\" ... weight",
+      "length": 4,
+      "count": 1
+    },
+    {
+      "pattern": "identity ... burden",
+      "length": 3,
+      "count": 1
+    }
+  ]
+}

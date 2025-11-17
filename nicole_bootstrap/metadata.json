@@ -1,0 +1,8 @@
+{
+  "version": "v1.0.0-bootstrap.1",
+  "created": "2025-11-17T21:10:01.662029",
+  "corpus_size_kb": 16,
+  "vocab_size": "unknown",
+  "training_iters": "corpus-only",
+  "notes": "First genesis. English-only subjectivity corpus. Weightless forever."
+}
