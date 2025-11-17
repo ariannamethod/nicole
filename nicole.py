@@ -135,6 +135,22 @@ try:
 except ImportError:
     NICOLE2NICOLE_AVAILABLE = False
 
+# Import Bootstrap for filtering Perplexity/DDG results
+try:
+    from nicole_bootstrap.engine.dynamic_loader import load_unified_skeleton
+    from nicole_bootstrap.engine.grammar import apply_perfect_grammar
+    BOOTSTRAP_AVAILABLE = True
+    print("[Nicole:Bootstrap] Loading unified skeleton...")
+    # Load skeleton ONCE at module load
+    UNIFIED_SKELETON = load_unified_skeleton()
+    BOOTSTRAP_BIGRAMS = UNIFIED_SKELETON.merge_ngrams()
+    BOOTSTRAP_BANNED = UNIFIED_SKELETON.get_banned_patterns()
+    BOOTSTRAP_CENTERS = UNIFIED_SKELETON.get_centers()
+    print(f"[Nicole:Bootstrap] ✅ Loaded: {len(BOOTSTRAP_BIGRAMS)} bigrams, {len(BOOTSTRAP_BANNED)} banned patterns")
+except ImportError as e:
+    BOOTSTRAP_AVAILABLE = False
+    print(f"[Nicole:Bootstrap] ❌ Bootstrap unavailable: {e}")
+
 # Import AMLK integration
 try:
     from nicole_amlk import get_amlk_bridge, start_nicole_in_amlk
@@ -1091,6 +1107,77 @@ class NicoleCore:
 
             print(f"[Nicole:SelfRef] 🔗 Created associative links: nicole ↔ persona concepts")
 
+    def _filter_seeds_with_bootstrap(self, seeds: List[str]) -> List[str]:
+        """
+        Filter seeds through bootstrap structure.
+
+        Removes:
+        1. Banned patterns (corporate speak, artifacts)
+        2. Low-frequency words (likely noise)
+        3. Words with weak bigram connections
+
+        Keeps:
+        1. High-resonance words (strong bigram connectivity)
+        2. Center words (structural hubs)
+        """
+        if not BOOTSTRAP_AVAILABLE or not seeds:
+            return seeds
+
+        filtered = []
+
+        for seed in seeds:
+            seed_lower = seed.lower()
+
+            # Skip banned patterns
+            if any(ban.lower() in seed_lower for ban in BOOTSTRAP_BANNED):
+                continue
+
+            # Skip single-letter noise
+            if len(seed_lower) < 2:
+                continue
+
+            # Skip common stop words (basic list)
+            stop_words = {'the', 'and', 'that', 'for', 'from', 'you', 'this', 'with'}
+            if seed_lower in stop_words:
+                continue
+
+            # Check bigram connectivity (exists in our graph?)
+            if seed_lower in BOOTSTRAP_BIGRAMS or any(seed_lower in nexts for nexts in BOOTSTRAP_BIGRAMS.values()):
+                filtered.append(seed)
+            elif seed_lower in BOOTSTRAP_CENTERS:
+                # Centers are structural hubs - keep them!
+                filtered.append(seed)
+
+        # Score by resonance
+        scored_seeds = []
+        for seed in filtered:
+            seed_lower = seed.lower()
+
+            # Count outgoing connections
+            out_degree = len(BOOTSTRAP_BIGRAMS.get(seed_lower, {}))
+
+            # Count incoming connections
+            in_degree = sum(1 for nexts in BOOTSTRAP_BIGRAMS.values() if seed_lower in nexts)
+
+            # Combined resonance score
+            resonance = out_degree + in_degree
+
+            scored_seeds.append((resonance, seed))
+
+        # Sort by resonance (high to low)
+        scored_seeds.sort(reverse=True, key=lambda x: x[0])
+
+        # Take top seeds
+        top_seeds = [seed for _, seed in scored_seeds]
+
+        removed = len(seeds) - len(top_seeds)
+        if removed > 0:
+            print(f"[Nicole:Bootstrap] Filtered {removed} seeds ({removed/len(seeds)*100:.0f}%) - keeping {len(top_seeds)} resonant seeds")
+            if top_seeds[:5]:
+                print(f"[Nicole:Bootstrap] Top seeds: {', '.join(top_seeds[:5])}")
+
+        return top_seeds
+
     def process_message(self, user_input: str) -> str:
         """Processes user message with ME principles"""
         with self.lock:
@@ -1372,11 +1459,16 @@ class NicoleCore:
                 print(f"[Nicole:Objectivity:ERROR] Context retrieval error: {e}")
                 context, objectivity_seeds = "", []
 
+            # BOOTSTRAP FILTER: Clean objectivity seeds through structure
+            print(f"[Nicole:Bootstrap] Raw seeds: {len(objectivity_seeds)}")
+            objectivity_seeds = self._filter_seeds_with_bootstrap(objectivity_seeds)
+            print(f"[Nicole:Bootstrap] Filtered seeds: {len(objectivity_seeds)}")
+
             # Get candidates at 50% and 70% semantic distance (as in ME)
             candidates_50 = self.memory.get_semantic_candidates(resonant_word, 0.5)
             candidates_70 = self.memory.get_semantic_candidates(resonant_word, 0.7)
 
-            # Combine ME candidates with Objectivity seeds
+            # Combine ME candidates with Bootstrap-filtered Objectivity seeds
             all_candidates = list(set(candidates_50 + candidates_70 + objectivity_seeds))
 
             # ANTI-TEMPLATE LOGIC: only from memory or user input!
@@ -1439,7 +1531,12 @@ class NicoleCore:
             # Assemble response
             response = " ".join(response_words)
 
-            # JULIA PUNCTUATION: optimize through mathematics
+            # BOOTSTRAP GRAMMAR: Apply perfect grammar (capitalization, punctuation, etc.)
+            if BOOTSTRAP_AVAILABLE:
+                response = apply_perfect_grammar(response)
+                print(f"[Nicole:Bootstrap] Applied grammar finalization")
+
+            # JULIA PUNCTUATION: optimize through mathematics (if High available, may override bootstrap)
             if self.high_enabled and self.high_core:
                 response = self.high_core.optimize_punctuation(response)
 
@@ -1600,7 +1697,13 @@ class NicoleCore:
             else:
                 unique_words.extend(['input'])
 
-        return ' '.join(unique_words) + '.'
+        response = ' '.join(unique_words) + '.'
+
+        # BOOTSTRAP GRAMMAR: Apply perfect grammar
+        if BOOTSTRAP_AVAILABLE:
+            response = apply_perfect_grammar(response)
+
+        return response
         
     def _update_metrics(self, user_input: str, response: str):
         """Updates conversation metrics"""
