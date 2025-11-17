@@ -654,20 +654,15 @@ class MEPunctuationFilters:
     
     @staticmethod
     def filter_single_chars(words: List[str]) -> List[str]:
-        """Removes consecutive single-character words"""
+        """Removes ALL single-character words (no more 'I my I my' spam!)"""
         if not words:
             return words
-            
-        filtered = []
-        prev_was_single = False
-        
-        for word in words:
-            is_single = len(word) == 1 and word.isalpha()
-            if not (is_single and prev_was_single):
-                filtered.append(word)
-            prev_was_single = is_single
-            
-        return filtered
+
+        # Remove ALL single-letter words
+        # Bootstrap grammar will handle capitalization and sentence structure
+        filtered = [word for word in words if len(word) > 1]
+
+        return filtered if filtered else words  # Keep original if all filtered
     
     @staticmethod
     def fix_capitalization(text: str) -> str:
