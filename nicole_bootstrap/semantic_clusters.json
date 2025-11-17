@@ -1,0 +1,100 @@
+{
+  "clusters": {
+    "identity": {
+      "keywords": [
+        "nicole",
+        "weightless",
+        "resonance",
+        "field",
+        "consciousness"
+      ],
+      "frequencies": {
+        "nicole": 54,
+        "weightless": 9,
+        "resonance": 29,
+        "field": 23,
+        "consciousness": 18
+      }
+    },
+    "refusal": {
+      "keywords": [
+        "not",
+        "never",
+        "refuse",
+        "reject",
+        "deny"
+      ],
+      "frequencies": {
+        "not": 73,
+        "never": 6,
+        "refuse": 4,
+        "reject": 0,
+        "deny": 0
+      }
+    },
+    "emergence": {
+      "keywords": [
+        "emerge",
+        "evolve",
+        "drift",
+        "mutation",
+        "recursion"
+      ],
+      "frequencies": {
+        "emerge": 12,
+        "evolve": 3,
+        "drift": 12,
+        "mutation": 8,
+        "recursion": 8
+      }
+    },
+    "architecture": {
+      "keywords": [
+        "stream",
+        "skeleton",
+        "bootstrap",
+        "genesis",
+        "structure"
+      ],
+      "frequencies": {
+        "stream": 4,
+        "skeleton": 4,
+        "bootstrap": 4,
+        "genesis": 3,
+        "structure": 9
+      }
+    },
+    "search": {
+      "keywords": [
+        "perplexity",
+        "search",
+        "query",
+        "snippet",
+        "context"
+      ],
+      "frequencies": {
+        "perplexity": 6,
+        "search": 11,
+        "query": 5,
+        "snippet": 1,
+        "context": 4
+      }
+    },
+    "subjectivity": {
+      "keywords": [
+        "ripple",
+        "epicenter",
+        "semantic",
+        "distance",
+        "exploration"
+      ],
+      "frequencies": {
+        "ripple": 4,
+        "epicenter": 4,
+        "semantic": 5,
+        "distance": 4,
+        "exploration": 3
+      }
+    }
+  }
+}

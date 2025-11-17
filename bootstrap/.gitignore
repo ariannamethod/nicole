@@ -1,0 +1,17 @@
+# Bootstrap temporary files - DO NOT COMMIT
+
+# Checkpoints (delete after export)
+checkpoints/*.pt
+checkpoints/*.pth
+
+# Combined corpus (regenerated from source files)
+combined_corpus.txt
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Temporary files
+*.tmp
+*.log
