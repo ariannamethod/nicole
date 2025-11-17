@@ -1136,8 +1136,9 @@ class NicoleCore:
             if len(seed_lower) < 2:
                 continue
 
-            # Skip common stop words (basic list)
-            stop_words = {'the', 'and', 'that', 'for', 'from', 'you', 'this', 'with'}
+            # Skip common stop words + pronouns (no more "I my" spam!)
+            stop_words = {'the', 'and', 'that', 'for', 'from', 'you', 'this', 'with',
+                         'my', 'your', 'his', 'her', 'its', 'our', 'their'}
             if seed_lower in stop_words:
                 continue
 
