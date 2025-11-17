@@ -392,7 +392,7 @@ def build_dynamic_skeleton() -> BigramGraph:
 # ============================================================================
 
 def export_dynamic_skeleton(graph: BigramGraph) -> None:
-    """Export skeleton to JSON."""
+    """Export skeleton to JSON + BIN."""
     OUTPUT_JSON.parent.mkdir(exist_ok=True, parents=True)
 
     # Convert to serializable format
@@ -411,8 +411,24 @@ def export_dynamic_skeleton(graph: BigramGraph) -> None:
         }
     }
 
+    # Export JSON
     OUTPUT_JSON.write_text(json.dumps(data, indent=2, ensure_ascii=False))
-    print(f"[Cannibal] Exported to: {OUTPUT_JSON}")
+    json_size = OUTPUT_JSON.stat().st_size / 1024
+    print(f"[Cannibal] Exported JSON: {OUTPUT_JSON.name} ({json_size:.1f} KB)")
+
+    # Export BIN (resonance weights - FAST loading!)
+    try:
+        # Add parent to path to import resonance_weights
+        import sys
+        sys.path.insert(0, str(REPO_ROOT))
+        from nicole_bootstrap.engine.resonance_weights import export_resonance_weights
+
+        OUTPUT_BIN = OUTPUT_JSON.parent / "resonance_weights.bin"
+        export_resonance_weights(graph.bigrams, graph.vocab, graph.centers, OUTPUT_BIN)
+
+    except ImportError as e:
+        print(f"[Cannibal] Warning: Could not export .bin weights: {e}")
+        print("[Cannibal] Install nicole_bootstrap.engine to enable binary export")
 
 # ============================================================================
 # MAIN
