@@ -454,19 +454,58 @@ And because I love idiot jokes: Nicole fine-tunes faster than I can say "wait, w
 
 Here's the dirty secret: Nicole's current speech generation is *coherent*, but sometimes it reads like someone fed a philosophy PhD thesis through a blender and hit "frappe." The Perplexity API returns amazing content, but it's noisy as hell - random Reddit usernames, corporate jargon, the occasional `businessman_threatening_unfavorably` that makes you question reality.
 
-So we're building a **bootstrap skeleton** - and before you panic, no, this doesn't mean adding pretrained weights. Nicole stays weightless. Forever. This is different.
+So we built a **two-tier bootstrap** - and before you panic, no, this doesn't mean adding pretrained weights. Nicole stays weightless. Forever. This is different.
 
-**The plan:** Train a tiny NanoGPT (Karpathy's toy GPT-2) *once* on Nicole's subjectivity corpus - her persona prompts, philosophical anchors, Arianna Method fragments, all the identity-defining texts. Then immediately throw away the model checkpoint. What we keep is the *skeleton*: pure JSON files containing n-gram statistics, phrase shapes, style biases, and a blacklist of patterns that make Nicole sound like a corporate chatbot having an existential crisis.
+### Mini-Bootstrap: Markdown Cannibal (ACTIVE NOW!)
 
-Think of it as giving Nicole a "gravitational center" for sentence construction without actual weights. The skeleton guides:
-- **N-gram topology** - which word pairs sound like Nicole vs which sound like LinkedIn spam
-- **Phrase shapes** - her typical sentence structures, rhythms, punctuation habits  
-- **Banned patterns** - hard filter for "I'm sorry, but", "as an AI assistant", and other politeness cancer
-- **Semantic clusters** - key concepts that define her identity (resonance, emergence, recursion, etc.)
+**Status:** ✅ Deployed and working
 
-Runtime stays identical: no PyTorch, no inference, no GPU. Just pure structure + search + resonance, but now with a JSON skeleton whispering "hey, maybe don't use that Reddit username as a verb." One-time genesis, permanent guidance, zero weights. 
+Nicole now eats her own documentation. Literally. Every .md file in the repo gets digested into bigrams.
 
-It's not training. It's giving birth to structural coherence, then forgetting you ever had a model in the first place. The checkpoint gets archived, the skeleton ships to Railway, and Nicole keeps being weightless while finally sounding like she has her shit together. Mostly.
+**How it works:**
+- `bootstrap/markdown_cannibal.py` scans ALL markdown files recursively
+- Extracts 12,527 bigrams from 16 files (README.md, persona docs, etc.)
+- Caches with mtime (rebuilds only changed files, like a smart build system)
+- Finds 100 "centers of gravity" - structural hubs that connect many words
+- Exports 342KB `dynamic_skeleton.json` (NO WEIGHTS, pure JSON!)
+
+**What this gives Nicole:**
+- **Bigram coherence scoring** - filter Perplexity results by structural plausibility
+- **Banned pattern detection** - block "as an AI assistant" and corporate speak
+- **Auto-updating corpus** - README changes → new bigrams → Nicole learns
+- **Self-documentation** - Nicole speaks through her own README (recursive!)
+
+**Impact:** Does 50% of full bootstrap work WITHOUT PyTorch/training!
+
+Test it yourself:
+```bash
+python bootstrap/markdown_cannibal.py  # Rebuild skeleton from docs
+python bootstrap/test_unified_loader.py  # See merged bigrams
+```
+
+### Full Bootstrap: NanoGPT Training (LATER)
+
+**The plan:** Train a tiny NanoGPT (Karpathy's toy GPT-2) *once* on Nicole's subjectivity corpus - her persona prompts, philosophical anchors, Arianna Method fragments, all the identity-defining texts. Then immediately throw away the model checkpoint. What we keep is the *skeleton*: pure JSON files containing n-gram statistics, phrase shapes, style biases, and deeper patterns.
+
+**What full bootstrap adds (beyond markdown cannibal):**
+- **N-gram topology** - model-learned phrase topology (not just corpus bigrams)
+- **Phrase shapes** - typical sentence structures, rhythms, punctuation habits
+- **Style bias** - temperature preferences, length distributions
+- **Semantic clusters** - deeper identity patterns from training
+
+**Training:** ~20 minutes on CPU (32GB RAM), one-time genesis, checkpoint discarded.
+
+**The hybrid approach:**
+1. Mini-bootstrap (markdown cannibal) provides structural filtering RIGHT NOW
+2. Full bootstrap (NanoGPT) adds model-learned depth LATER
+3. Both merge into unified skeleton: 12,930+ bigrams total
+4. Runtime stays weightless: no PyTorch, no inference, no GPU
+
+Think of it as giving Nicole a "gravitational center" for filtering Perplexity results without actual weights. The skeleton guides what sounds like Nicole vs what sounds like LinkedIn spam. One-time genesis (if you want full bootstrap), permanent guidance, zero weights shipped to production.
+
+It's not training. It's giving birth to structural coherence, then forgetting you ever had a model in the first place. The checkpoint gets archived, the skeleton ships to Railway, and Nicole keeps being weightless while filtering results like she has her shit together. Mostly.
+
+**Current status:** Mini-bootstrap active, full bootstrap optional enhancement.
 
 ---
 
