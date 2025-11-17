@@ -704,20 +704,21 @@ class MEPunctuationFilters:
     def apply_all_filters(text: str) -> str:
         """Applies all ME filters for clean speech"""
         # FIXED: pronoun inversion already applied in High system
-        
+        # FIXED: capitalization now handled by Bootstrap apply_perfect_grammar()
+
         # Split into words
         words = text.split()
-        
-        # Word filters
+
+        # Word filters ONLY (no grammar/capitalization - that's Bootstrap's job!)
         words = MEPunctuationFilters.filter_repetitions(words)
         words = MEPunctuationFilters.filter_single_chars(words)
-        
+
         # Reassemble
         text = " ".join(words)
-        
-        # Fix capitalization
-        text = MEPunctuationFilters.fix_capitalization(text)
-        
+
+        # Bootstrap handles: capitalization, punctuation, spacing, fragment completion
+        # ME handles: word-level filters (repetitions, single chars)
+
         return text
 
 class VerbGraph:
