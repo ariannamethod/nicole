@@ -20,7 +20,19 @@ def capitalize_first_letter(text: str) -> str:
     """Capitalize first letter of sentence."""
     if not text:
         return text
-    return text[0].upper() + text[1:]
+
+    # Strip leading whitespace first
+    text = text.lstrip()
+    if not text:
+        return text
+
+    # Find first letter (skip non-alpha chars)
+    for i, char in enumerate(text):
+        if char.isalpha():
+            return text[:i] + char.upper() + text[i+1:]
+
+    # No letters found, return as is
+    return text
 
 def ensure_final_punctuation(text: str) -> str:
     """Ensure sentence ends with punctuation."""
